@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBarItem
@@ -17,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -25,6 +27,8 @@ import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.auth.api.identity.SignInClient
 import ke.ac.ku.ledgerly.auth.presentation.AuthScreen
 import ke.ac.ku.ledgerly.feature.add_transaction.AddTransaction
+import ke.ac.ku.ledgerly.feature.budget.AddBudgetScreen
+import ke.ac.ku.ledgerly.feature.budget.BudgetScreen
 import ke.ac.ku.ledgerly.feature.home.HomeScreen
 import ke.ac.ku.ledgerly.feature.stats.StatsScreen
 import ke.ac.ku.ledgerly.feature.transactionlist.TransactionListScreen
@@ -47,6 +51,8 @@ fun NavHostScreen(
                 navController = navController,
                 items = listOf(
                     NavItem(route = NavRouts.home, icon = R.drawable.ic_home),
+                    NavItem(route = NavRouts.budget, icon = R.drawable.ic_budget),
+                    NavItem(route = NavRouts.allTransactions, icon = R.drawable.ic_transaction),
                     NavItem(route = NavRouts.stats, icon = R.drawable.ic_stats)
                 )
             )
@@ -93,6 +99,16 @@ fun NavHostScreen(
                 bottomBarVisibility = true
                 TransactionListScreen(navController)
             }
+
+            composable(route = NavRouts.budget) {
+                bottomBarVisibility = true
+                BudgetScreen(navController)
+            }
+
+            composable("add_budget") {
+                AddBudgetScreen(navController = navController)
+            }
+
         }
     }
 }
@@ -108,7 +124,6 @@ fun NavigationBottomBar(
     navController: NavController,
     items: List<NavItem>
 ) {
-    // Bottom Navigation Bar
     val navBackStackEntry = navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry.value?.destination?.route
 
@@ -126,7 +141,11 @@ fun NavigationBottomBar(
                     }
                 },
                 icon = {
-                    Icon(painter = painterResource(id = item.icon), contentDescription = null)
+                    Icon(
+                        painter = painterResource(id = item.icon),
+                        contentDescription = null,
+                        modifier = Modifier.size(30.dp)
+                    )
                 },
                 alwaysShowLabel = false,
                 colors = NavigationBarItemDefaults.colors(
@@ -139,4 +158,5 @@ fun NavigationBottomBar(
         }
     }
 }
+
 

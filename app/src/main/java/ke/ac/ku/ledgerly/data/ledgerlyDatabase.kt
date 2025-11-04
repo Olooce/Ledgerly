@@ -9,9 +9,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import dagger.hilt.android.qualifiers.ApplicationContext
+import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import javax.inject.Singleton
 
-@Database(entities = [TransactionEntity::class], version = 2, exportSchema = false)
+@Database(entities = [TransactionEntity::class, BudgetEntity::class], version = 3, exportSchema = false)
 @Singleton
 abstract class LedgerlyDatabase : RoomDatabase() {
 

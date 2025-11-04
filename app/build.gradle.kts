@@ -104,14 +104,14 @@ dependencies {
     val nav_version = "2.7.7"
     implementation("androidx.navigation:navigation-compose:$nav_version")
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
-    
+
     // Firebase Authentication
     implementation(libs.firebase.auth)
     implementation(libs.firebase.auth.ktx)
-    
+
     // Google Sign-In
     implementation(libs.play.services.auth)
-    
+
     // Biometric
     implementation(libs.biometric)
 }
