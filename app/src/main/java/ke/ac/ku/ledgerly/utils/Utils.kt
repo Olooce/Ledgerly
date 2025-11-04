@@ -94,6 +94,42 @@ object Utils {
             "Freelance" -> {
                 R.drawable.ic_upwork
             }
+            "Budget" -> {
+                R.drawable.ic_budget
+            }
+            "Education" -> {
+                R.drawable.ic_education
+            }
+            "Entertainment" -> {
+                R.drawable.ic_ent
+            }
+
+            "Grocery" -> {
+                R.drawable.ic_grocery
+            }
+
+            "Healthcare" -> {
+                R.drawable.ic_healthcare
+            }
+
+            "Investments" -> {
+                R.drawable.ic_investment
+            }
+            "Receipt" -> {
+                R.drawable.ic_receipt
+            }
+
+            "Rent" -> {
+                R.drawable.ic_rent
+            }
+            "Transport" -> {
+                R.drawable.ic_transport
+            }
+
+            "Utilities" -> {
+                R.drawable.ic_utility
+            }
+
             else -> {
                 R.drawable.ic_default_category
             }
