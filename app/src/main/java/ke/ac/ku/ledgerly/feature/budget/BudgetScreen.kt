@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,6 +25,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
+import ke.ac.ku.ledgerly.feature.add_transaction.AddTransactionViewModel
 import ke.ac.ku.ledgerly.ui.theme.*
 import ke.ac.ku.ledgerly.utils.Utils
 import ke.ac.ku.ledgerly.widget.TransactionTextView
@@ -31,13 +33,26 @@ import ke.ac.ku.ledgerly.widget.TransactionTextView
 @Composable
 fun BudgetScreen(
     navController: NavController,
-    viewModel: BudgetViewModel = hiltViewModel()
+    viewModel: BudgetViewModel = hiltViewModel(),
+    addTransactionViewModel: AddTransactionViewModel = hiltViewModel()
 ) {
     val budgets by viewModel.budgets.collectAsState()
     val alerts by viewModel.alerts.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(Unit) { viewModel.loadBudgets() }
+    // Initial load
+    LaunchedEffect(Unit) {
+        viewModel.loadBudgets()
+        viewModel.loadAlerts()
+    }
+
+    // Reactive reload when a new transaction is added
+    LaunchedEffect(Unit) {
+        addTransactionViewModel.transactionAdded.collect {
+            viewModel.loadBudgets()
+            viewModel.loadAlerts()
+        }
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -240,12 +255,10 @@ fun BudgetItem(
 
         LinearProgressIndicator(
             progress = { progress.toFloat() },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(8.dp)
-                .clip(RoundedCornerShape(8.dp)),
+            modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(8.dp)),
             color = progressColor,
-            trackColor = Color.DarkGray
+            trackColor = Color.DarkGray,
+            strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
         )
 
         Spacer(modifier = Modifier.height(6.dp))

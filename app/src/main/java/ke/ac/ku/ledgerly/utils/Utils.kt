@@ -17,6 +17,11 @@ object Utils {
         return dateFormatter.format(dateInMillis)
     }
 
+    fun formatDateToISO(timestamp: Long): String {
+        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        return sdf.format(java.util.Date(timestamp))
+    }
+
     fun formatDateForChart(dateInMillis: Long): String {
         val dateFormatter = SimpleDateFormat("dd-MMM", Locale.getDefault())
         return dateFormatter.format(dateInMillis)
@@ -52,17 +57,28 @@ object Utils {
         return getMilliFromDate(date)
     }
 
-    fun getMilliFromDate(dateFormat: String?): Long {
-        var date = Date()
-        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-        try {
-            date = formatter.parse(dateFormat)
-        } catch (e: ParseException) {
-            e.printStackTrace()
+    fun getMilliFromDate(dateStr: String?): Long {
+        if (dateStr.isNullOrBlank()) return 0L
+
+        val formats = listOf(
+            "dd/MM/yyyy",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd"
+        )
+
+        for (format in formats) {
+            try {
+                val formatter = SimpleDateFormat(format, Locale.getDefault())
+                val date = formatter.parse(dateStr)
+                if (date != null) return date.time
+            } catch (e: ParseException) {
+                // Ignore and try next format
+            }
         }
-//        println("Today is $date")
-        return date.time
+
+        throw IllegalArgumentException("Unable to parse date: $dateStr. Expected formats: dd/MM/yyyy, yyyy-MM-dd'T'HH:mm:ss, or yyyy-MM-dd")
     }
+
 
     fun getItemIcon(category: String): Int {
         return when (category) {

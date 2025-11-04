@@ -226,14 +226,14 @@ fun DataForm(
             },
             textStyle = TextStyle(color = Color.Black),
             visualTransformation = { text ->
-                val out = "$" + text.text
+                val out = "Ksh " + text.text
                 val currencyOffsetTranslator = object : OffsetMapping {
                     override fun originalToTransformed(offset: Int): Int {
-                        return offset + 1
+                        return offset + 4
                     }
 
                     override fun transformedToOriginal(offset: Int): Int {
-                        return if (offset > 0) offset - 1 else 0
+                        return (offset - 4).coerceIn(0, text.text.length)
                     }
                 }
                 TransformedText(AnnotatedString(out), currencyOffsetTranslator)
@@ -333,7 +333,7 @@ fun DataForm(
                     id = null,
                     category = category.value,
                     amount = amount.value.toDoubleOrNull() ?: 0.0,
-                    date = Utils.formatDateToHumanReadableForm(date.longValue),
+                    date = Utils.formatDateToISO(date.longValue),
                     type = type.value,
                     notes = notes.value,
                     paymentMethod = paymentMethod.value,

@@ -10,6 +10,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ke.ac.ku.ledgerly.base.AddTransactionNavigationEvent
 import ke.ac.ku.ledgerly.data.repository.BudgetRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -17,6 +19,8 @@ import javax.inject.Inject
 @HiltViewModel
 class AddTransactionViewModel @Inject constructor(val dao: TransactionDao,  private val budgetRepository: BudgetRepository) : BaseViewModel() {
 
+    private val _transactionAdded = MutableSharedFlow<Unit>()
+    val transactionAdded = _transactionAdded.asSharedFlow()
 
     suspend fun addTransaction(transactionEntity: TransactionEntity): Boolean {
 
@@ -78,6 +82,7 @@ class AddTransactionViewModel @Inject constructor(val dao: TransactionDao,  priv
     private suspend fun updateBudgetSpending(transaction: TransactionEntity) {
         if (transaction.type == "Expense") {
             budgetRepository.refreshBudgetSpending()
+            _transactionAdded.emit(Unit)
         }
     }
 }
