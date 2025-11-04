@@ -1,7 +1,6 @@
 package ke.ac.ku.ledgerly.utils
 
 import ke.ac.ku.ledgerly.R
-import ke.ac.ku.ledgerly.data.model.ExpenseEntity
 import java.text.NumberFormat
 import java.text.ParseException
 import java.text.SimpleDateFormat
@@ -60,19 +59,27 @@ object Utils {
         } catch (e: ParseException) {
             e.printStackTrace()
         }
-        println("Today is $date")
+//        println("Today is $date")
         return date.time
     }
 
-    fun getItemIcon(item: ExpenseEntity): Int {
-        return if (item.title == "Paypal") {
-            R.drawable.ic_paypal
-        } else if (item.title == "Netflix") {
-            R.drawable.ic_netflix
-        } else if (item.title == "Starbucks") {
-            R.drawable.ic_starbucks
-        } else {
-            R.drawable.ic_upwork
+    fun getItemIcon(category: String): Int {
+        return when (category) {
+            "Paypal" -> {
+                R.drawable.ic_paypal
+            }
+            "Netflix" -> {
+                R.drawable.ic_netflix
+            }
+            "Starbucks" -> {
+                R.drawable.ic_starbucks
+            }
+            "Freelance" -> {
+                R.drawable.ic_upwork
+            }
+            else -> {
+                R.drawable.ic_default_category
+            }
         }
     }
 

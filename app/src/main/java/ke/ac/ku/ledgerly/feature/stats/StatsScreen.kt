@@ -29,7 +29,6 @@ import androidx.navigation.NavController
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.utils.Utils
 import ke.ac.ku.ledgerly.feature.home.TransactionList
-import ke.ac.ku.ledgerly.widget.ExpenseTextView
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.components.YAxis
@@ -38,6 +37,7 @@ import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.ValueFormatter
 import androidx.core.graphics.toColorInt
+import ke.ac.ku.ledgerly.widget.TransactionTextView
 
 @Composable
 fun StatsScreen(navController: NavController, viewModel: StatsViewModel = hiltViewModel()) {
@@ -57,7 +57,7 @@ fun StatsScreen(navController: NavController, viewModel: StatsViewModel = hiltVi
                 },
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.outline)
             )
-            ExpenseTextView(
+            TransactionTextView(
                 text = "Statistics",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,

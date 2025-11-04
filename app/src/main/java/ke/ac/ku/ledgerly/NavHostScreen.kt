@@ -24,7 +24,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.auth.api.identity.SignInClient
 import ke.ac.ku.ledgerly.auth.presentation.AuthScreen
-import ke.ac.ku.ledgerly.feature.add_expense.AddExpense
+import ke.ac.ku.ledgerly.feature.add_transaction.AddTransaction
 import ke.ac.ku.ledgerly.feature.home.HomeScreen
 import ke.ac.ku.ledgerly.feature.stats.StatsScreen
 import ke.ac.ku.ledgerly.feature.transactionlist.TransactionListScreen
@@ -76,12 +76,12 @@ fun NavHostScreen(
 
             composable(route = NavRouts.addIncome) {
                 bottomBarVisibility = false
-                AddExpense(navController, isIncome = true)
+                AddTransaction(navController, isIncome = true)
             }
             
             composable(route = NavRouts.addExpense) {
                 bottomBarVisibility = false
-                AddExpense(navController, isIncome = false)
+                AddTransaction(navController, isIncome = false)
             }
 
             composable(route = NavRouts.stats) {

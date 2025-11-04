@@ -7,22 +7,11 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,30 +23,33 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import ke.ac.ku.ledgerly.R
-import ke.ac.ku.ledgerly.feature.add_expense.ExpenseDropDown
+import ke.ac.ku.ledgerly.data.model.TransactionEntity
+import ke.ac.ku.ledgerly.feature.add_transaction.TransactionDropDown
 import ke.ac.ku.ledgerly.feature.home.TransactionItem
-import ke.ac.ku.ledgerly.utils.Utils
 import ke.ac.ku.ledgerly.feature.home.HomeViewModel
-import ke.ac.ku.ledgerly.widget.ExpenseTextView
+import ke.ac.ku.ledgerly.utils.Utils
+import ke.ac.ku.ledgerly.widget.TransactionTextView
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun TransactionListScreen(navController: NavController, viewModel: HomeViewModel = hiltViewModel()) {
-    val state = viewModel.expenses.collectAsState(initial = emptyList())
+fun TransactionListScreen(
+    navController: NavController,
+    viewModel: HomeViewModel = hiltViewModel()
+) {
+    val transactions by viewModel.transactions.collectAsState(initial = emptyList<TransactionEntity>())
     var filterType by remember { mutableStateOf("All") }
     var dateRange by remember { mutableStateOf("All Time") }
     var menuExpanded by remember { mutableStateOf(false) }
 
-    val filteredTransactions = when (filterType) {
-        "Expense" -> state.value.filter { it.type == "Expense" }
-        "Income" -> state.value.filter { it.type == "Income" }
-        else -> state.value
+    // Filter by type
+    val filteredByType = when (filterType) {
+        "Expense" -> transactions.filter { it.type.equals("Expense", true) }
+        "Income" -> transactions.filter { it.type.equals("Income", true) }
+        else -> transactions
     }
 
-    val filteredByDateRange = filteredTransactions.filter { transaction ->
-        // TODO: Apply date range filter logic here
-        true
-    }
+    // TODO: Add actual date filtering logic
+    val filteredTransactions = filteredByType.filter { _ -> true }
 
     Scaffold(
         topBar = {
@@ -66,7 +58,6 @@ fun TransactionListScreen(navController: NavController, viewModel: HomeViewModel
                     .fillMaxWidth()
                     .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 8.dp)
             ) {
-                // Back Button
                 Image(
                     painter = painterResource(id = R.drawable.ic_back),
                     contentDescription = "Back",
@@ -76,20 +67,16 @@ fun TransactionListScreen(navController: NavController, viewModel: HomeViewModel
                     colorFilter = ColorFilter.tint(Color.Black)
                 )
 
-                // Title
-                ExpenseTextView(
+                TransactionTextView(
                     text = "Transactions",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .align(Alignment.Center)
+                    modifier = Modifier.align(Alignment.Center)
                 )
 
-                // Three Dots Menu
                 Image(
                     painter = painterResource(id = R.drawable.ic_filter),
-                    contentDescription = null,
+                    contentDescription = "Filter",
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
                         .clickable { menuExpanded = !menuExpanded },
@@ -99,7 +86,6 @@ fun TransactionListScreen(navController: NavController, viewModel: HomeViewModel
         }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
-            // Content area for the transaction list
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -107,45 +93,53 @@ fun TransactionListScreen(navController: NavController, viewModel: HomeViewModel
                     .padding(horizontal = 16.dp)
             ) {
                 item {
-                    // Dropdowns
                     AnimatedVisibility(
                         visible = menuExpanded,
                         enter = slideInVertically(initialOffsetY = { -it / 2 }),
-                        exit = slideOutVertically(targetOffsetY = { -it  }),
+                        exit = slideOutVertically(targetOffsetY = { -it }),
                         modifier = Modifier.padding(8.dp)
                     ) {
                         Column {
-                            // Type Filter Dropdown
-                            ExpenseDropDown(
+                            TransactionDropDown(
                                 listOfItems = listOf("All", "Expense", "Income"),
                                 onItemSelected = { selected ->
                                     filterType = selected
-                                    menuExpanded = false // Close menu after selection
+                                    menuExpanded = false
                                 }
                             )
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            // Date Range Filter Dropdown
-                            ExpenseDropDown(
-                                listOfItems = listOf( "Yesterday", "Today", "Last 30 Days", "Last 90 Days", "Last Year"),
+                            TransactionDropDown(
+                                listOfItems = listOf(
+                                    "All Time",
+                                    "Today",
+                                    "Yesterday",
+                                    "Last 30 Days",
+                                    "Last 90 Days",
+                                    "Last Year"
+                                ),
                                 onItemSelected = { selected ->
                                     dateRange = selected
-                                    menuExpanded = false // Close menu after selection
+                                    menuExpanded = false
                                 }
                             )
                         }
                     }
                 }
-                items(filteredByDateRange) { item ->
-                    val icon = Utils.getItemIcon(item)
+
+                items(filteredTransactions) { transaction ->
+                    val icon = Utils.getItemIcon(transaction.category)
                     TransactionItem(
-                        title = item.title,
-                        amount = item.amount.toString(),
-                        icon = icon!!,
-                        date = item.date,
-                        color = if (item.type == "Income") Color.Green else Color.Red,
-                        Modifier.animateItemPlacement(tween(100))
+                        title = transaction.category,
+                        paymentMethod = transaction.paymentMethod,
+                        amount = Utils.formatCurrency(transaction.amount),
+                        icon = icon ?: R.drawable.ic_default_category,
+                        date = transaction.date,
+                        notes = transaction.notes,
+                        tags = transaction.tags,
+                        color = if (transaction.type.equals("Income", true)) Color(0xFF2E7D32) else Color(0xFFC62828),
+                        modifier = Modifier.animateItemPlacement(tween(100))
                     )
                 }
             }

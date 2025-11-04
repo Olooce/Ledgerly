@@ -42,9 +42,8 @@ import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import ke.ac.ku.ledgerly.data.model.ExpenseEntity
+import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.ui.theme.Zinc
-import ke.ac.ku.ledgerly.widget.ExpenseTextView
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.base.HomeNavigationEvent
 import ke.ac.ku.ledgerly.base.NavigationEvent
@@ -53,6 +52,7 @@ import ke.ac.ku.ledgerly.ui.theme.LightGrey
 import ke.ac.ku.ledgerly.ui.theme.Red
 import ke.ac.ku.ledgerly.ui.theme.Typography
 import ke.ac.ku.ledgerly.utils.Utils
+import ke.ac.ku.ledgerly.widget.TransactionTextView
 import java.util.Calendar
 
 
@@ -72,7 +72,7 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                 }
 
                 HomeNavigationEvent.NavigateToAddExpense -> {
-                    navController.navigate("/add_exp")
+                    navController.navigate("/add_transaction")
                 }
 
                 else -> {}
@@ -81,9 +81,13 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
     }
 
     val greeting = remember { getTimeBasedGreeting() }
-
-    //TODO: Make injectable
     val userName = "Oloo"
+
+    // Collect transactions from ViewModel
+    val transactions by viewModel.transactions.collectAsState(initial = emptyList())
+    val expense = viewModel.getTotalExpense(transactions)
+    val income = viewModel.getTotalIncome(transactions)
+    val balance = viewModel.getBalance(transactions)
 
     Surface(modifier = Modifier.fillMaxSize()) {
         ConstraintLayout(modifier = Modifier.fillMaxSize()) {
@@ -103,12 +107,12 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                     end.linkTo(parent.end)
                 }) {
                 Column(modifier = Modifier.align(Alignment.CenterStart)) {
-                    ExpenseTextView(
+                   TransactionTextView(
                         text =  greeting,
                         style = Typography.bodyMedium,
                         color = Color.White
                     )
-                    ExpenseTextView(
+                   TransactionTextView(
                         text = userName,
                         style = Typography.titleLarge,
                         color = Color.White
@@ -121,10 +125,6 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                 )
             }
 
-            val state = viewModel.expenses.collectAsState(initial = emptyList())
-            val expense = viewModel.getTotalExpense(state.value)
-            val income = viewModel.getTotalIncome(state.value)
-            val balance = viewModel.getBalance(state.value)
             CardItem(
                 modifier = Modifier.constrainAs(card) {
                     top.linkTo(nameRow.bottom)
@@ -133,6 +133,7 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                 },
                 balance = balance, income = income, expense = expense
             )
+
             TransactionList(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -142,7 +143,9 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                         end.linkTo(parent.end)
                         bottom.linkTo(parent.bottom)
                         height = Dimension.fillToConstraints
-                    }, list = state.value, onSeeAllClicked = {
+                    },
+                list = transactions,
+                onSeeAllClicked = {
                     viewModel.onEvent(HomeUiEvent.OnSeeAllClicked)
                 }
             )
@@ -153,13 +156,18 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                     .constrainAs(add) {
                         bottom.linkTo(parent.bottom)
                         end.linkTo(parent.end)
-                    }, contentAlignment = Alignment.BottomEnd
+                    },
+                contentAlignment = Alignment.BottomEnd
             ) {
-                MultiFloatingActionButton(modifier = Modifier, {
-                    viewModel.onEvent(HomeUiEvent.OnAddExpenseClicked)
-                }, {
-                    viewModel.onEvent(HomeUiEvent.OnAddIncomeClicked)
-                })
+                MultiFloatingActionButton(
+                    modifier = Modifier,
+                    onAddExpenseClicked = {
+                        viewModel.onEvent(HomeUiEvent.OnAddExpenseClicked)
+                    },
+                    onAddIncomeClicked = {
+                        viewModel.onEvent(HomeUiEvent.OnAddIncomeClicked)
+                    }
+                )
             }
         }
     }
@@ -197,6 +205,7 @@ fun MultiFloatingActionButton(
                             .background(color = Zinc, shape = RoundedCornerShape(12.dp))
                             .clickable {
                                 onAddIncomeClicked.invoke()
+                                expanded = false
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -213,6 +222,7 @@ fun MultiFloatingActionButton(
                             .background(color = Zinc, shape = RoundedCornerShape(12.dp))
                             .clickable {
                                 onAddExpenseClicked.invoke()
+                                expanded = false
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -266,14 +276,16 @@ fun CardItem(
                 .weight(1f)
         ) {
             Column {
-                ExpenseTextView(
+               TransactionTextView(
                     text = "Total Balance",
                     style = Typography.titleMedium,
                     color = Color.White
                 )
                 Spacer(modifier = Modifier.size(8.dp))
-                ExpenseTextView(
-                    text = balance, style = Typography.headlineLarge, color = Color.White,
+               TransactionTextView(
+                    text = balance,
+                    style = Typography.headlineLarge,
+                    color = Color.White,
                 )
             }
             Image(
@@ -289,30 +301,26 @@ fun CardItem(
                 .weight(1f)
         ) {
             CardRowItem(
-                modifier = Modifier
-                    .align(Alignment.CenterStart),
+                modifier = Modifier.align(Alignment.CenterStart),
                 title = "Income",
                 amount = income,
                 imaget = R.drawable.ic_income
             )
             Spacer(modifier = Modifier.size(8.dp))
             CardRowItem(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd),
+                modifier = Modifier.align(Alignment.CenterEnd),
                 title = "Expense",
                 amount = expense,
                 imaget = R.drawable.ic_expense
             )
         }
-
     }
 }
-
 
 @Composable
 fun TransactionList(
     modifier: Modifier,
-    list: List<ExpenseEntity>,
+    list: List<TransactionEntity>,
     title: String = "Recent Transactions",
     onSeeAllClicked: () -> Unit
 ) {
@@ -320,12 +328,12 @@ fun TransactionList(
         item {
             Column {
                 Box(modifier = modifier.fillMaxWidth()) {
-                    ExpenseTextView(
+                   TransactionTextView(
                         text = title,
                         style = Typography.titleLarge,
                     )
                     if (title == "Recent Transactions") {
-                        ExpenseTextView(
+                       TransactionTextView(
                             text = "See all",
                             style = Typography.bodyMedium,
                             modifier = Modifier
@@ -341,16 +349,19 @@ fun TransactionList(
         }
         items(items = list,
             key = { item -> item.id ?: 0 }) { item ->
-            val icon = Utils.getItemIcon(item)
+            val icon = Utils.getItemIcon(item.category)
             val amount = if (item.type == "Income") item.amount else item.amount * -1
 
             TransactionItem(
-                title = item.title,
+                title = item.category,
                 amount = Utils.formatCurrency(amount),
                 icon = icon,
                 date = Utils.formatStringDateToMonthDayYear(item.date),
+                paymentMethod = item.paymentMethod,
+                notes = item.notes,
+                tags = item.tags,
                 color = if (item.type == "Income") Green else Red,
-                Modifier
+                modifier = Modifier
             )
         }
     }
@@ -362,6 +373,9 @@ fun TransactionItem(
     amount: String,
     icon: Int,
     date: String,
+    paymentMethod: String,
+    notes: String,
+    tags: String,
     color: Color,
     modifier: Modifier
 ) {
@@ -378,13 +392,45 @@ fun TransactionItem(
                 modifier = Modifier.size(51.dp)
             )
             Spacer(modifier = Modifier.size(8.dp))
-            Column {
-                ExpenseTextView(text = title, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                Spacer(modifier = Modifier.size(6.dp))
-                ExpenseTextView(text = date, fontSize = 13.sp, color = LightGrey)
+            Column(modifier = Modifier.weight(1f)) {
+               TransactionTextView(text = title, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                Spacer(modifier = Modifier.size(4.dp))
+
+                // Show payment method if available
+                if (paymentMethod.isNotEmpty()) {
+                   TransactionTextView(
+                        text = "Via $paymentMethod",
+                        fontSize = 12.sp,
+                        color = LightGrey
+                    )
+                    Spacer(modifier = Modifier.size(2.dp))
+                }
+
+                // Show tags if available
+                if (tags.isNotEmpty()) {
+                   TransactionTextView(
+                        text = "Tags: $tags",
+                        fontSize = 11.sp,
+                        color = LightGrey
+                    )
+                    Spacer(modifier = Modifier.size(2.dp))
+                }
+
+               TransactionTextView(text = date, fontSize = 13.sp, color = LightGrey)
+
+                // Show notes if available (with limited lines)
+                if (notes.isNotEmpty()) {
+                    Spacer(modifier = Modifier.size(4.dp))
+                   TransactionTextView(
+                        text = notes,
+                        fontSize = 12.sp,
+                        color = LightGrey,
+                        maxLines = 1
+                    )
+                }
             }
         }
-        ExpenseTextView(
+       TransactionTextView(
             text = amount,
             fontSize = 18.sp,
             fontWeight = FontWeight.Medium,
@@ -398,16 +444,15 @@ fun TransactionItem(
 fun CardRowItem(modifier: Modifier, title: String, amount: String, imaget: Int) {
     Column(modifier = modifier) {
         Row {
-
             Image(
                 painter = painterResource(id = imaget),
                 contentDescription = null,
             )
             Spacer(modifier = Modifier.size(8.dp))
-            ExpenseTextView(text = title, style = Typography.bodyLarge, color = Color.White)
+           TransactionTextView(text = title, style = Typography.bodyLarge, color = Color.White)
         }
         Spacer(modifier = Modifier.size(4.dp))
-        ExpenseTextView(text = amount, style = Typography.titleLarge, color = Color.White)
+       TransactionTextView(text = amount, style = Typography.titleLarge, color = Color.White)
     }
 }
 

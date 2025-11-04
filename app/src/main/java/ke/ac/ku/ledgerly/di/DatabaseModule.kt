@@ -1,7 +1,7 @@
 package ke.ac.ku.ledgerly.di
 
 import android.content.Context
-import ke.ac.ku.ledgerly.data.dao.ExpenseDao
+import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,7 +21,7 @@ object DatabaseModule {
     }
 
     @Provides
-    fun provideExpenseDao(database: LedgerlyDatabase): ExpenseDao {
+    fun provideExpenseDao(database: LedgerlyDatabase): TransactionDao {
         return database.expenseDao()
     }
 }

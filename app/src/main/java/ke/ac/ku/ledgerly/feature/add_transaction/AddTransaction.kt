@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
-package ke.ac.ku.ledgerly.feature.add_expense
+package ke.ac.ku.ledgerly.feature.add_transaction
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -54,27 +54,27 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import ke.ac.ku.ledgerly.R
-import ke.ac.ku.ledgerly.base.AddExpenseNavigationEvent
+import ke.ac.ku.ledgerly.base.AddTransactionNavigationEvent
 import ke.ac.ku.ledgerly.base.NavigationEvent
 import ke.ac.ku.ledgerly.utils.Utils
-import ke.ac.ku.ledgerly.data.model.ExpenseEntity
+import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.ui.theme.InterFontFamily
 import ke.ac.ku.ledgerly.ui.theme.LightGrey
 import ke.ac.ku.ledgerly.ui.theme.Typography
-import ke.ac.ku.ledgerly.widget.ExpenseTextView
+import ke.ac.ku.ledgerly.widget.TransactionTextView
 
 @Composable
-fun AddExpense(
+fun AddTransaction(
     navController: NavController,
     isIncome: Boolean,
-    viewModel: AddExpenseViewModel = hiltViewModel()
+    viewModel: AddTransactionViewModel = hiltViewModel()
 ) {
     val menuExpanded = remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
             when (event) {
                 NavigationEvent.NavigateBack -> navController.popBackStack()
-                AddExpenseNavigationEvent.MenuOpenedClicked -> {
+                AddTransactionNavigationEvent.MenuOpenedClicked -> {
                     menuExpanded.value = true
                 }
                 else->{}
@@ -103,9 +103,9 @@ fun AddExpense(
                     modifier = Modifier
                         .align(Alignment.CenterStart)
                         .clickable {
-                            viewModel.onEvent(AddExpenseUiEvent.OnBackPressed)
+                            viewModel.onEvent(AddTransactionUiEvent.OnBackPressed)
                         })
-                ExpenseTextView(
+                TransactionTextView(
                     text = "Add ${if (isIncome) "Income" else "Expense"}",
                     style = Typography.titleLarge,
                     color = Color.White,
@@ -120,7 +120,7 @@ fun AddExpense(
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
                             .clickable {
-                                viewModel.onEvent(AddExpenseUiEvent.OnMenuClicked)
+                                viewModel.onEvent(AddTransactionUiEvent.OnMenuClicked)
                             }
                     )
                     DropdownMenu(
@@ -128,31 +128,26 @@ fun AddExpense(
                         onDismissRequest = { menuExpanded.value = false }
                     ) {
                         DropdownMenuItem(
-                            text = { ExpenseTextView(text = "Profile") },
+                            text = { TransactionTextView(text = "Profile") },
                             onClick = {
                                 menuExpanded.value = false
-                                // Navigate to profile screen
-                                // navController.navigate("profile_route")
                             }
                         )
                         DropdownMenuItem(
-                            text = { ExpenseTextView(text = "Settings") },
+                            text = { TransactionTextView(text = "Settings") },
                             onClick = {
                                 menuExpanded.value = false
-                                // Navigate to settings screen
-                                // navController.navigate("settings_route")
                             }
                         )
                     }
                 }
-
             }
             DataForm(modifier = Modifier.constrainAs(card) {
                 top.linkTo(nameRow.bottom)
                 start.linkTo(parent.start)
                 end.linkTo(parent.end)
-            }, onAddExpenseClick = {
-                viewModel.onEvent(AddExpenseUiEvent.OnAddExpenseClicked(it))
+            }, onAddTransactionClick = {
+                viewModel.onEvent(AddTransactionUiEvent.OnAddTransactionClicked(it))
             }, isIncome)
         }
     }
@@ -161,39 +156,32 @@ fun AddExpense(
 @Composable
 fun DataForm(
     modifier: Modifier,
-    onAddExpenseClick: (model: ExpenseEntity) -> Unit,
+    onAddTransactionClick: (model: TransactionEntity) -> Unit,
     isIncome: Boolean
 ) {
 
-    val name = remember {
-        mutableStateOf("")
-    }
-    val amount = remember {
-        mutableStateOf("")
-    }
-    val date = remember {
-        mutableLongStateOf(0L)
-    }
-    val dateDialogVisibility = remember {
-        mutableStateOf(false)
-    }
-    val type = remember {
-        mutableStateOf(if (isIncome) "Income" else "Expense")
-    }
+    val category = remember { mutableStateOf("") }
+    val amount = remember { mutableStateOf("") }
+    val date = remember { mutableLongStateOf(0L) }
+    val dateDialogVisibility = remember { mutableStateOf(false) }
+    val type = remember { mutableStateOf(if (isIncome) "Income" else "Expense") }
+    val notes = remember { mutableStateOf("") }
+    val paymentMethod = remember { mutableStateOf("") }
+    val tags = remember { mutableStateOf("") }
+
     Column(
         modifier = modifier
             .padding(16.dp)
             .fillMaxWidth()
             .shadow(16.dp)
-            .clip(
-                RoundedCornerShape(16.dp)
-            )
+            .clip(RoundedCornerShape(16.dp))
             .background(Color.White)
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        TitleComponent(title = "name")
-        ExpenseDropDown(
+        // Category Dropdown
+        TitleComponent(title = "Category")
+        TransactionDropDown(
             if (isIncome) listOf(
                 "Paypal",
                 "Salary",
@@ -223,15 +211,20 @@ fun DataForm(
                 "Other Expenses"
             ),
             onItemSelected = {
-                name.value = it
-            })
+                category.value = it
+            }
+        )
+
         Spacer(modifier = Modifier.size(24.dp))
-        TitleComponent("amount")
+
+        // Amount Field
+        TitleComponent("Amount")
         OutlinedTextField(
             value = amount.value,
             onValueChange = { newValue ->
                 amount.value = newValue.filter { it.isDigit() || it == '.' }
-            }, textStyle = TextStyle(color = Color.Black),
+            },
+            textStyle = TextStyle(color = Color.Black),
             visualTransformation = { text ->
                 val out = "$" + text.text
                 val currencyOffsetTranslator = object : OffsetMapping {
@@ -243,79 +236,150 @@ fun DataForm(
                         return if (offset > 0) offset - 1 else 0
                     }
                 }
-
                 TransformedText(AnnotatedString(out), currencyOffsetTranslator)
             },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            placeholder = { ExpenseTextView(text = "Enter amount") },
+            placeholder = { TransactionTextView(text = "Enter amount") },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Color.Black,
                 unfocusedBorderColor = Color.Black,
-                disabledBorderColor = Color.Black, disabledTextColor = Color.Black,
+                disabledBorderColor = Color.Black,
+                disabledTextColor = Color.Black,
                 disabledPlaceholderColor = Color.Black,
                 focusedTextColor = Color.Black,
             )
         )
+
         Spacer(modifier = Modifier.size(24.dp))
-        TitleComponent("date")
-        OutlinedTextField(value = if (date.longValue == 0L) "" else Utils.formatDateToHumanReadableForm(
-            date.longValue
-        ),
+
+        // Date Field
+        TitleComponent("Date")
+        OutlinedTextField(
+            value = if (date.longValue == 0L) "" else Utils.formatDateToHumanReadableForm(date.longValue),
             onValueChange = {},
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { dateDialogVisibility.value = true },
             enabled = false,
             colors = OutlinedTextFieldDefaults.colors(
-                disabledBorderColor = Color.Black, disabledTextColor = Color.Black,
+                disabledBorderColor = Color.Black,
+                disabledTextColor = Color.Black,
                 disabledPlaceholderColor = Color.Black,
             ),
-            placeholder = { ExpenseTextView(text = "Select date") })
+            placeholder = { TransactionTextView(text = "Select date") }
+        )
+
         Spacer(modifier = Modifier.size(24.dp))
+
+        // Payment Method Dropdown
+        TitleComponent("Payment Method")
+        TransactionDropDown(
+            listOf(
+                "Cash",
+                "Credit Card",
+                "Debit Card",
+                "Bank Transfer",
+                "Mobile Payment",
+                "Digital Wallet",
+                "Other"
+            ),
+            onItemSelected = {
+                paymentMethod.value = it
+            }
+        )
+
+        Spacer(modifier = Modifier.size(24.dp))
+
+        // Notes Field
+        TitleComponent("Notes")
+        OutlinedTextField(
+            value = notes.value,
+            onValueChange = { notes.value = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { TransactionTextView(text = "Add any notes...") },
+            maxLines = 3,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.Black,
+                unfocusedBorderColor = Color.Black,
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+            )
+        )
+
+        Spacer(modifier = Modifier.size(24.dp))
+
+        // Tags Field
+        TitleComponent("Tags")
+        OutlinedTextField(
+            value = tags.value,
+            onValueChange = { tags.value = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { TransactionTextView(text = "Enter tags separated by commas") },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.Black,
+                unfocusedBorderColor = Color.Black,
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+            )
+        )
+
+        Spacer(modifier = Modifier.size(32.dp))
+
+        // Add Button
         Button(
             onClick = {
-                val model = ExpenseEntity(
-                    null,
-                    name.value,
-                    amount.value.toDoubleOrNull() ?: 0.0,
-                    Utils.formatDateToHumanReadableForm(date.longValue),
-                    type.value
+                val model = TransactionEntity(
+                    id = null,
+                    category = category.value,
+                    amount = amount.value.toDoubleOrNull() ?: 0.0,
+                    date = Utils.formatDateToHumanReadableForm(date.longValue),
+                    type = type.value,
+                    notes = notes.value,
+                    paymentMethod = paymentMethod.value,
+                    tags = tags.value
                 )
-                onAddExpenseClick(model)
-            }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)
+                onAddTransactionClick(model)
+            },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp),
+            enabled = category.value.isNotEmpty() && amount.value.isNotEmpty() && date.longValue != 0L
         ) {
-            ExpenseTextView(
+            TransactionTextView(
                 text = "Add ${if (isIncome) "Income" else "Expense"}",
                 fontSize = 14.sp,
                 color = Color.White
             )
         }
     }
+
     if (dateDialogVisibility.value) {
-        ExpenseDatePickerDialog(onDateSelected = {
-            date.longValue = it
-            dateDialogVisibility.value = false
-        }, onDismiss = {
-            dateDialogVisibility.value = false
-        })
+        TransactionDatePickerDialog(
+            onDateSelected = {
+                date.longValue = it
+                dateDialogVisibility.value = false
+            },
+            onDismiss = {
+                dateDialogVisibility.value = false
+            }
+        )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExpenseDatePickerDialog(
+fun TransactionDatePickerDialog(
     onDateSelected: (date: Long) -> Unit, onDismiss: () -> Unit
 ) {
     val datePickerState = rememberDatePickerState()
     val selectedDate = datePickerState.selectedDateMillis ?: 0L
     DatePickerDialog(onDismissRequest = { onDismiss() }, confirmButton = {
         TextButton(onClick = { onDateSelected(selectedDate) }) {
-            ExpenseTextView(text = "Confirm")
+            TransactionTextView(text = "Confirm")
         }
     }, dismissButton = {
         TextButton(onClick = { onDateSelected(selectedDate) }) {
-            ExpenseTextView(text = "Cancel")
+            TransactionTextView(text = "Cancel")
         }
     }) {
         DatePicker(state = datePickerState)
@@ -324,7 +388,7 @@ fun ExpenseDatePickerDialog(
 
 @Composable
 fun TitleComponent(title: String) {
-    ExpenseTextView(
+    TransactionTextView(
         text = title.uppercase(),
         fontSize = 12.sp,
         fontWeight = FontWeight.Medium,
@@ -334,7 +398,7 @@ fun TitleComponent(title: String) {
 }
 
 @Composable
-fun ExpenseDropDown(listOfItems: List<String>, onItemSelected: (item: String) -> Unit) {
+fun TransactionDropDown(listOfItems: List<String>, onItemSelected: (item: String) -> Unit) {
     val expanded = remember {
         mutableStateOf(false)
     }
@@ -366,7 +430,7 @@ fun ExpenseDropDown(listOfItems: List<String>, onItemSelected: (item: String) ->
         )
         ExposedDropdownMenu(expanded = expanded.value, onDismissRequest = { }) {
             listOfItems.forEach {
-                DropdownMenuItem(text = { ExpenseTextView(text = it) }, onClick = {
+                DropdownMenuItem(text = { TransactionTextView(text = it) }, onClick = {
                     selectedItem.value = it
                     onItemSelected(selectedItem.value)
                     expanded.value = false
@@ -378,7 +442,7 @@ fun ExpenseDropDown(listOfItems: List<String>, onItemSelected: (item: String) ->
 
 @Preview(showBackground = true)
 @Composable
-fun PreviewAddExpense() {
-    AddExpense(rememberNavController(), true)
+fun PreviewAddTransaction() {
+    AddTransaction(rememberNavController(), true)
 }
 

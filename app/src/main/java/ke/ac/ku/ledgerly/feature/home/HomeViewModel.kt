@@ -5,15 +5,15 @@ import ke.ac.ku.ledgerly.base.BaseViewModel
 import ke.ac.ku.ledgerly.base.HomeNavigationEvent
 import ke.ac.ku.ledgerly.base.UiEvent
 import ke.ac.ku.ledgerly.utils.Utils
-import ke.ac.ku.ledgerly.data.dao.ExpenseDao
-import ke.ac.ku.ledgerly.data.model.ExpenseEntity
+import ke.ac.ku.ledgerly.data.dao.TransactionDao
+import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(val dao: ExpenseDao) : BaseViewModel() {
-    val expenses = dao.getAllExpense()
+class HomeViewModel @Inject constructor(val dao: TransactionDao) : BaseViewModel() {
+    val transactions = dao.getAllTransactions()
 
     override fun onEvent(event: UiEvent) {
         when (event) {
@@ -37,7 +37,7 @@ class HomeViewModel @Inject constructor(val dao: ExpenseDao) : BaseViewModel() {
         }
     }
 
-    fun getBalance(list: List<ExpenseEntity>): String {
+    fun getBalance(list: List<TransactionEntity>): String {
         var balance = 0.0
         for (expense in list) {
             if (expense.type == "Income") {
@@ -49,7 +49,7 @@ class HomeViewModel @Inject constructor(val dao: ExpenseDao) : BaseViewModel() {
         return Utils.formatCurrency(balance)
     }
 
-    fun getTotalExpense(list: List<ExpenseEntity>): String {
+    fun getTotalExpense(list: List<TransactionEntity>): String {
         var total = 0.0
         for (expense in list) {
             if (expense.type != "Income") {
@@ -60,7 +60,7 @@ class HomeViewModel @Inject constructor(val dao: ExpenseDao) : BaseViewModel() {
         return Utils.formatCurrency(total)
     }
 
-    fun getTotalIncome(list: List<ExpenseEntity>): String {
+    fun getTotalIncome(list: List<TransactionEntity>): String {
         var totalIncome = 0.0
         for (expense in list) {
             if (expense.type == "Income") {
