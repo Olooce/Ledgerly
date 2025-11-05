@@ -5,35 +5,13 @@ package ke.ac.ku.ledgerly.feature.add_transaction
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,21 +24,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.base.AddTransactionNavigationEvent
 import ke.ac.ku.ledgerly.base.NavigationEvent
-import ke.ac.ku.ledgerly.utils.Utils
+import ke.ac.ku.ledgerly.data.model.RecurrenceFrequency
+import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.ui.theme.InterFontFamily
 import ke.ac.ku.ledgerly.ui.theme.LightGrey
 import ke.ac.ku.ledgerly.ui.theme.Typography
+import ke.ac.ku.ledgerly.utils.Utils
 import ke.ac.ku.ledgerly.widget.TransactionTextView
 
 @Composable
@@ -77,34 +56,44 @@ fun AddTransaction(
                 AddTransactionNavigationEvent.MenuOpenedClicked -> {
                     menuExpanded.value = true
                 }
-                else->{}
+                else -> {}
             }
         }
     }
+
     Surface(modifier = Modifier.fillMaxSize()) {
         ConstraintLayout(modifier = Modifier.fillMaxSize()) {
             val (nameRow, card, topBar) = createRefs()
-            Image(painter = painterResource(id = R.drawable.ic_topbar),
+
+            Image(
+                painter = painterResource(id = R.drawable.ic_topbar),
                 contentDescription = null,
                 modifier = Modifier.constrainAs(topBar) {
                     top.linkTo(parent.top)
                     start.linkTo(parent.start)
                     end.linkTo(parent.end)
-                })
-            Box(modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 64.dp, start = 16.dp, end = 16.dp)
-                .constrainAs(nameRow) {
-                    top.linkTo(parent.top)
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                }) {
-                Image(painter = painterResource(id = R.drawable.ic_back), contentDescription = null,
+                }
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 64.dp, start = 16.dp, end = 16.dp)
+                    .constrainAs(nameRow) {
+                        top.linkTo(parent.top)
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                    }
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_back),
+                    contentDescription = null,
                     modifier = Modifier
                         .align(Alignment.CenterStart)
                         .clickable {
                             viewModel.onEvent(AddTransactionUiEvent.OnBackPressed)
-                        })
+                        }
+                )
                 TransactionTextView(
                     text = "Add ${if (isIncome) "Income" else "Expense"}",
                     style = Typography.titleLarge,
@@ -129,26 +118,35 @@ fun AddTransaction(
                     ) {
                         DropdownMenuItem(
                             text = { TransactionTextView(text = "Profile") },
-                            onClick = {
-                                menuExpanded.value = false
-                            }
+                            onClick = { menuExpanded.value = false }
                         )
                         DropdownMenuItem(
                             text = { TransactionTextView(text = "Settings") },
-                            onClick = {
-                                menuExpanded.value = false
-                            }
+                            onClick = { menuExpanded.value = false }
                         )
                     }
                 }
             }
-            DataForm(modifier = Modifier.constrainAs(card) {
-                top.linkTo(nameRow.bottom)
-                start.linkTo(parent.start)
-                end.linkTo(parent.end)
-            }, onAddTransactionClick = {
-                viewModel.onEvent(AddTransactionUiEvent.OnAddTransactionClicked(it))
-            }, isIncome)
+
+            DataForm(
+                modifier = Modifier
+                    .constrainAs(card) {
+                        top.linkTo(nameRow.bottom)
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                        bottom.linkTo(parent.bottom)
+                        height = Dimension.fillToConstraints
+                    }
+                    .padding(16.dp),
+                onAddTransactionClick = { transaction, recurring ->
+                    if (recurring != null) {
+                        viewModel.onEvent(AddTransactionUiEvent.OnAddRecurringTransactionClicked(recurring))
+                    } else {
+                        viewModel.onEvent(AddTransactionUiEvent.OnAddTransactionClicked(transaction))
+                    }
+                },
+                isIncome
+            )
         }
     }
 }
@@ -156,10 +154,9 @@ fun AddTransaction(
 @Composable
 fun DataForm(
     modifier: Modifier,
-    onAddTransactionClick: (model: TransactionEntity) -> Unit,
+    onAddTransactionClick: (model: TransactionEntity, recurring: RecurringTransactionEntity?) -> Unit,
     isIncome: Boolean
 ) {
-
     val category = remember { mutableStateOf("") }
     val amount = remember { mutableStateOf("") }
     val date = remember { mutableLongStateOf(0L) }
@@ -168,168 +165,189 @@ fun DataForm(
     val notes = remember { mutableStateOf("") }
     val paymentMethod = remember { mutableStateOf("") }
     val tags = remember { mutableStateOf("") }
+    val isRecurring = remember { mutableStateOf(false) }
+    val frequency = remember { mutableStateOf(RecurrenceFrequency.MONTHLY) }
+    val endDate = remember { mutableLongStateOf(0L) }
+    val endDateDialogVisibility = remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
-            .padding(16.dp)
-            .fillMaxWidth()
+            .fillMaxSize()
             .shadow(16.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(Color.White)
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
     ) {
-        // Category Dropdown
-        TitleComponent(title = "Category")
-        TransactionDropDown(
-            if (isIncome) listOf(
-                "Paypal",
-                "Salary",
-                "Freelance",
-                "Investments",
-                "Bonus",
-                "Rental Income",
-                "Other Income"
-            ) else listOf(
-                "Grocery",
-                "Netflix",
-                "Rent",
-                "Paypal",
-                "Starbucks",
-                "Shopping",
-                "Transport",
-                "Utilities",
-                "Dining Out",
-                "Entertainment",
-                "Healthcare",
-                "Insurance",
-                "Subscriptions",
-                "Education",
-                "Debt Payments",
-                "Gifts & Donations",
-                "Travel",
-                "Other Expenses"
-            ),
-            onItemSelected = {
-                category.value = it
-            }
-        )
 
-        Spacer(modifier = Modifier.size(24.dp))
-
-        // Amount Field
-        TitleComponent("Amount")
-        OutlinedTextField(
-            value = amount.value,
-            onValueChange = { newValue ->
-                amount.value = newValue.filter { it.isDigit() || it == '.' }
-            },
-            textStyle = TextStyle(color = Color.Black),
-            visualTransformation = { text ->
-                val out = "Ksh " + text.text
-                val currencyOffsetTranslator = object : OffsetMapping {
-                    override fun originalToTransformed(offset: Int): Int {
-                        return offset + 4
-                    }
-
-                    override fun transformedToOriginal(offset: Int): Int {
-                        return (offset - 4).coerceIn(0, text.text.length)
-                    }
-                }
-                TransformedText(AnnotatedString(out), currencyOffsetTranslator)
-            },
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            placeholder = { TransactionTextView(text = "Enter amount") },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.Black,
-                unfocusedBorderColor = Color.Black,
-                disabledBorderColor = Color.Black,
-                disabledTextColor = Color.Black,
-                disabledPlaceholderColor = Color.Black,
-                focusedTextColor = Color.Black,
-            )
-        )
-
-        Spacer(modifier = Modifier.size(24.dp))
-
-        // Date Field
-        TitleComponent("Date")
-        OutlinedTextField(
-            value = if (date.longValue == 0L) "" else Utils.formatDateToHumanReadableForm(date.longValue),
-            onValueChange = {},
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .clickable { dateDialogVisibility.value = true },
-            enabled = false,
-            colors = OutlinedTextFieldDefaults.colors(
-                disabledBorderColor = Color.Black,
-                disabledTextColor = Color.Black,
-                disabledPlaceholderColor = Color.Black,
-            ),
-            placeholder = { TransactionTextView(text = "Select date") }
-        )
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
+        ) {
+            TitleComponent(title = "Category")
+            TransactionDropDown(
+                if (isIncome) listOf(
+                    "Paypal", "Salary", "Freelance", "Investments", "Bonus",
+                    "Rental Income", "Other Income"
+                ) else listOf(
+                    "Grocery", "Netflix", "Rent", "Paypal", "Starbucks", "Shopping",
+                    "Transport", "Utilities", "Dining Out", "Entertainment", "Healthcare",
+                    "Insurance", "Subscriptions", "Education", "Debt Payments",
+                    "Gifts & Donations", "Travel", "Other Expenses"
+                ),
+                onItemSelected = { category.value = it }
+            )
 
-        Spacer(modifier = Modifier.size(24.dp))
+            Spacer(modifier = Modifier.size(24.dp))
 
-        // Payment Method Dropdown
-        TitleComponent("Payment Method")
-        TransactionDropDown(
-            listOf(
-                "Cash",
-                "Credit Card",
-                "Debit Card",
-                "Bank Transfer",
-                "Mobile Payment",
-                "Digital Wallet",
-                "Other"
-            ),
-            onItemSelected = {
-                paymentMethod.value = it
+            // Amount Field
+            TitleComponent("Amount")
+            OutlinedTextField(
+                value = amount.value,
+                onValueChange = { newValue ->
+                    amount.value = newValue.filter { it.isDigit() || it == '.' }
+                },
+                textStyle = TextStyle(color = Color.Black),
+                visualTransformation = { text ->
+                    val out = "Ksh " + text.text
+                    val currencyOffsetTranslator = object : OffsetMapping {
+                        override fun originalToTransformed(offset: Int) = offset + 4
+                        override fun transformedToOriginal(offset: Int) =
+                            (offset - 4).coerceIn(0, text.text.length)
+                    }
+                    TransformedText(AnnotatedString(out), currencyOffsetTranslator)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                placeholder = { TransactionTextView(text = "Enter amount") },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Black,
+                    unfocusedBorderColor = Color.Black,
+                    focusedTextColor = Color.Black,
+                )
+            )
+
+            Spacer(modifier = Modifier.size(24.dp))
+
+            // Date Field
+            TitleComponent("Date")
+            OutlinedTextField(
+                value = if (date.longValue == 0L) "" else Utils.formatDateToHumanReadableForm(date.longValue),
+                onValueChange = {},
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { dateDialogVisibility.value = true },
+                enabled = false,
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledBorderColor = Color.Black,
+                    disabledTextColor = Color.Black,
+                ),
+                placeholder = { TransactionTextView(text = "Select date") }
+            )
+
+            Spacer(modifier = Modifier.size(24.dp))
+
+            // Recurring Transaction Section
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TransactionTextView(
+                    text = "Make this recurring",
+                    fontSize = 14.sp,
+                    color = Color.Black
+                )
+                Switch(
+                    checked = isRecurring.value,
+                    onCheckedChange = { isRecurring.value = it }
+                )
             }
-        )
 
-        Spacer(modifier = Modifier.size(24.dp))
+            if (isRecurring.value) {
+                Spacer(modifier = Modifier.size(16.dp))
 
-        // Notes Field
-        TitleComponent("Notes")
-        OutlinedTextField(
-            value = notes.value,
-            onValueChange = { notes.value = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { TransactionTextView(text = "Add any notes...") },
-            maxLines = 3,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.Black,
-                unfocusedBorderColor = Color.Black,
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black,
+                TitleComponent("Frequency")
+                TransactionDropDown(
+                    listOf("Daily", "Weekly", "Monthly", "Yearly"),
+                    onItemSelected = { selected ->
+                        frequency.value = when (selected) {
+                            "Daily" -> RecurrenceFrequency.DAILY
+                            "Weekly" -> RecurrenceFrequency.WEEKLY
+                            "Monthly" -> RecurrenceFrequency.MONTHLY
+                            "Yearly" -> RecurrenceFrequency.YEARLY
+                            else -> RecurrenceFrequency.MONTHLY
+                        }
+                    }
+                )
+
+                Spacer(modifier = Modifier.size(16.dp))
+
+                TitleComponent("End Date (Optional)")
+                OutlinedTextField(
+                    value = if (endDate.longValue == 0L) "Never"
+                    else Utils.formatDateToHumanReadableForm(endDate.longValue),
+                    onValueChange = {},
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { endDateDialogVisibility.value = true },
+                    enabled = false,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        disabledBorderColor = Color.Black,
+                        disabledTextColor = Color.Black,
+                    ),
+                    placeholder = { TransactionTextView(text = "Select end date") }
+                )
+            }
+
+            Spacer(modifier = Modifier.size(24.dp))
+
+            // Payment Method Dropdown
+            TitleComponent("Payment Method")
+            TransactionDropDown(
+                listOf("Cash", "Credit Card", "Debit Card", "Bank Transfer",
+                    "Mobile Payment", "Digital Wallet", "Other"),
+                onItemSelected = { paymentMethod.value = it }
             )
-        )
 
-        Spacer(modifier = Modifier.size(24.dp))
+            Spacer(modifier = Modifier.size(24.dp))
 
-        // Tags Field
-        TitleComponent("Tags")
-        OutlinedTextField(
-            value = tags.value,
-            onValueChange = { tags.value = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { TransactionTextView(text = "Enter tags separated by commas") },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.Black,
-                unfocusedBorderColor = Color.Black,
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black,
+            // Notes Field
+            TitleComponent("Notes")
+            OutlinedTextField(
+                value = notes.value,
+                onValueChange = { notes.value = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { TransactionTextView(text = "Add any notes...") },
+                maxLines = 3,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Black,
+                    unfocusedBorderColor = Color.Black,
+                )
             )
-        )
 
-        Spacer(modifier = Modifier.size(32.dp))
+            Spacer(modifier = Modifier.size(24.dp))
+
+            // Tags Field
+            TitleComponent("Tags")
+            OutlinedTextField(
+                value = tags.value,
+                onValueChange = { tags.value = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { TransactionTextView(text = "Enter tags separated by commas") },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Black,
+                    unfocusedBorderColor = Color.Black,
+                )
+            )
+
+            Spacer(modifier = Modifier.size(16.dp))
+        }
 
         // Add Button
         Button(
             onClick = {
-                val model = TransactionEntity(
+                val transaction = TransactionEntity(
                     id = null,
                     category = category.value,
                     amount = amount.value.toDoubleOrNull() ?: 0.0,
@@ -339,14 +357,37 @@ fun DataForm(
                     paymentMethod = paymentMethod.value,
                     tags = tags.value
                 )
-                onAddTransactionClick(model)
+
+                val recurringTransaction = if (isRecurring.value) {
+                    RecurringTransactionEntity(
+                        id = null,
+                        category = category.value,
+                        amount = amount.value.toDoubleOrNull() ?: 0.0,
+                        type = type.value,
+                        notes = notes.value,
+                        paymentMethod = paymentMethod.value,
+                        tags = tags.value,
+                        frequency = frequency.value,
+                        startDate = Utils.formatDateToISO(date.longValue),
+                        endDate = if (endDate.longValue != 0L)
+                            Utils.formatDateToISO(endDate.longValue) else null,
+                        isActive = true
+                    )
+                } else null
+
+                onAddTransactionClick(transaction, recurringTransaction)
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             shape = RoundedCornerShape(8.dp),
-            enabled = category.value.isNotEmpty() && amount.value.isNotEmpty() && date.longValue != 0L
+            enabled = category.value.isNotEmpty() &&
+                    amount.value.isNotEmpty() &&
+                    date.longValue != 0L
         ) {
             TransactionTextView(
-                text = "Add ${if (isIncome) "Income" else "Expense"}",
+                text = if (isRecurring.value) "Add Recurring ${if (isIncome) "Income" else "Expense"}"
+                else "Add ${if (isIncome) "Income" else "Expense"}",
                 fontSize = 14.sp,
                 color = Color.White
             )
@@ -359,9 +400,17 @@ fun DataForm(
                 date.longValue = it
                 dateDialogVisibility.value = false
             },
-            onDismiss = {
-                dateDialogVisibility.value = false
-            }
+            onDismiss = { dateDialogVisibility.value = false }
+        )
+    }
+
+    if (endDateDialogVisibility.value) {
+        TransactionDatePickerDialog(
+            onDateSelected = {
+                endDate.longValue = it
+                endDateDialogVisibility.value = false
+            },
+            onDismiss = { endDateDialogVisibility.value = false }
         )
     }
 }
@@ -369,19 +418,25 @@ fun DataForm(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionDatePickerDialog(
-    onDateSelected: (date: Long) -> Unit, onDismiss: () -> Unit
+    onDateSelected: (date: Long) -> Unit,
+    onDismiss: () -> Unit
 ) {
     val datePickerState = rememberDatePickerState()
     val selectedDate = datePickerState.selectedDateMillis ?: 0L
-    DatePickerDialog(onDismissRequest = { onDismiss() }, confirmButton = {
-        TextButton(onClick = { onDateSelected(selectedDate) }) {
-            TransactionTextView(text = "Confirm")
+
+    DatePickerDialog(
+        onDismissRequest = { onDismiss() },
+        confirmButton = {
+            TextButton(onClick = { onDateSelected(selectedDate) }) {
+                TransactionTextView(text = "Confirm")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { onDismiss() }) {
+                TransactionTextView(text = "Cancel")
+            }
         }
-    }, dismissButton = {
-        TextButton(onClick = { onDateSelected(selectedDate) }) {
-            TransactionTextView(text = "Cancel")
-        }
-    }) {
+    ) {
         DatePicker(state = datePickerState)
     }
 }
@@ -399,13 +454,13 @@ fun TitleComponent(title: String) {
 
 @Composable
 fun TransactionDropDown(listOfItems: List<String>, onItemSelected: (item: String) -> Unit) {
-    val expanded = remember {
-        mutableStateOf(false)
-    }
-    val selectedItem = remember {
-        mutableStateOf(listOfItems[0])
-    }
-    ExposedDropdownMenuBox(expanded = expanded.value, onExpandedChange = { expanded.value = it }) {
+    val expanded = remember { mutableStateOf(false) }
+    val selectedItem = remember { mutableStateOf(listOfItems[0]) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded.value,
+        onExpandedChange = { expanded.value = it }
+    ) {
         OutlinedTextField(
             value = selectedItem.value,
             onValueChange = {},
@@ -421,28 +476,22 @@ fun TransactionDropDown(listOfItems: List<String>, onItemSelected: (item: String
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Color.Black,
                 unfocusedBorderColor = Color.Black,
-                disabledBorderColor = Color.Black, disabledTextColor = Color.Black,
-                disabledPlaceholderColor = Color.Black,
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black,
-
             )
         )
-        ExposedDropdownMenu(expanded = expanded.value, onDismissRequest = { }) {
+        ExposedDropdownMenu(
+            expanded = expanded.value,
+            onDismissRequest = { expanded.value = false }
+        ) {
             listOfItems.forEach {
-                DropdownMenuItem(text = { TransactionTextView(text = it) }, onClick = {
-                    selectedItem.value = it
-                    onItemSelected(selectedItem.value)
-                    expanded.value = false
-                })
+                DropdownMenuItem(
+                    text = { TransactionTextView(text = it) },
+                    onClick = {
+                        selectedItem.value = it
+                        onItemSelected(selectedItem.value)
+                        expanded.value = false
+                    }
+                )
             }
         }
     }
 }
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewAddTransaction() {
-    AddTransaction(rememberNavController(), true)
-}
-
