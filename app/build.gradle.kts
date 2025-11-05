@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.dagger.hilt)
     id("com.google.gms.google-services")
+    alias(libs.plugins.kotlin.compose)
 }
 val localProperties = Properties().apply {
     load(rootProject.file("local.properties").inputStream())
@@ -15,12 +16,12 @@ val googleWebClientId = localProperties.getProperty("GOOGLE_WEB_CLIENT_ID") ?: "
 
 android {
     namespace = "ke.ac.ku.ledgerly"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "ke.ac.ku.ledgerly"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -72,7 +73,6 @@ android {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -84,6 +84,9 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation("androidx.constraintlayout:constraintlayout-compose:1.0.1")
     implementation(libs.firebase.database.ktx)
+    implementation(libs.androidx.hilt.common)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
     testImplementation(libs.junit)
     implementation(libs.dagger.hilt.andriod)
     ksp(libs.dagger.hilt.compiler)

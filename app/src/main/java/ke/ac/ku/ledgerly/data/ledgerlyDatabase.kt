@@ -4,15 +4,27 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
+import ke.ac.ku.ledgerly.data.model.Converters
 import javax.inject.Singleton
+import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 
-@Database(entities = [TransactionEntity::class, BudgetEntity::class], version = 3, exportSchema = false)
+@Database(
+    entities = [
+        TransactionEntity::class,
+        BudgetEntity::class,
+        RecurringTransactionEntity::class
+    ],
+    version = 4,
+    exportSchema = false
+)
+@TypeConverters(Converters::class)
 @Singleton
 abstract class LedgerlyDatabase : RoomDatabase() {
 
@@ -31,8 +43,14 @@ abstract class LedgerlyDatabase : RoomDatabase() {
                     LedgerlyDatabase::class.java,
                     DATABASE_NAME
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    //                    .addMigrations(
+                    //                        MIGRATION_1_2,
+                    //                        MIGRATION_2_3,
+                    //                        MIGRATION_3_4
+                    //                    )
+                    .fallbackToDestructiveMigration(true) //  Delete and recreate the database: For Dev
                     .build()
+
                 INSTANCE = instance
                 instance
             }
@@ -42,27 +60,39 @@ abstract class LedgerlyDatabase : RoomDatabase() {
 
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL(
-            """
-            CREATE TABLE IF NOT EXISTS expense_table_new (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL,
-                amount REAL NOT NULL,
-                date TEXT NOT NULL,
-                type TEXT NOT NULL
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS budgets (
+                category TEXT PRIMARY KEY NOT NULL,
+                monthlyBudget REAL NOT NULL,
+                currentSpending REAL NOT NULL DEFAULT 0.0,
+                monthYear TEXT NOT NULL
             )
-            """.trimIndent()
-        )
+        """.trimIndent())
+    }
 
-        db.execSQL(
-            """
-            INSERT INTO expense_table_new (id, title, amount, date, type)
-            SELECT id, title, amount, date, type FROM expense_table
-            """.trimIndent()
-        )
+}
 
-        db.execSQL("DROP TABLE expense_table")
+val MIGRATION_2_3 = object : Migration(2, 3) {
 
-        db.execSQL("ALTER TABLE expense_table_new RENAME TO expense_table")
+}
+
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS recurring_transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                category TEXT NOT NULL,
+                amount REAL NOT NULL,
+                type TEXT NOT NULL,
+                notes TEXT NOT NULL,
+                paymentMethod TEXT NOT NULL,
+                tags TEXT NOT NULL,
+                frequency TEXT NOT NULL,
+                startDate TEXT NOT NULL,
+                endDate TEXT,
+                lastGeneratedDate TEXT,
+                isActive INTEGER NOT NULL DEFAULT 1
+            )
+        """.trimIndent())
     }
 }
