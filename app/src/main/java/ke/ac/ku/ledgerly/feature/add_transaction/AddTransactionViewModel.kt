@@ -28,7 +28,7 @@ class AddTransactionViewModel @Inject constructor(
 
     suspend fun addTransaction(transactionEntity: TransactionEntity): Boolean {
         return try {
-            dao.insertExpense(transactionEntity)
+            dao.insertTransaction(transactionEntity)
             updateBudgetSpending(transactionEntity)
             true
         } catch (ex: Throwable) {
@@ -50,7 +50,7 @@ class AddTransactionViewModel @Inject constructor(
                 paymentMethod = recurringTransaction.paymentMethod,
                 tags = recurringTransaction.tags
             )
-            dao.insertExpense(firstTransaction)
+            dao.insertTransaction(firstTransaction)
 
             dao.updateRecurringTransaction(
                 recurringTransaction.copy(

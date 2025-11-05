@@ -58,6 +58,8 @@ fun TransactionListScreen(
     var filterType by remember { mutableStateOf("All") }
     var dateRange by remember { mutableStateOf("All Time") }
     var menuExpanded by remember { mutableStateOf(false) }
+    var fabExpanded by remember { mutableStateOf(false) }
+
 
     val filteredByType = when (filterType) {
         "Expense" -> transactions.filter { it.type.equals("Expense", true) }

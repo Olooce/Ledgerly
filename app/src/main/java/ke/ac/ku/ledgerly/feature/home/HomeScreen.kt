@@ -1,7 +1,5 @@
 package ke.ac.ku.ledgerly.feature.home
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -56,7 +54,6 @@ import ke.ac.ku.ledgerly.widget.TransactionTextView
 import java.util.Calendar
 
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltViewModel()) {
     LaunchedEffect(Unit) {
@@ -175,7 +172,6 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 fun getTimeBasedGreeting(): String {
     val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
     return when (hour) {
@@ -421,7 +417,7 @@ fun TransactionItem(
 
                 TransactionTextView(text = date, fontSize = 13.sp, color = LightGrey)
 
-                // Show notes if available (with limited lines)
+                // Show notes if available
                 if (notes.isNotEmpty()) {
                     Spacer(modifier = Modifier.size(4.dp))
                     TransactionTextView(
@@ -459,7 +455,6 @@ fun CardRowItem(modifier: Modifier, title: String, amount: String, imaget: Int) 
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {

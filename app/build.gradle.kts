@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.dagger.hilt)
     id("com.google.gms.google-services")
     alias(libs.plugins.kotlin.compose)
+
 }
 val localProperties = Properties().apply {
     load(rootProject.file("local.properties").inputStream())
@@ -20,7 +21,7 @@ android {
 
     defaultConfig {
         applicationId = "ke.ac.ku.ledgerly"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -73,6 +74,8 @@ android {
 }
 
 dependencies {
+    implementation(libs.material)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -90,6 +93,7 @@ dependencies {
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.compose.runtime)
     implementation(libs.androidx.datastore.core)
+//    implementation(libs.firebase.firestore.ktx)
     testImplementation(libs.junit)
     implementation(libs.dagger.hilt.andriod)
     ksp(libs.dagger.hilt.compiler)
@@ -115,9 +119,12 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:$nav_version")
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 
-    // Firebase Authentication
+    implementation(platform(libs.firebase.bom))
+
     implementation(libs.firebase.auth)
     implementation(libs.firebase.auth.ktx)
+    implementation(libs.firebase.database.ktx)
+    implementation(libs.firebase.firestore)
 
     // Google Sign-In
     implementation(libs.play.services.auth)

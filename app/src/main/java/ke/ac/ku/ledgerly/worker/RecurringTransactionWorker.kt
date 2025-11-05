@@ -69,7 +69,7 @@ class RecurringTransactionWorker @AssistedInject constructor(
                     tags = recurring.tags
                 )
 
-                dao.insertExpense(transaction)
+                dao.insertTransaction(transaction)
 
                 // Update last generated date
                 dao.updateRecurringTransaction(

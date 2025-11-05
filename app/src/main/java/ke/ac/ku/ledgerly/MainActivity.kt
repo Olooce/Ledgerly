@@ -16,16 +16,21 @@ import com.google.android.gms.auth.api.identity.SignInClient
 import dagger.hilt.android.AndroidEntryPoint
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyTheme
 import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
+import ke.ac.ku.ledgerly.feature.settings.SettingsViewModel
+import ke.ac.ku.ledgerly.auth.presentation.AuthViewModel
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val themeViewModel: ThemeViewModel by viewModels()
+    private val settingsViewModel: SettingsViewModel by viewModels()
+    private val authViewModel: AuthViewModel by viewModels()
+
+
 
     @Inject
     lateinit var oneTapClient: SignInClient
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -35,7 +40,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    NavHostScreen(oneTapClient, themeViewModel = themeViewModel)
+                    NavHostScreen(oneTapClient, themeViewModel = themeViewModel, settingsViewModel = settingsViewModel, authViewModel = authViewModel)
                 }
             }
         }

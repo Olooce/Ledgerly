@@ -19,10 +19,6 @@ object AuthModule {
 
     @Provides
     @Singleton
-    fun provideFirebaseAuth(): FirebaseAuth = Firebase.auth
-
-    @Provides
-    @Singleton
     fun provideOneTapClient(
         @ApplicationContext context: Context
     ): SignInClient = Identity.getSignInClient(context)

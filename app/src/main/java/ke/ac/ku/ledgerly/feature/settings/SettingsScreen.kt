@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import ke.ac.ku.ledgerly.R
@@ -31,9 +32,11 @@ import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    themeViewModel: ThemeViewModel
+    themeViewModel: ThemeViewModel,
+    settingsViewModel: SettingsViewModel
 ) {
     val isDarkMode by themeViewModel.isDarkMode.collectAsState()
+    val isCloudSyncEnabled by settingsViewModel.isSyncEnabled.collectAsState()
 
     Scaffold(
         topBar = {
@@ -57,23 +60,44 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Theme Switch
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Dark Mode",
-                    style = MaterialTheme.typography.bodyLarge
+                    text = "Ledgerly",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary
                 )
-                Switch(
-                    checked = isDarkMode,
-                    onCheckedChange = { themeViewModel.toggleTheme() }
+                Text(
+                    text = "Know your money",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-
             HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+
+            // Dark Mode Switch
+            SettingRow(
+                title = "Dark Mode",
+                checked = isDarkMode,
+                onCheckedChange = { themeViewModel.toggleTheme() }
+            )
+
+            HorizontalDivider()
+
+            // Cloud Sync Switch
+            SettingRow(
+                title = "Cloud Sync",
+                checked = isCloudSyncEnabled,
+                onCheckedChange = { enabled ->
+                    settingsViewModel.toggleCloudSync(enabled)
+                }
+            )
+
+            HorizontalDivider()
 
             // Version Info
             Text(
@@ -82,5 +106,27 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+@Composable
+private fun SettingRow(
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyLarge
+        )
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
     }
 }

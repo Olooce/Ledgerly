@@ -8,6 +8,8 @@ import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ke.ac.ku.ledgerly.BuildConfig
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -66,4 +68,26 @@ class AuthRepository @Inject constructor(
     }
 
     fun getCurrentUser() = auth.currentUser
+
+    fun getCurrentUserId(): String? {
+        return auth.currentUser?.uid
+    }
+
+    fun isUserAuthenticated(): Boolean {
+        return auth.currentUser != null
+    }
+
+    private val _authState = MutableStateFlow(auth.currentUser != null)
+    val authState = _authState.asStateFlow()
+
+    init {
+        // Listen for auth state changes
+        auth.addAuthStateListener { firebaseAuth ->
+            _authState.value = firebaseAuth.currentUser != null
+        }
+    }
+
+    suspend fun getAuthToken(): String? {
+        return auth.currentUser?.getIdToken(false)?.await()?.token
+    }
 }

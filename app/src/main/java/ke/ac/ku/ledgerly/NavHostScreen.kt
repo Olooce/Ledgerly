@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.autoSaver
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,11 +40,13 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.auth.api.identity.SignInClient
 import ke.ac.ku.ledgerly.auth.presentation.AuthScreen
+import ke.ac.ku.ledgerly.auth.presentation.AuthViewModel
 import ke.ac.ku.ledgerly.feature.add_transaction.AddTransaction
 import ke.ac.ku.ledgerly.feature.budget.AddBudgetScreen
 import ke.ac.ku.ledgerly.feature.budget.BudgetScreen
 import ke.ac.ku.ledgerly.feature.home.HomeScreen
 import ke.ac.ku.ledgerly.feature.settings.SettingsScreen
+import ke.ac.ku.ledgerly.feature.settings.SettingsViewModel
 import ke.ac.ku.ledgerly.feature.stats.StatsScreen
 import ke.ac.ku.ledgerly.feature.transactionlist.TransactionListScreen
 import ke.ac.ku.ledgerly.ui.components.DrawerContent
@@ -53,11 +56,12 @@ import ke.ac.ku.ledgerly.utils.NavRouts
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NavHostScreen(
     oneTapClient: SignInClient,
-    themeViewModel: ThemeViewModel
+    themeViewModel: ThemeViewModel,
+    settingsViewModel: SettingsViewModel,
+    authViewModel: AuthViewModel
 ) {
     val navController = rememberNavController()
     var bottomBarVisibility by remember { mutableStateOf(false) }
@@ -76,7 +80,8 @@ fun NavHostScreen(
                 DrawerContent(
                     navController = navController,
                     themeViewModel = themeViewModel,
-                    onCloseDrawer = { scope.launch { drawerState.close() } }
+                    onCloseDrawer = { scope.launch { drawerState.close() } },
+                    authViewModel = authViewModel
                 )
             }
         }
@@ -153,25 +158,13 @@ fun NavHostScreen(
 
                     composable(NavRouts.settings) {
                         bottomBarVisibility = false
-                        SettingsScreen(navController, themeViewModel)
+                        SettingsScreen(navController, themeViewModel, settingsViewModel)
                     }
                 }
             }
 
             // Floating top bar overlay
             if (showMenuButton) {
-                CenterAlignedTopAppBar(
-                    title = {},
-                    actions = {
-                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_menu),
-                                contentDescription = "Menu"
-                            )
-                        }
-                    },
-                    modifier = Modifier
-                        .zIndex(10f),
                 CenterAlignedTopAppBar(
                     title = {},
                     actions = {
@@ -191,7 +184,6 @@ fun NavHostScreen(
                         titleContentColor = MaterialTheme.colorScheme.onSurface,
                         actionIconContentColor = MaterialTheme.colorScheme.onSurface
                     )
-                )
                 )
             }
 

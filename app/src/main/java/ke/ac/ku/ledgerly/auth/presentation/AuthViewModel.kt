@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ke.ac.ku.ledgerly.auth.data.AuthRepository
 import ke.ac.ku.ledgerly.auth.domain.AuthEvent
 import ke.ac.ku.ledgerly.auth.domain.AuthState
+import ke.ac.ku.ledgerly.domain.SyncManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -18,7 +19,8 @@ import javax.inject.Inject
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val repository: AuthRepository,
-    private val oneTapClient: SignInClient
+    private val oneTapClient: SignInClient,
+    private val syncManager: SyncManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthState())
@@ -50,6 +52,8 @@ class AuthViewModel @Inject constructor(
             repository.signInWithEmail(email, password)
                 .onSuccess {
                     _state.update { it.copy(isAuthenticated = true, error = null) }
+                    syncManager.syncAllData()
+
                 }
                 .onFailure { e ->
                     _state.update { it.copy(error = e.message) }
@@ -82,6 +86,8 @@ class AuthViewModel @Inject constructor(
                         // TODO: Handle the result
                     } catch (e: Exception) {
                         _state.update { it.copy(error = e.message) }
+                    } finally {
+                        syncManager.syncAllData()
                     }
                 }
                 .onFailure { e ->
@@ -97,6 +103,7 @@ class AuthViewModel @Inject constructor(
             repository.signInWithGoogleCredential(credential)
                 .onSuccess {
                     _state.update { it.copy(isAuthenticated = true, error = null) }
+                    syncManager.syncAllData()
                 }
                 .onFailure { e ->
                     _state.update { it.copy(error = e.message) }
