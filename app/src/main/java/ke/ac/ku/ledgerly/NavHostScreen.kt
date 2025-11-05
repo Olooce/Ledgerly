@@ -172,13 +172,26 @@ fun NavHostScreen(
                     },
                     modifier = Modifier
                         .zIndex(10f),
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        Color.Transparent,
-                        Color.Transparent,
-                        Color.White,
-                        Color.White,
-                        Color.White
+                CenterAlignedTopAppBar(
+                    title = {},
+                    actions = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_menu),
+                                contentDescription = "Menu"
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .zIndex(10f),
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = Color.Transparent,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurface
                     )
+                )
                 )
             }
 
