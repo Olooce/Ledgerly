@@ -118,6 +118,7 @@ class AddTransactionViewModel @Inject constructor(
                     newPercentage >= 80 ->
                         "Alert: This expense will use ${
                             String.format(
+                                java.util.Locale.US,
                                 "%.1f",
                                 newPercentage
                             )
