@@ -47,6 +47,17 @@ object Utils {
         return String.format("%.2f", d)
     }
 
+    fun formatMonthString(monthYear: String): String {
+        val inputFormat = SimpleDateFormat("yyyy-MM", Locale.getDefault())
+        val outputFormat = SimpleDateFormat("MMM yyyy", Locale.getDefault())
+        return try {
+            val date = inputFormat.parse(monthYear)
+            outputFormat.format(date!!)
+        } catch (e: Exception) {
+            monthYear
+        }
+    }
+
     fun formatStringDateToMonthDayYear(date: String): String {
         val millis = getMillisFromDate(date)
         return formatDayMonthYear(millis)
