@@ -83,7 +83,10 @@ class RecurringTransactionWorker @AssistedInject constructor(
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    private fun calculateNextDueDate(fromDate: LocalDate, frequency: RecurrenceFrequency): LocalDate {
+    private fun calculateNextDueDate(
+        fromDate: LocalDate,
+        frequency: RecurrenceFrequency
+    ): LocalDate {
         return when (frequency) {
             RecurrenceFrequency.DAILY -> fromDate.plusDays(1)
             RecurrenceFrequency.WEEKLY -> fromDate.plusWeeks(1)

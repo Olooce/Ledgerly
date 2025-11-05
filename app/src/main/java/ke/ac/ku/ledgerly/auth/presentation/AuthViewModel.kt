@@ -25,10 +25,12 @@ class AuthViewModel @Inject constructor(
     val state: StateFlow<AuthState> = _state
 
     init {
-        _state.update { it.copy(
-            isAuthenticated = repository.getCurrentUser() != null,
-            isBiometricAvailable = repository.isBiometricAvailable()
-        ) }
+        _state.update {
+            it.copy(
+                isAuthenticated = repository.getCurrentUser() != null,
+                isBiometricAvailable = repository.isBiometricAvailable()
+            )
+        }
     }
 
     fun onEvent(event: AuthEvent) {

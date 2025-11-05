@@ -6,7 +6,6 @@ import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Currency
-import java.util.Date
 import java.util.Locale
 
 
@@ -85,21 +84,27 @@ object Utils {
             "Paypal" -> {
                 R.drawable.ic_paypal
             }
+
             "Netflix" -> {
                 R.drawable.ic_netflix
             }
+
             "Starbucks" -> {
                 R.drawable.ic_starbucks
             }
+
             "Freelance" -> {
                 R.drawable.ic_upwork
             }
+
             "Budget" -> {
                 R.drawable.ic_budget
             }
+
             "Education" -> {
                 R.drawable.ic_education
             }
+
             "Entertainment" -> {
                 R.drawable.ic_ent
             }
@@ -115,6 +120,7 @@ object Utils {
             "Investments" -> {
                 R.drawable.ic_investment
             }
+
             "Receipt" -> {
                 R.drawable.ic_receipt
             }
@@ -122,6 +128,7 @@ object Utils {
             "Rent" -> {
                 R.drawable.ic_rent
             }
+
             "Transport" -> {
                 R.drawable.ic_transport
             }

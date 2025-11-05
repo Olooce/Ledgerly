@@ -1,5 +1,6 @@
 package ke.ac.ku.ledgerly.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
+import ke.ac.ku.ledgerly.utils.NavRouts
 
 @Composable
 fun DrawerContent(
@@ -46,7 +48,11 @@ fun DrawerContent(
         ) {
             Text(
                 text = "Settings",
-                style = MaterialTheme.typography.headlineSmall
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.clickable {
+                    onCloseDrawer()
+                    navController.navigate(NavRouts.settings)
+                }
             )
         }
 

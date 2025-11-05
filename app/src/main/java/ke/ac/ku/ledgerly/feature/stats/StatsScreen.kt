@@ -24,11 +24,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import ke.ac.ku.ledgerly.R
-import ke.ac.ku.ledgerly.utils.Utils
-import ke.ac.ku.ledgerly.feature.home.TransactionList
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.components.YAxis
@@ -36,7 +34,9 @@ import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.ValueFormatter
-import androidx.core.graphics.toColorInt
+import ke.ac.ku.ledgerly.R
+import ke.ac.ku.ledgerly.feature.home.TransactionList
+import ke.ac.ku.ledgerly.utils.Utils
 import ke.ac.ku.ledgerly.widget.TransactionTextView
 
 @Composable
@@ -50,11 +50,13 @@ fun StatsScreen(navController: NavController, viewModel: StatsViewModel = hiltVi
             Image(
                 painter = painterResource(id = R.drawable.ic_back),
                 contentDescription = null,
-                modifier = Modifier.align(
-                    Alignment.CenterStart
-                ).clickable {
-                    navController.navigateUp()
-                },
+                modifier = Modifier
+                    .align(
+                        Alignment.CenterStart
+                    )
+                    .clickable {
+                        navController.navigateUp()
+                    },
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.outline)
             )
             TransactionTextView(

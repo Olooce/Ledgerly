@@ -114,8 +114,15 @@ class AddTransactionViewModel @Inject constructor(
                 return when {
                     newSpending > it.monthlyBudget ->
                         "Warning: This expense will exceed your ${transaction.category} budget!"
+
                     newPercentage >= 80 ->
-                        "Alert: This expense will use ${String.format("%.1f", newPercentage)}% of your ${transaction.category} budget"
+                        "Alert: This expense will use ${
+                            String.format(
+                                "%.1f",
+                                newPercentage
+                            )
+                        }% of your ${transaction.category} budget"
+
                     else -> null
                 }
             }
@@ -132,8 +139,12 @@ class AddTransactionViewModel @Inject constructor(
 }
 
 sealed class AddTransactionUiEvent : UiEvent() {
-    data class OnAddTransactionClicked(val transactionEntity: TransactionEntity) : AddTransactionUiEvent()
-    data class OnAddRecurringTransactionClicked(val recurringTransaction: RecurringTransactionEntity) : AddTransactionUiEvent()
+    data class OnAddTransactionClicked(val transactionEntity: TransactionEntity) :
+        AddTransactionUiEvent()
+
+    data class OnAddRecurringTransactionClicked(val recurringTransaction: RecurringTransactionEntity) :
+        AddTransactionUiEvent()
+
     object OnBackPressed : AddTransactionUiEvent()
     object OnMenuClicked : AddTransactionUiEvent()
 }

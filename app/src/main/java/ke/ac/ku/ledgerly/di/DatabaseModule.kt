@@ -1,13 +1,13 @@
 package ke.ac.ku.ledgerly.di
 
 import android.content.Context
-import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import ke.ac.ku.ledgerly.data.LedgerlyDatabase
+import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import javax.inject.Singleton
 
 @Module
@@ -16,7 +16,7 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideDatabase(@ApplicationContext context: Context, ): LedgerlyDatabase {
+    fun provideDatabase(@ApplicationContext context: Context): LedgerlyDatabase {
         return LedgerlyDatabase.getInstance(context)
     }
 

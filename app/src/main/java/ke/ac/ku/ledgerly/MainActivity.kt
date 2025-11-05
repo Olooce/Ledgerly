@@ -12,25 +12,25 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import ke.ac.ku.ledgerly.ui.theme.LedgerlyTheme
 import com.google.android.gms.auth.api.identity.SignInClient
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
+import ke.ac.ku.ledgerly.ui.theme.LedgerlyTheme
 import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val themeViewModel: ThemeViewModel by viewModels()
-    
+
     @Inject
     lateinit var oneTapClient: SignInClient
-    
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             val isDarkMode by themeViewModel.isDarkMode.collectAsState()
-            LedgerlyTheme (darkTheme = isDarkMode) {
+            LedgerlyTheme(darkTheme = isDarkMode) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

@@ -2,15 +2,31 @@ package ke.ac.ku.ledgerly.feature.budget
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ProgressIndicatorDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,7 +41,17 @@ import androidx.navigation.NavController
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.feature.add_transaction.AddTransactionViewModel
-import ke.ac.ku.ledgerly.ui.theme.*
+import ke.ac.ku.ledgerly.ui.theme.DeepNavy
+import ke.ac.ku.ledgerly.ui.theme.Green
+import ke.ac.ku.ledgerly.ui.theme.LightGrey
+import ke.ac.ku.ledgerly.ui.theme.OceanBlue
+import ke.ac.ku.ledgerly.ui.theme.Red
+import ke.ac.ku.ledgerly.ui.theme.SoftGold
+import ke.ac.ku.ledgerly.ui.theme.Teal
+import ke.ac.ku.ledgerly.ui.theme.Typography
+import ke.ac.ku.ledgerly.ui.theme.White
+import ke.ac.ku.ledgerly.ui.theme.Yellow
+import ke.ac.ku.ledgerly.ui.theme.Zinc
 import ke.ac.ku.ledgerly.utils.Utils
 import ke.ac.ku.ledgerly.widget.TransactionTextView
 
@@ -205,7 +231,12 @@ private fun AlertSection(alerts: List<BudgetEntity>) {
             Spacer(modifier = Modifier.height(8.dp))
             alerts.forEach { budget ->
                 TransactionTextView(
-                    text = "${budget.category} is ${String.format("%.1f", budget.percentageUsed)}% used",
+                    text = "${budget.category} is ${
+                        String.format(
+                            "%.1f",
+                            budget.percentageUsed
+                        )
+                    }% used",
                     color = Red,
                     style = Typography.bodyMedium
                 )
@@ -230,7 +261,7 @@ fun BudgetItem(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background( OceanBlue.copy(alpha = 0.85f))
+            .background(OceanBlue.copy(alpha = 0.85f))
             .padding(16.dp)
     ) {
         Row(
@@ -244,7 +275,11 @@ fun BudgetItem(
                 fontWeight = FontWeight.Medium
             )
             TransactionTextView(
-                text = "${Utils.formatCurrency(budget.currentSpending)} / ${Utils.formatCurrency(budget.monthlyBudget)}",
+                text = "${Utils.formatCurrency(budget.currentSpending)} / ${
+                    Utils.formatCurrency(
+                        budget.monthlyBudget
+                    )
+                }",
                 style = Typography.bodyMedium,
                 color = SoftGold
             )
@@ -254,7 +289,10 @@ fun BudgetItem(
 
         LinearProgressIndicator(
             progress = { progress.toFloat() },
-            modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(8.dp)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(RoundedCornerShape(8.dp)),
             color = progressColor,
             trackColor = Color.DarkGray,
             strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,

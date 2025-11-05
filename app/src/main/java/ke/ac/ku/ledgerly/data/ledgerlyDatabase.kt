@@ -7,13 +7,13 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import ke.ac.ku.ledgerly.data.dao.TransactionDao
-import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import dagger.hilt.android.qualifiers.ApplicationContext
+import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.data.model.Converters
-import javax.inject.Singleton
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
+import ke.ac.ku.ledgerly.data.model.TransactionEntity
+import javax.inject.Singleton
 
 @Database(
     entities = [
@@ -60,14 +60,16 @@ abstract class LedgerlyDatabase : RoomDatabase() {
 
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("""
+        db.execSQL(
+            """
             CREATE TABLE IF NOT EXISTS budgets (
                 category TEXT PRIMARY KEY NOT NULL,
                 monthlyBudget REAL NOT NULL,
                 currentSpending REAL NOT NULL DEFAULT 0.0,
                 monthYear TEXT NOT NULL
             )
-        """.trimIndent())
+        """.trimIndent()
+        )
     }
 
 }
@@ -78,7 +80,8 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
 
 val MIGRATION_3_4 = object : Migration(3, 4) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("""
+        db.execSQL(
+            """
             CREATE TABLE IF NOT EXISTS recurring_transactions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 category TEXT NOT NULL,
@@ -93,6 +96,7 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
                 lastGeneratedDate TEXT,
                 isActive INTEGER NOT NULL DEFAULT 1
             )
-        """.trimIndent())
+        """.trimIndent()
+        )
     }
 }

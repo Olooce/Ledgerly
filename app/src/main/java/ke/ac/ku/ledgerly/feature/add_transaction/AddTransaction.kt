@@ -5,13 +5,38 @@ package ke.ac.ku.ledgerly.feature.add_transaction
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,6 +81,7 @@ fun AddTransaction(
                 AddTransactionNavigationEvent.MenuOpenedClicked -> {
                     menuExpanded.value = true
                 }
+
                 else -> {}
             }
         }
@@ -140,7 +166,11 @@ fun AddTransaction(
                     .padding(16.dp),
                 onAddTransactionClick = { transaction, recurring ->
                     if (recurring != null) {
-                        viewModel.onEvent(AddTransactionUiEvent.OnAddRecurringTransactionClicked(recurring))
+                        viewModel.onEvent(
+                            AddTransactionUiEvent.OnAddRecurringTransactionClicked(
+                                recurring
+                            )
+                        )
                     } else {
                         viewModel.onEvent(AddTransactionUiEvent.OnAddTransactionClicked(transaction))
                     }
@@ -305,8 +335,10 @@ fun DataForm(
             // Payment Method Dropdown
             TitleComponent("Payment Method")
             TransactionDropDown(
-                listOf("Cash", "Credit Card", "Debit Card", "Bank Transfer",
-                    "Mobile Payment", "Digital Wallet", "Other"),
+                listOf(
+                    "Cash", "Credit Card", "Debit Card", "Bank Transfer",
+                    "Mobile Payment", "Digital Wallet", "Other"
+                ),
                 onItemSelected = { paymentMethod.value = it }
             )
 

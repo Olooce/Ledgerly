@@ -36,7 +36,8 @@ class BudgetRepository @Inject constructor(
         val budgets = transactionDao.getBudgetsForMonth(currentMonth)
 
         budgets.forEach { budget ->
-            val currentSpending = transactionDao.getCurrentSpendingForCategory(budget.category, currentMonth)
+            val currentSpending =
+                transactionDao.getCurrentSpendingForCategory(budget.category, currentMonth)
             if (budget.currentSpending != currentSpending) {
                 val updatedBudget = budget.copy(currentSpending = currentSpending)
                 transactionDao.updateBudget(updatedBudget)

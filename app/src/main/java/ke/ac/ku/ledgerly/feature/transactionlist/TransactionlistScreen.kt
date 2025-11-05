@@ -81,7 +81,10 @@ fun TransactionListScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     AnimatedVisibility(visible = expanded) {
-                        Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(16.dp)) {
+                        Column(
+                            horizontalAlignment = Alignment.End,
+                            modifier = Modifier.padding(16.dp)
+                        ) {
                             // Add Income
                             Box(
                                 modifier = Modifier
@@ -276,7 +279,11 @@ fun TransactionListScreen(
                             date = transaction.date,
                             notes = transaction.notes,
                             tags = transaction.tags,
-                            color = if (transaction.type.equals("Income", true)) Color(0xFF2E7D32) else Color(0xFFC62828),
+                            color = if (transaction.type.equals(
+                                    "Income",
+                                    true
+                                )
+                            ) Color(0xFF2E7D32) else Color(0xFFC62828),
                             modifier = Modifier
                         )
                     }
