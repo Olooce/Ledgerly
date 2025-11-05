@@ -4,18 +4,23 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyTheme
 import com.google.android.gms.auth.api.identity.SignInClient
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val themeViewModel: ThemeViewModel by viewModels()
     
     @Inject
     lateinit var oneTapClient: SignInClient
@@ -24,12 +29,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            LedgerlyTheme {
+            val isDarkMode by themeViewModel.isDarkMode.collectAsState()
+            LedgerlyTheme (darkTheme = isDarkMode) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    NavHostScreen(oneTapClient)
+                    NavHostScreen(oneTapClient, themeViewModel = themeViewModel)
                 }
             }
         }

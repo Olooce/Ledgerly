@@ -87,6 +87,9 @@ dependencies {
     implementation(libs.androidx.hilt.common)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.foundation.layout)
+    implementation(libs.androidx.compose.runtime)
     testImplementation(libs.junit)
     implementation(libs.dagger.hilt.andriod)
     ksp(libs.dagger.hilt.compiler)
@@ -98,11 +101,14 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.compose.navigation)
     implementation(libs.dagger.hilt.compose)
-    implementation("androidx.compose.foundation:foundation:1.7.0-beta07")
+    implementation("androidx.compose.foundation:foundation:1.9.4")
     val room_version = "2.6.1"
     implementation("androidx.room:room-runtime:$room_version")
     ksp("androidx.room:room-compiler:$room_version")
     implementation("androidx.room:room-ktx:$room_version")
+
+
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
 
     val nav_version = "2.7.7"
     implementation("androidx.navigation:navigation-compose:$nav_version")

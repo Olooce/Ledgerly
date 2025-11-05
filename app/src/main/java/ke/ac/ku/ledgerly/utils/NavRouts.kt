@@ -9,4 +9,6 @@ object NavRouts {
     const val addExpense = "/add_transaction"
     const val allTransactions = "/all_transactions"
     const val budget = "budget"
+    const val addBudget = "add_budget"
+    const val settings = "/settings"
 }
