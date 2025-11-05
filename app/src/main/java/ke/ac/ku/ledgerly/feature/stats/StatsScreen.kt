@@ -135,7 +135,7 @@ fun StatsScreen(
                 label = "tab_animation"
             ) { index ->
                 when (index) {
-                    0 -> TrendsTab(viewModel)
+                    0 -> TrendsTab(viewModel, navController)
                     1 -> CategoriesTab(viewModel)
                     2 -> ComparisonTab(viewModel)
                 }
@@ -145,11 +145,9 @@ fun StatsScreen(
 }
 
 @Composable
-private fun TrendsTab(viewModel: StatsViewModel) {
+private fun TrendsTab(viewModel: StatsViewModel, navController: NavController) {
     val dataState by viewModel.entries.collectAsState(emptyList())
     val topExpenses by viewModel.topEntries.collectAsState(emptyList())
-    val navController = rememberNavController()
-
 
     Column(
         modifier = Modifier

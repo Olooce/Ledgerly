@@ -246,7 +246,7 @@ fun MultiFloatingActionButton(
             ) {
                 Image(
                     painter = painterResource(R.drawable.ic_addbutton),
-                    contentDescription = "small floating action button",
+                    contentDescription = "Add Transaction",
                     modifier = Modifier.size(40.dp)
                 )
             }

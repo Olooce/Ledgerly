@@ -7,6 +7,9 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
+import ke.ac.ku.ledgerly.data.model.CategorySummary
+import ke.ac.ku.ledgerly.data.model.MonthlyComparison
+import ke.ac.ku.ledgerly.data.model.MonthlyTrend
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionSummary
@@ -83,4 +86,40 @@ interface TransactionDao {
 
     @Query("SELECT * FROM recurring_transactions")
     suspend fun getAllRecurringTransactionsSync(): List<RecurringTransactionEntity>
+
+    @Query("""
+    SELECT category, SUM(amount) as total_amount 
+    FROM transactions 
+    WHERE type = 'Expense' 
+    AND strftime('%Y-%m', date) = :monthYear 
+    GROUP BY category
+    HAVING total_amount > 0
+""")
+    fun getExpenseByCategoryForMonth(monthYear: String): Flow<List<CategorySummary>>
+
+    @Query("""
+    SELECT strftime('%Y-%m', date) as month, 
+           SUM(CASE WHEN type = 'Income' THEN amount ELSE 0 END) as income,
+           SUM(CASE WHEN type = 'Expense' THEN amount ELSE 0 END) as expense
+    FROM transactions 
+    WHERE date IS NOT NULL AND strftime('%Y-%m', date) IS NOT NULL
+    GROUP BY strftime('%Y-%m', date)
+    HAVING income > 0 OR expense > 0
+    ORDER BY month
+""")
+    fun getMonthlyIncomeVsExpense(): Flow<List<MonthlyComparison>>
+
+    @Query("""
+    SELECT strftime('%Y-%m', date) as month,
+           category,
+           SUM(amount) as total_amount
+    FROM transactions 
+    WHERE type = 'Expense' 
+    AND date IS NOT NULL 
+    AND strftime('%Y-%m', date) IS NOT NULL
+    GROUP BY strftime('%Y-%m', date), category
+    HAVING total_amount > 0
+    ORDER BY month
+""")
+    fun getMonthlySpendingTrends(): Flow<List<MonthlyTrend>>
 }

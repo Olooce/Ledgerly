@@ -270,10 +270,10 @@ fun TransactionListScreen(
                             .clickable { fabExpanded = !fabExpanded },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
+                        Image(
                             painter = painterResource(R.drawable.ic_addbutton),
                             contentDescription = "Add Transaction",
-                            tint = Color.White
+                            modifier = Modifier.size(40.dp)
                         )
                     }
                 }
