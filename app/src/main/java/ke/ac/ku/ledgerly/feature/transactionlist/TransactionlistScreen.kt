@@ -20,7 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -43,9 +43,7 @@ import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.feature.add_transaction.TransactionDropDown
 import ke.ac.ku.ledgerly.feature.home.HomeViewModel
 import ke.ac.ku.ledgerly.feature.home.TransactionItem
-import ke.ac.ku.ledgerly.ui.theme.DeepNavy
 import ke.ac.ku.ledgerly.ui.theme.Typography
-import ke.ac.ku.ledgerly.ui.theme.White
 import ke.ac.ku.ledgerly.ui.theme.Zinc
 import ke.ac.ku.ledgerly.utils.Utils
 import ke.ac.ku.ledgerly.widget.TransactionTextView
@@ -61,102 +59,19 @@ fun TransactionListScreen(
     var dateRange by remember { mutableStateOf("All Time") }
     var menuExpanded by remember { mutableStateOf(false) }
 
-    // Filter by type
     val filteredByType = when (filterType) {
         "Expense" -> transactions.filter { it.type.equals("Expense", true) }
         "Income" -> transactions.filter { it.type.equals("Income", true) }
         else -> transactions
     }
 
-    // TODO: Add actual date filtering logic
-    val filteredTransactions = filteredByType.filter { _ -> true }
+    val filteredTransactions = filteredByType // TODO: Apply actual date filter logic
 
-    Scaffold(
-        floatingActionButton = {
-            var expanded by remember { mutableStateOf(false) }
+    Surface(modifier = Modifier.fillMaxSize()) {
+        ConstraintLayout(modifier = Modifier.fillMaxSize()) {
+            val (topBar, header, content, fab) = createRefs()
 
-            Box(contentAlignment = Alignment.BottomEnd) {
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    AnimatedVisibility(visible = expanded) {
-                        Column(
-                            horizontalAlignment = Alignment.End,
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            // Add Income
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .background(color = Zinc, shape = RoundedCornerShape(12.dp))
-                                    .clickable {
-                                        viewModel.onEvent(ke.ac.ku.ledgerly.feature.home.HomeUiEvent.OnAddIncomeClicked)
-                                        expanded = false
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_income),
-                                    contentDescription = "Add Income",
-                                    tint = Color.White
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            // Add Expense
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .background(color = Zinc, shape = RoundedCornerShape(12.dp))
-                                    .clickable {
-                                        viewModel.onEvent(ke.ac.ku.ledgerly.feature.home.HomeUiEvent.OnAddExpenseClicked)
-                                        expanded = false
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_expense),
-                                    contentDescription = "Add Expense",
-                                    tint = Color.White
-                                )
-                            }
-                        }
-                    }
-
-                    // Main FAB
-                    Box(
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .size(60.dp)
-//                            .clip(RoundedCornerShape(16.dp))
-                            .background(color = Zinc)
-                            .clickable {
-                                expanded = !expanded
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.ic_addbutton),
-                            contentDescription = "Add Transaction",
-                            modifier = Modifier.size(40.dp)
-                        )
-                    }
-                }
-            }
-        },
-        containerColor = Color.Transparent
-    ) { padding ->
-        ConstraintLayout(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(White)
-                .padding(padding)
-        ) {
-            val (topBar, header, content) = createRefs()
-
-            // Top
+            // Top Bar
             Image(
                 painter = painterResource(id = R.drawable.ic_topbar),
                 contentDescription = null,
@@ -178,6 +93,7 @@ fun TransactionListScreen(
                         end.linkTo(parent.end)
                     }
             ) {
+                // Back icon
                 Image(
                     painter = painterResource(id = R.drawable.ic_back),
                     contentDescription = "Back",
@@ -187,6 +103,7 @@ fun TransactionListScreen(
                     colorFilter = ColorFilter.tint(Color.White)
                 )
 
+                // Title + Date range
                 Column(
                     modifier = Modifier.align(Alignment.Center),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -200,10 +117,11 @@ fun TransactionListScreen(
                     TransactionTextView(
                         text = dateRange,
                         style = Typography.bodyMedium,
-                        color = DeepNavy
+                        color = Color.White
                     )
                 }
 
+                // Filter icon
                 Image(
                     painter = painterResource(id = R.drawable.ic_filter),
                     contentDescription = "Filter",
@@ -214,20 +132,19 @@ fun TransactionListScreen(
                 )
             }
 
-            // Main content area
+            // Content
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .constrainAs(content) {
-                        top.linkTo(header.bottom, margin = 16.dp)
+                        top.linkTo(header.bottom)
                         start.linkTo(parent.start)
                         end.linkTo(parent.end)
                         bottom.linkTo(parent.bottom)
                         height = Dimension.fillToConstraints
                     }
             ) {
-                // Filter dropdown menu
                 AnimatedVisibility(
                     visible = menuExpanded,
                     enter = slideInVertically(initialOffsetY = { -it / 2 }),
@@ -237,8 +154,8 @@ fun TransactionListScreen(
                     Column {
                         TransactionDropDown(
                             listOfItems = listOf("All", "Expense", "Income"),
-                            onItemSelected = { selected ->
-                                filterType = selected
+                            onItemSelected = {
+                                filterType = it
                                 menuExpanded = false
                             }
                         )
@@ -247,15 +164,11 @@ fun TransactionListScreen(
 
                         TransactionDropDown(
                             listOfItems = listOf(
-                                "All Time",
-                                "Today",
-                                "Yesterday",
-                                "Last 30 Days",
-                                "Last 90 Days",
-                                "Last Year"
+                                "All Time", "Today", "Yesterday",
+                                "Last 30 Days", "Last 90 Days", "Last Year"
                             ),
-                            onItemSelected = { selected ->
-                                dateRange = selected
+                            onItemSelected = {
+                                dateRange = it
                                 menuExpanded = false
                             }
                         )
@@ -279,12 +192,86 @@ fun TransactionListScreen(
                             date = transaction.date,
                             notes = transaction.notes,
                             tags = transaction.tags,
-                            color = if (transaction.type.equals(
-                                    "Income",
-                                    true
-                                )
-                            ) Color(0xFF2E7D32) else Color(0xFFC62828),
+                            color = if (transaction.type.equals("Income", true))
+                                Color(0xFF2E7D32) else Color(0xFFC62828),
                             modifier = Modifier
+                        )
+                    }
+                }
+            }
+
+            // Floating Action Button
+            Box(
+                modifier = Modifier
+                    .constrainAs(fab) {
+                        bottom.linkTo(parent.bottom)
+                        end.linkTo(parent.end)
+                    },
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    AnimatedVisibility(visible = fabExpanded) {
+                        Column(horizontalAlignment = Alignment.End) {
+                            // Add Income
+                            Box(
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .background(color = Zinc, shape = RoundedCornerShape(16.dp))
+                                    .clickable {
+                                        viewModel.onEvent(
+                                            ke.ac.ku.ledgerly.feature.home.HomeUiEvent.OnAddIncomeClicked
+                                        )
+                                        fabExpanded = false
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_income),
+                                    contentDescription = "Add Income",
+                                    tint = Color.White
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // Add Expense
+                            Box(
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .background(color = Zinc, shape = RoundedCornerShape(16.dp))
+                                    .clickable {
+                                        viewModel.onEvent(
+                                            ke.ac.ku.ledgerly.feature.home.HomeUiEvent.OnAddExpenseClicked
+                                        )
+                                        fabExpanded = false
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_expense),
+                                    contentDescription = "Add Expense",
+                                    tint = Color.White
+                                )
+                            }
+                        }
+                    }
+
+                    // Main FAB
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(color = Zinc, shape = RoundedCornerShape(16.dp))
+                            .clickable { fabExpanded = !fabExpanded },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_addbutton),
+                            contentDescription = "Add Transaction",
+                            tint = Color.White
                         )
                     }
                 }

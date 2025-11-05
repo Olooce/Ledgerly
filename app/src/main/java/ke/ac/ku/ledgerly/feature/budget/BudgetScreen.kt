@@ -22,7 +22,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ProgressIndicatorDefaults
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -41,7 +41,6 @@ import androidx.navigation.NavController
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.feature.add_transaction.AddTransactionViewModel
-import ke.ac.ku.ledgerly.ui.theme.DeepNavy
 import ke.ac.ku.ledgerly.ui.theme.Green
 import ke.ac.ku.ledgerly.ui.theme.LightGrey
 import ke.ac.ku.ledgerly.ui.theme.OceanBlue
@@ -49,7 +48,6 @@ import ke.ac.ku.ledgerly.ui.theme.Red
 import ke.ac.ku.ledgerly.ui.theme.SoftGold
 import ke.ac.ku.ledgerly.ui.theme.Teal
 import ke.ac.ku.ledgerly.ui.theme.Typography
-import ke.ac.ku.ledgerly.ui.theme.White
 import ke.ac.ku.ledgerly.ui.theme.Yellow
 import ke.ac.ku.ledgerly.ui.theme.Zinc
 import ke.ac.ku.ledgerly.utils.Utils
@@ -65,13 +63,11 @@ fun BudgetScreen(
     val alerts by viewModel.alerts.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
 
-    // Initial load
     LaunchedEffect(Unit) {
         viewModel.loadBudgets()
         viewModel.loadAlerts()
     }
 
-    // Reactive reload when a new transaction is added
     LaunchedEffect(Unit) {
         addTransactionViewModel.transactionAdded.collect {
             viewModel.loadBudgets()
@@ -79,28 +75,11 @@ fun BudgetScreen(
         }
     }
 
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { navController.navigate("add_budget") },
-                containerColor = Zinc,
-                contentColor = Color.White,
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Budget")
-            }
-        },
-        containerColor = Color.Transparent
-    ) { padding ->
-        ConstraintLayout(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(White)
-                .padding(padding)
-        ) {
-            val (topBar, header, content) = createRefs()
+    Surface(modifier = Modifier.fillMaxSize()) {
+        ConstraintLayout(modifier = Modifier.fillMaxSize()) {
+            val (topBar, header, list, fab) = createRefs()
 
-            // Top bar image
+            // Top Bar
             Image(
                 painter = painterResource(id = R.drawable.ic_topbar),
                 contentDescription = null,
@@ -111,7 +90,7 @@ fun BudgetScreen(
                 }
             )
 
-            // Header section
+            // Header
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -122,7 +101,7 @@ fun BudgetScreen(
                         end.linkTo(parent.end)
                     }
             ) {
-                Column {
+                Column(modifier = Modifier.align(Alignment.CenterStart)) {
                     TransactionTextView(
                         text = "Budgets Overview",
                         style = Typography.titleLarge,
@@ -132,23 +111,18 @@ fun BudgetScreen(
                     TransactionTextView(
                         text = Utils.formatMonthYear(Utils.getCurrentMonthYear()),
                         style = Typography.bodyMedium,
-                        color = DeepNavy
+                        color = Color.White
                     )
                 }
-//                Image(
-//                    painter = painterResource(id = R.drawable.ic_notification),
-//                    contentDescription = null,
-//                    modifier = Modifier.align(Alignment.CenterEnd)
-//                )
             }
 
-            // Main content area
+            // Budget List Section
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
-                    .constrainAs(content) {
-                        top.linkTo(header.bottom, margin = 16.dp)
+                    .constrainAs(list) {
+                        top.linkTo(header.bottom)
                         start.linkTo(parent.start)
                         end.linkTo(parent.end)
                         bottom.linkTo(parent.bottom)
@@ -200,9 +174,30 @@ fun BudgetScreen(
                     }
                 }
             }
+
+            // Floating Action Button
+            Box(
+                modifier = Modifier
+                    .constrainAs(fab) {
+                        bottom.linkTo(parent.bottom)
+                        end.linkTo(parent.end)
+                    },
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                FloatingActionButton(
+                    onClick = { navController.navigate("add_budget") },
+                    containerColor = Zinc,
+                    contentColor = Color.White,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Budget")
+                }
+            }
         }
     }
 }
+
 
 @Composable
 private fun AlertSection(alerts: List<BudgetEntity>) {
