@@ -178,7 +178,6 @@ fun BudgetScreen(
             // Floating Action Button
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
                     .constrainAs(fab) {
                         bottom.linkTo(parent.bottom)
                         end.linkTo(parent.end)
