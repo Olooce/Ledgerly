@@ -157,6 +157,11 @@ class SyncRepository @Inject constructor(
         }
     }
 
+    /**
+     * Performs a full sync of all data types.
+     * Note: Partial failures are possible - check FullSyncResult.isSuccessful 
+     * and individual result fields to determine which syncs completed.
+     */
     suspend fun fullSync(deviceId: String): FullSyncResult {
         return try {
             val transactionResult = syncTransactions(deviceId)
