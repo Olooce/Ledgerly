@@ -67,13 +67,18 @@ fun NavHostScreen(
     val scope = rememberCoroutineScope()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: NavRouts.home
-    val showMenuButton = currentRoute == NavRouts.home
+    val showMenuButton = currentRoute in listOf(
+        NavRouts.home,
+        NavRouts.budget,
+        NavRouts.allTransactions,
+        NavRouts.stats
+    )
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = currentRoute != NavRouts.auth,
         drawerContent = {
-            ModalDrawerSheet {
+            ModalDrawerSheet{
                 DrawerContent(
                     navController = navController,
                     themeViewModel = themeViewModel,

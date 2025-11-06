@@ -94,6 +94,7 @@ dependencies {
     implementation(libs.androidx.compose.runtime)
     implementation(libs.androidx.datastore.core)
     implementation(libs.androidx.compose.ui.unit)
+    implementation(libs.androidx.compose.material.core)
 //    implementation(libs.firebase.firestore.ktx)
     testImplementation(libs.junit)
     implementation(libs.dagger.hilt.andriod)

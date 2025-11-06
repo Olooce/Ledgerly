@@ -8,11 +8,15 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <color name="color1">#FF6B9B</color>
-    <color name="color2">#FFD166</color>
-    <color name="color3">#06D6A0</color>
-    <color name="color4">#118AB2</color>
-    <color name="color5">#073B4C</color>
-    <color name="color6">#EF476F</color>
+    <color name="ledgerly_chart1">#0BB38E</color>
+    <color name="ledgerly_chart2">#0F8DA8</color>
+    <color name="ledgerly_chart3">#E6A23E</color>
+    <color name="ledgerly_chart4">#D65C1D</color>
+    <color name="ledgerly_chart5">#7FAE5C</color>
+    <color name="ledgerly_chart6">#496C84</color>
+    <color name="ledgerly_chart7">#A06ADE</color>
+    <color name="ledgerly_chart8">#379277</color>
+    <color name="ledgerly_chart9">#DC8418</color>
+    <color name="ledgerly_chart10">#1E6A8A</color>
 
 </resources>

@@ -274,28 +274,23 @@ fun CardItem(
             .background(Zinc)
             .padding(16.dp)
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
+                .weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Column {
-                TransactionTextView(
-                    text = "Total Balance",
-                    style = Typography.titleMedium,
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.size(8.dp))
-                TransactionTextView(
-                    text = balance,
-                    style = Typography.headlineLarge,
-                    color = Color.White,
-                )
-            }
-            Image(
-                painter = painterResource(id = R.drawable.dots_menu),
-                contentDescription = null,
-                modifier = Modifier.align(Alignment.CenterEnd)
+            TransactionTextView(
+                text = "Total Balance",
+                style = Typography.titleMedium,
+                color = Color.White
+            )
+            Spacer(modifier = Modifier.size(8.dp))
+            TransactionTextView(
+                text = balance,
+                style = Typography.headlineLarge,
+                color = Color.White
             )
         }
 

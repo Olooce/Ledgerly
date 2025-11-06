@@ -9,6 +9,7 @@ import androidx.compose.animation.core.EaseOutCubic
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -69,6 +70,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -81,7 +83,9 @@ import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.SignInClient
+import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.auth.domain.AuthEvent
+import ke.ac.ku.ledgerly.ui.theme.LedgerlyAccent
 import kotlinx.coroutines.delay
 
 private val LedgerlyGreen = Color(0xFF0B3D2E)
@@ -197,12 +201,12 @@ fun AuthScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(bottom = 32.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.AccountBalance,
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_ledgerly),
                         contentDescription = "Ledgerly Logo",
-                        tint = LedgerlyAccent,
                         modifier = Modifier.size(72.dp)
                     )
+
 
                     Spacer(modifier = Modifier.height(16.dp))
 
