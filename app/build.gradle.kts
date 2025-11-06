@@ -17,12 +17,12 @@ val googleWebClientId = localProperties.getProperty("GOOGLE_WEB_CLIENT_ID") ?: "
 
 android {
     namespace = "ke.ac.ku.ledgerly"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "ke.ac.ku.ledgerly"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -44,7 +44,7 @@ android {
             )
         }
         debug {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -84,8 +84,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.constraintlayout)
-    implementation("androidx.constraintlayout:constraintlayout-compose:1.0.1")
-    implementation(libs.firebase.database.ktx)
+    implementation(libs.androidx.constraintlayout.compose)
     implementation(libs.androidx.hilt.common)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
@@ -95,7 +94,7 @@ dependencies {
     implementation(libs.androidx.datastore.core)
     implementation(libs.androidx.compose.ui.unit)
     implementation(libs.androidx.compose.material.core)
-//    implementation(libs.firebase.firestore.ktx)
+    implementation(libs.firebase.firestore)
     testImplementation(libs.junit)
     implementation(libs.dagger.hilt.andriod)
     ksp(libs.dagger.hilt.compiler)
@@ -105,28 +104,23 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation(libs.compose.navigation)
     implementation(libs.dagger.hilt.compose)
-    implementation("androidx.compose.foundation:foundation:1.9.4")
-    val room_version = "2.6.1"
-    implementation("androidx.room:room-runtime:$room_version")
-    ksp("androidx.room:room-compiler:$room_version")
-    implementation("androidx.room:room-ktx:$room_version")
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
 
 
-    implementation("androidx.compose.material:material-icons-extended:1.7.8")
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.androidx.datastore.preferences)
 
-    val nav_version = "2.7.7"
-    implementation("androidx.navigation:navigation-compose:$nav_version")
-    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    implementation(libs.compose.navigation)
+    implementation(libs.mpandroidchart)
 
     implementation(platform(libs.firebase.bom))
 
     implementation(libs.firebase.auth)
-    implementation(libs.firebase.auth.ktx)
-    implementation(libs.firebase.database.ktx)
-    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.database)
 
     // Google Sign-In
     implementation(libs.play.services.auth)
