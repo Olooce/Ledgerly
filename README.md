@@ -5,3 +5,9 @@
 <h1 align="center"><strong style="font-size: 2.5em;">Ledgerly</strong></h1>
 
 <p align="center"><em>Know your money.</em></p>
+
+---
+
+This project was developed as part of a school assignment.  
+You can view the original assignment instructions here:  
+[📄 SCO 306 - Project 2 (PDF)](./SCO%20306%20-project%202.pdf)
