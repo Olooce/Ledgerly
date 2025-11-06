@@ -1,26 +1,28 @@
 [versions]
-agp = "8.6.0"
-kotlin = "2.0.21"
-ksp = "2.0.21-1.0.28"
-firebaseBom = "33.2.0"
-coreKtx = "1.13.1"
+agp = "8.13.0"
+constraintlayoutCompose = "1.1.1"
+foundation = "1.9.4"
+kotlin = "2.2.21"
+ksp = "2.2.21-2.0.4"
+firebaseBom = "34.5.0"
+coreKtx = "1.17.0"
 junit = "4.13.2"
-junitVersion = "1.2.1"
-espressoCore = "3.6.1"
-lifecycleRuntimeKtx = "2.8.4"
-activityCompose = "1.9.1"
-composeBom = "2024.06.00"
-constraint-compose = "1.0.1"
-constraintlayout = "2.1.4"
-hilt-compose="1.2.0"
+junitVersion = "1.3.0"
+espressoCore = "3.7.0"
+lifecycleRuntimeKtx = "2.9.4"
+activityCompose = "1.11.0"
+composeBom = "2025.11.00"
+constraintlayout = "2.2.1"
+hilt-compose="1.3.0"
 dagger-hilt= "2.57.2"
-compose-navigation = "2.7.7"
-firebaseDatabaseKtx = "21.0.0"
-firebaseAuth = "22.3.1"
-firebaseAuthKtx = "22.3.1"
-playServicesAuth = "20.7.0"
+compose-navigation = "2.9.6"
+mpandroidchart = "v3.1.0"
+playServicesAuth = "21.4.0"
 biometric = "1.2.0-alpha05"
 hiltCommon = "1.3.0"
+roomRuntime = "2.8.3"
+roomKtx = "2.8.3"
+roomCompiler = "2.8.3"
 workRuntimeKtx = "2.11.0"
 hiltWork = "1.3.0"
 material = "1.13.0"
@@ -28,12 +30,19 @@ material3 = "1.4.0"
 foundationLayout = "1.9.4"
 runtime = "1.9.4"
 datastoreCore = "1.1.7"
-firebaseFirestoreKtx = "26.0.2"
 uiUnit = "1.9.4"
-composeMaterialCore = "1.5.4"
+composeMaterialCore = "1.5.5"
+materialIconsExtended = "1.7.8"
+datastorePreferences = "1.1.7"
+
 
 [libraries]
+androidx-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "foundation" }
+androidx-constraintlayout-compose = { module = "androidx.constraintlayout:constraintlayout-compose", version.ref = "constraintlayoutCompose" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCompiler" }
+androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomKtx" }
+androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -52,10 +61,10 @@ compose-navigation = {module = "androidx.navigation:navigation-compose" , versio
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
-firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx" }
-firebase-database-ktx = { group = "com.google.firebase", name = "firebase-database-ktx" }
+firebase-database = { group = "com.google.firebase", name = "firebase-database" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+mpandroidchart = { module = "com.github.PhilJay:MPAndroidChart", version.ref = "mpandroidchart" }
 play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
 biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
 androidx-hilt-common = { group = "androidx.hilt", name = "hilt-common", version.ref = "hiltCommon" }
@@ -68,7 +77,8 @@ androidx-datastore-core = { group = "androidx.datastore", name = "datastore-core
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-compose-ui-unit = { group = "androidx.compose.ui", name = "ui-unit", version.ref = "uiUnit" }
 androidx-compose-material-core = { group = "androidx.wear.compose", name = "compose-material-core", version.ref = "composeMaterialCore" }
-#firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" }
+androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIconsExtended" }
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
