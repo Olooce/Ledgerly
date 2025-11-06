@@ -2,18 +2,19 @@ package ke.ac.ku.ledgerly.domain
 
 import android.content.Context
 import android.util.Log
+import androidx.core.content.edit
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 import ke.ac.ku.ledgerly.auth.data.AuthRepository
 import ke.ac.ku.ledgerly.data.repository.SyncRepository
+import ke.ac.ku.ledgerly.data.repository.SyncResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
-import androidx.core.content.edit
-import dagger.hilt.android.qualifiers.ApplicationContext
-import ke.ac.ku.ledgerly.data.repository.SyncResult
 
 @Singleton
 class SyncManager @Inject constructor(
@@ -59,9 +60,7 @@ class SyncManager @Inject constructor(
 
                 if (result.isSuccessful) {
                     updateLastSyncTime()
-                    withContext(Dispatchers.Main) {
-                        onSuccess?.invoke()
-                    }
+                    withContext(Dispatchers.Main) { onSuccess?.invoke() }
                     Log.d(TAG, "Sync completed successfully")
                 } else {
                     val errorMessage = when {
@@ -71,16 +70,12 @@ class SyncManager @Inject constructor(
                             "Budget sync failed: ${result.budgets.message}"
                         else -> "Sync failed"
                     }
-                    withContext(Dispatchers.Main) {
-                        onError?.invoke(errorMessage)
-                    }
+                    withContext(Dispatchers.Main) { onError?.invoke(errorMessage) }
                     Log.e(TAG, errorMessage)
                 }
             } catch (e: Exception) {
                 val errorMsg = "Sync failed: ${e.message}"
-                withContext(Dispatchers.Main) {
-                    onError?.invoke(errorMsg)
-                }
+                withContext(Dispatchers.Main) { onError?.invoke(errorMsg) }
                 Log.e(TAG, errorMsg, e)
             }
         }
@@ -93,7 +88,7 @@ class SyncManager @Inject constructor(
 
     fun setCloudSyncEnabled(enabled: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        
+
         if (enabled && !authRepository.isUserAuthenticated()) {
             Log.w(TAG, "Ignoring cloud sync enable while user is signed out")
             return
@@ -111,8 +106,6 @@ class SyncManager @Inject constructor(
             )
         }
     }
-    }
-
 
     suspend fun isSyncEnabled(): Boolean {
         return authRepository.authState.first()
@@ -138,5 +131,4 @@ class SyncManager @Inject constructor(
             }
         }
     }
-
 }

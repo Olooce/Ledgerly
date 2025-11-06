@@ -21,7 +21,6 @@ class RecurringTransactionWorker @AssistedInject constructor(
     private val dao: TransactionDao
 ) : CoroutineWorker(context, workerParams) {
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override suspend fun doWork(): Result {
         return try {
             processRecurringTransactions()
@@ -31,7 +30,6 @@ class RecurringTransactionWorker @AssistedInject constructor(
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     private suspend fun processRecurringTransactions() {
         val recurringTransactions = dao.getActiveRecurringTransactions()
         val today = LocalDate.now()
@@ -82,7 +80,6 @@ class RecurringTransactionWorker @AssistedInject constructor(
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     private fun calculateNextDueDate(
         fromDate: LocalDate,
         frequency: RecurrenceFrequency

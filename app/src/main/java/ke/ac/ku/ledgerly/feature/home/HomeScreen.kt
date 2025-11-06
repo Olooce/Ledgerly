@@ -14,11 +14,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -32,7 +36,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -268,28 +274,23 @@ fun CardItem(
             .background(Zinc)
             .padding(16.dp)
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
+                .weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Column {
-                TransactionTextView(
-                    text = "Total Balance",
-                    style = Typography.titleMedium,
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.size(8.dp))
-                TransactionTextView(
-                    text = balance,
-                    style = Typography.headlineLarge,
-                    color = Color.White,
-                )
-            }
-            Image(
-                painter = painterResource(id = R.drawable.dots_menu),
-                contentDescription = null,
-                modifier = Modifier.align(Alignment.CenterEnd)
+            TransactionTextView(
+                text = "Total Balance",
+                style = Typography.titleMedium,
+                color = Color.White
+            )
+            Spacer(modifier = Modifier.size(8.dp))
+            TransactionTextView(
+                text = balance,
+                style = Typography.headlineLarge,
+                color = Color.White
             )
         }
 
@@ -349,11 +350,10 @@ fun TransactionList(
             items = list,
             key = { item -> item.id ?: 0 }) { item ->
             val icon = Utils.getItemIcon(item.category)
-            val amount = if (item.type == "Income") item.amount else item.amount * -1
 
             TransactionItem(
                 title = item.category,
-                amount = Utils.formatCurrency(amount),
+                amount = Utils.formatCurrency(item.amount),
                 icon = icon,
                 date = Utils.formatStringDateToMonthDayYear(item.date),
                 paymentMethod = item.paymentMethod,
@@ -376,68 +376,110 @@ fun TransactionItem(
     notes: String,
     tags: String,
     color: Color,
-    modifier: Modifier
+    modifier: Modifier = Modifier,
+    iconSize: Dp = 48.dp,
+    iconTint: Color = MaterialTheme.colorScheme.primary
 ) {
-
-    Box(
+    Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(vertical = 6.dp, horizontal = 12.dp),
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 2.dp,
+        color = MaterialTheme.colorScheme.surface
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Image(
-                painter = painterResource(id = icon),
-                contentDescription = null,
-                modifier = Modifier.size(51.dp)
-            )
-            Spacer(modifier = Modifier.size(8.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                TransactionTextView(text = title, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                Spacer(modifier = Modifier.size(4.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(iconSize + 12.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.secondaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = icon),
+                    contentDescription = null,
+                    modifier = Modifier.size(iconSize),
+                    tint = iconTint
+                )
+            }
 
-                // Show payment method if available
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
                 if (paymentMethod.isNotEmpty()) {
-                    TransactionTextView(
+                    Text(
                         text = "Via $paymentMethod",
-                        fontSize = 12.sp,
-                        color = LightGrey
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(modifier = Modifier.size(2.dp))
                 }
 
-                // Show tags if available
                 if (tags.isNotEmpty()) {
-                    TransactionTextView(
+                    Text(
                         text = "Tags: $tags",
-                        fontSize = 11.sp,
-                        color = LightGrey
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(modifier = Modifier.size(2.dp))
                 }
 
-                TransactionTextView(text = date, fontSize = 13.sp, color = LightGrey)
+                Text(
+                    text = date,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                )
 
-                // Show notes if available
                 if (notes.isNotEmpty()) {
-                    Spacer(modifier = Modifier.size(4.dp))
-                    TransactionTextView(
+                    Text(
                         text = notes,
-                        fontSize = 12.sp,
-                        color = LightGrey,
-                        maxLines = 1
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text(
+                text = amount,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    color = color,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            )
         }
-        TransactionTextView(
-            text = amount,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.align(Alignment.CenterEnd),
-            color = color
-        )
     }
 }
+
 
 @Composable
 fun CardRowItem(modifier: Modifier, title: String, amount: String, imaget: Int) {

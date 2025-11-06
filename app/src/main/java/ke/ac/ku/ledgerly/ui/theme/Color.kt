@@ -35,9 +35,6 @@ val SurfaceDark = Color(0xFF1B263B)
 val SurfaceLight = Color(0xFFFFFFFF)
 val TextPrimaryDark = Color(0xFFECEFF1)
 val TextPrimaryLight = Color(0xFF1C1C1C)
-val SuccessGreen = Color(0xFF4CAF50)
-val ErrorRed = Color(0xFFD32F2F)
-val WarningYellow = Color(0xFFFFD600)
 
 val Blue900 = Color(0xFF0A2540)
 val Blue800 = Color(0xFF12355B)
@@ -70,6 +67,22 @@ val Red100 = Color(0xFFFFCDD2)
 val Yellow500 = Color(0xFFFFD600)
 val Yellow300 = Color(0xFFFFF176)
 val Yellow100 = Color(0xFFFFF9C4)
+
+// Ledgerly Brand Colors
+val LedgerlyGreen = Color(0xFF0B3D2E)
+val LedgerlyGreenLight = Color(0xFF1A5C47)
+val LedgerlyAccent = Color(0xFFE6F0EC)
+val LedgerlyBlue = Color(0xFF4A90E2)
+val LedgerlyBlueLight = Color(0xFFD6E4F0)
+
+// Standard Palette Extensions
+val OnPrimaryDark = Color(0xFFFFFFFF)
+val OnPrimaryLight = Color(0xFFFFFFFF)
+val OnSurfaceDark = Color(0xFFECEFF1)
+val OnSurfaceLight = Color(0xFF1C1C1C)
+val ErrorRed = Color(0xFFD32F2F)
+val SuccessGreen = Color(0xFF4CAF50)
+val WarningYellow = Color(0xFFFFD600)
 
 sealed class ThemeColors(
     val background: Color,

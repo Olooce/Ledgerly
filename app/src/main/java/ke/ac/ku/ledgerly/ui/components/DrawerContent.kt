@@ -1,6 +1,7 @@
 package ke.ac.ku.ledgerly.ui.components
 
 import android.content.Intent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -64,6 +65,14 @@ fun DrawerContent(
                     .padding(vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_ledgerly),
+                    contentDescription = "Ledgerly Logo",
+                    modifier = Modifier.size(72.dp)
+                )
+
+
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "Ledgerly",
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),

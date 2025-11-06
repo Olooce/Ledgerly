@@ -29,6 +29,8 @@ foundationLayout = "1.9.4"
 runtime = "1.9.4"
 datastoreCore = "1.1.7"
 firebaseFirestoreKtx = "26.0.2"
+uiUnit = "1.9.4"
+composeMaterialCore = "1.5.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -64,6 +66,8 @@ androidx-compose-foundation-layout = { group = "androidx.compose.foundation", na
 androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "runtime" }
 androidx-datastore-core = { group = "androidx.datastore", name = "datastore-core", version.ref = "datastoreCore" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-compose-ui-unit = { group = "androidx.compose.ui", name = "ui-unit", version.ref = "uiUnit" }
+androidx-compose-material-core = { group = "androidx.wear.compose", name = "compose-material-core", version.ref = "composeMaterialCore" }
 #firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" }
 
 [plugins]

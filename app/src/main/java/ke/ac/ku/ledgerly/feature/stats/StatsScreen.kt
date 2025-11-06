@@ -32,13 +32,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -49,10 +49,10 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.github.mikephil.charting.animation.Easing
 import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
@@ -95,16 +95,7 @@ fun StatsScreen(
                         )
                     }
                 },
-                actions = {
-                    IconButton(onClick = { /* Menu action */ }) {
-                        Icon(
-                            painter = painterResource(R.drawable.dots_menu),
-                            contentDescription = "More options",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )
@@ -290,7 +281,7 @@ private fun SummaryCard(
     title: String,
     value: String,
     modifier: Modifier = Modifier,
-    color: androidx.compose.ui.graphics.Color
+    color: Color
 ) {
     Card(
         modifier = modifier,
@@ -401,14 +392,14 @@ private fun PieChartView(categorySummaries: List<CategorySummary>) {
             .fillMaxWidth()
             .height(300.dp)
     ) { view ->
-        val chart = view.findViewById<com.github.mikephil.charting.charts.PieChart>(R.id.pieChart)
+        val chart = view.findViewById<PieChart>(R.id.pieChart)
 
         val entries = categorySummaries.map {
             PieEntry(it.total_amount.toFloat(), it.category)
         }
 
         val dataSet = PieDataSet(entries, "Category Spending").apply {
-            colors = getThemeColors(context)
+            colors = getColors(context, entries.size)
             valueTextColor = textColor
             valueTextSize = 12f
             sliceSpace = 3f
@@ -478,7 +469,22 @@ private fun BarChartView(
     }
 }
 
-private fun getThemeColors(context: Context): List<Int> = listOf(
-    R.color.color1, R.color.color2, R.color.color3,
-    R.color.color4, R.color.color5, R.color.color6
-).map { ContextCompat.getColor(context, it) }
+
+private fun getColors(context: Context, count: Int): List<Int> {
+    val all = getThemeColors(context).shuffled()
+    return if (count <= all.size) all.take(count) else all
+}
+private fun getThemeColors(context: Context): List<Int> {
+    val res = context.resources
+    val packageName = context.packageName
+    val colorIds = listOf(
+        "ledgerly_chart1", "ledgerly_chart2", "ledgerly_chart3",
+        "ledgerly_chart4", "ledgerly_chart5", "ledgerly_chart6",
+        "ledgerly_chart7", "ledgerly_chart8", "ledgerly_chart9", "ledgerly_chart10"
+    )
+
+    return colorIds.map { name ->
+        val id = res.getIdentifier(name, "color", packageName)
+        ContextCompat.getColor(context, id)
+    }
+}

@@ -1,7 +1,6 @@
 package ke.ac.ku.ledgerly.feature.budget
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,16 +12,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -30,7 +31,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -41,17 +41,13 @@ import androidx.navigation.NavController
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.feature.add_transaction.AddTransactionViewModel
-import ke.ac.ku.ledgerly.ui.theme.Green
-import ke.ac.ku.ledgerly.ui.theme.LightGrey
-import ke.ac.ku.ledgerly.ui.theme.OceanBlue
-import ke.ac.ku.ledgerly.ui.theme.Red
-import ke.ac.ku.ledgerly.ui.theme.SoftGold
-import ke.ac.ku.ledgerly.ui.theme.Teal
-import ke.ac.ku.ledgerly.ui.theme.Typography
-import ke.ac.ku.ledgerly.ui.theme.Yellow
-import ke.ac.ku.ledgerly.ui.theme.Zinc
+import ke.ac.ku.ledgerly.ui.theme.ErrorRed
+import ke.ac.ku.ledgerly.ui.theme.LedgerlyAccent
+import ke.ac.ku.ledgerly.ui.theme.LedgerlyBlue
+import ke.ac.ku.ledgerly.ui.theme.LedgerlyGreen
+import ke.ac.ku.ledgerly.ui.theme.LedgerlyGreenLight
+import ke.ac.ku.ledgerly.ui.theme.WarningYellow
 import ke.ac.ku.ledgerly.utils.Utils
-import ke.ac.ku.ledgerly.widget.TransactionTextView
 
 @Composable
 fun BudgetScreen(
@@ -75,23 +71,42 @@ fun BudgetScreen(
         }
     }
 
-    Surface(modifier = Modifier.fillMaxSize()) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
         ConstraintLayout(modifier = Modifier.fillMaxSize()) {
             val (topBar, header, list, fab) = createRefs()
 
             // Top Bar
-            Image(
-                painter = painterResource(id = R.drawable.ic_topbar),
-                contentDescription = null,
-                modifier = Modifier.constrainAs(topBar) {
-                    top.linkTo(parent.top)
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .constrainAs(topBar) {
+                        top.linkTo(parent.top)
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                    }
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_topbar),
+                    contentDescription = "Top Bar",
+                    modifier = Modifier.fillMaxWidth()
+                )
+                IconButton(
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier.align(Alignment.CenterStart)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_back),
+                        contentDescription = "Back",
+                        tint = LedgerlyAccent
+                    )
                 }
-            )
+            }
 
             // Header
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 64.dp, start = 16.dp, end = 16.dp)
@@ -101,19 +116,16 @@ fun BudgetScreen(
                         end.linkTo(parent.end)
                     }
             ) {
-                Column(modifier = Modifier.align(Alignment.CenterStart)) {
-                    TransactionTextView(
-                        text = "Budgets Overview",
-                        style = Typography.titleLarge,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
-                    )
-                    TransactionTextView(
-                        text = Utils.formatMonthYear(Utils.getCurrentMonthYear()),
-                        style = Typography.bodyMedium,
-                        color = Color.White
-                    )
-                }
+                Text(
+                    text = "Budgets Overview",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = LedgerlyAccent
+                )
+                Text(
+                    text = Utils.formatMonthYear(Utils.getCurrentMonthYear()),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = LedgerlyAccent
+                )
             }
 
             // Budget List Section
@@ -130,23 +142,23 @@ fun BudgetScreen(
                     }
             ) {
                 if (alerts.isNotEmpty()) {
-                    AlertSection(alerts = alerts)
-                    Spacer(modifier = Modifier.height(16.dp))
+                    AlertSection(alerts)
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
 
                 when (uiState) {
                     is BudgetUiState.Loading -> Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
-                    ) { CircularProgressIndicator(color = Green) }
+                    ) { CircularProgressIndicator(color = LedgerlyGreen) }
 
                     is BudgetUiState.Error -> Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        TransactionTextView(
+                        Text(
                             text = (uiState as BudgetUiState.Error).message,
-                            color = Red
+                            color = LedgerlyBlue
                         )
                     }
 
@@ -156,9 +168,9 @@ fun BudgetScreen(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center
                             ) {
-                                TransactionTextView(
+                                Text(
                                     text = "No budgets set for ${Utils.formatMonthYear(Utils.getCurrentMonthYear())}",
-                                    color = LightGrey
+                                    color = LedgerlyGreenLight
                                 )
                             }
                         } else {
@@ -186,9 +198,8 @@ fun BudgetScreen(
             ) {
                 FloatingActionButton(
                     onClick = { navController.navigate("add_budget") },
-                    containerColor = Zinc,
-                    contentColor = Color.White,
-                    shape = RoundedCornerShape(16.dp),
+                    containerColor = LedgerlyGreen,
+                    contentColor = LedgerlyAccent,
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Add Budget")
@@ -198,42 +209,34 @@ fun BudgetScreen(
     }
 }
 
-
 @Composable
 private fun AlertSection(alerts: List<BudgetEntity>) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(Red.copy(alpha = 0.15f))
-            .padding(16.dp)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 2.dp,
+        color = LedgerlyBlue.copy(alpha = 0.15f)
     ) {
-        Column {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     Icons.Default.Warning,
                     contentDescription = "Warning",
-                    tint = Red,
+                    tint = ErrorRed,
                     modifier = Modifier.padding(end = 8.dp)
                 )
-                TransactionTextView(
+                Text(
                     text = "Budget Alerts",
-                    style = Typography.titleMedium,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = LedgerlyGreen
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
             alerts.forEach { budget ->
-                TransactionTextView(
-                    text = "${budget.category} is ${
-                        String.format(
-                            "%.1f",
-                            budget.percentageUsed
-                        )
-                    }% used",
-                    color = Red,
-                    style = Typography.bodyMedium
+                Text(
+                    text = "${budget.category} is ${String.format("%.1f", budget.percentageUsed)}% used",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = WarningYellow
                 )
             }
         }
@@ -247,68 +250,66 @@ fun BudgetItem(
 ) {
     val progress = (budget.currentSpending / budget.monthlyBudget).coerceIn(0.0, 1.0)
     val progressColor = when {
-        budget.isExceeded() -> Red
-        budget.isNearLimit() -> Yellow
-        else -> Green
+        budget.isExceeded() -> LedgerlyBlue
+        budget.isNearLimit() -> LedgerlyGreenLight
+        else -> LedgerlyGreen
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(OceanBlue.copy(alpha = 0.85f))
-            .padding(16.dp)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 2.dp,
+        color = LedgerlyAccent.copy(alpha = 0.85f)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            TransactionTextView(
-                text = budget.category,
-                style = Typography.titleMedium,
-                color = Color.White,
-                fontWeight = FontWeight.Medium
-            )
-            TransactionTextView(
-                text = "${Utils.formatCurrency(budget.currentSpending)} / ${
-                    Utils.formatCurrency(
-                        budget.monthlyBudget
-                    )
-                }",
-                style = Typography.bodyMedium,
-                color = SoftGold
-            )
-        }
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = budget.category,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
+                    color = LedgerlyGreen
+                )
+                Text(
+                    text = "${Utils.formatCurrency(budget.currentSpending)} / ${Utils.formatCurrency(budget.monthlyBudget)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = LedgerlyBlue
+                )
+            }
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        LinearProgressIndicator(
+            LinearProgressIndicator(
             progress = { progress.toFloat() },
             modifier = Modifier
-                .fillMaxWidth()
-                .height(8.dp)
-                .clip(RoundedCornerShape(8.dp)),
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(MaterialTheme.shapes.small),
             color = progressColor,
-            trackColor = Color.DarkGray,
+            trackColor = LedgerlyGreenLight.copy(alpha = 0.3f),
             strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
-        )
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            TransactionTextView(
-                text = "${String.format("%.1f", budget.percentageUsed)}% used",
-                style = Typography.bodySmall,
-                color = Teal
             )
-            TransactionTextView(
-                text = "${Utils.formatCurrency(budget.remainingBudget)} remaining",
-                style = Typography.bodySmall,
-                color = if (budget.remainingBudget < 0) Red else Teal
-            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "${String.format("%.1f", budget.percentageUsed)}% used",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = LedgerlyGreen
+                )
+                Text(
+                    text = "${Utils.formatCurrency(budget.remainingBudget)} remaining",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (budget.remainingBudget < 0) LedgerlyBlue else LedgerlyGreen
+                )
+            }
         }
     }
 }
+
+
