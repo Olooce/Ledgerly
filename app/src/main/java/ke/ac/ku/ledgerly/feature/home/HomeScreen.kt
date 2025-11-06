@@ -57,6 +57,8 @@ import ke.ac.ku.ledgerly.ui.theme.Typography
 import ke.ac.ku.ledgerly.ui.theme.Zinc
 import ke.ac.ku.ledgerly.utils.Utils
 import ke.ac.ku.ledgerly.widget.TransactionTextView
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import java.util.Calendar
 
 
@@ -84,7 +86,7 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
     }
 
     val greeting = remember { getTimeBasedGreeting() }
-    val userName = "Oloo"
+    val userName by viewModel.userName.collectAsState(initial = "User")
 
     // Collect transactions from ViewModel
     val transactions by viewModel.transactions.collectAsState(initial = emptyList())

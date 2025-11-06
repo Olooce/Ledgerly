@@ -1,10 +1,4 @@
-package ke.ac.ku.ledgerly.auth.domain
-data class AuthState(
-    val isLoading: Boolean = false,
-    val isAuthenticated: Boolean = false,
-    val error: String? = null,
-    val isBiometricAvailable: Boolean = false
-)
+package ke.ac.ku.ledgerly.domain
 
 sealed class AuthEvent {
     data class EmailSignIn(val email: String, val password: String) : AuthEvent()

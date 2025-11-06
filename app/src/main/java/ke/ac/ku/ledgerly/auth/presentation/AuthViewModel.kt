@@ -1,13 +1,12 @@
 package ke.ac.ku.ledgerly.auth.presentation
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.identity.SignInClient
 import com.google.firebase.auth.GoogleAuthProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ke.ac.ku.ledgerly.auth.data.AuthRepository
-import ke.ac.ku.ledgerly.auth.domain.AuthEvent
+import ke.ac.ku.ledgerly.domain.AuthEvent
 import ke.ac.ku.ledgerly.auth.domain.AuthState
 import ke.ac.ku.ledgerly.domain.SyncManager
 import kotlinx.coroutines.flow.MutableStateFlow

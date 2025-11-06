@@ -28,7 +28,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Fingerprint
@@ -84,7 +83,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.SignInClient
 import ke.ac.ku.ledgerly.R
-import ke.ac.ku.ledgerly.auth.domain.AuthEvent
+import ke.ac.ku.ledgerly.domain.AuthEvent
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyAccent
 import kotlinx.coroutines.delay
 

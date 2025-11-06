@@ -1,78 +1,93 @@
 package ke.ac.ku.ledgerly.feature.home
 
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import ke.ac.ku.ledgerly.base.BaseViewModel
 import ke.ac.ku.ledgerly.base.HomeNavigationEvent
-import ke.ac.ku.ledgerly.base.UiEvent
+import ke.ac.ku.ledgerly.base.NavigationEvent
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
+import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
 import ke.ac.ku.ledgerly.utils.Utils
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(val dao: TransactionDao) : BaseViewModel() {
-    val transactions = dao.getAllTransactions()
+class HomeViewModel @Inject constructor(
+    private val dao: TransactionDao,
+    private val userPreferencesRepository: UserPreferencesRepository
+) : ViewModel() {
 
-    override fun onEvent(event: UiEvent) {
-        when (event) {
-            is HomeUiEvent.OnAddExpenseClicked -> {
-                viewModelScope.launch {
+    private val _navigationEvent = MutableSharedFlow<NavigationEvent>()
+    val navigationEvent = _navigationEvent.asSharedFlow()
+
+    val transactions: StateFlow<List<TransactionEntity>> =
+        dao.getAllTransactions()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
+
+    val userName: StateFlow<String> = userPreferencesRepository.userName
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "User"
+        )
+
+    val currency: StateFlow<String> = userPreferencesRepository.currency
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "KES"
+        )
+
+    fun onEvent(event: HomeUiEvent) {
+        viewModelScope.launch {
+            when (event) {
+                HomeUiEvent.OnSeeAllClicked -> {
+                    _navigationEvent.emit(HomeNavigationEvent.NavigateToSeeAll)
+                }
+                HomeUiEvent.OnAddIncomeClicked -> {
+                    _navigationEvent.emit(HomeNavigationEvent.NavigateToAddIncome)
+                }
+                HomeUiEvent.OnAddExpenseClicked -> {
                     _navigationEvent.emit(HomeNavigationEvent.NavigateToAddExpense)
                 }
             }
-
-            is HomeUiEvent.OnAddIncomeClicked -> {
-                viewModelScope.launch {
-                    _navigationEvent.emit(HomeNavigationEvent.NavigateToAddIncome)
-                }
-            }
-
-            is HomeUiEvent.OnSeeAllClicked -> {
-                viewModelScope.launch {
-                    _navigationEvent.emit(HomeNavigationEvent.NavigateToSeeAll)
-                }
-            }
         }
     }
 
-    fun getBalance(list: List<TransactionEntity>): String {
-        var balance = 0.0
-        for (expense in list) {
-            if (expense.type == "Income") {
-                balance += expense.amount
-            } else {
-                balance -= expense.amount
-            }
-        }
-        return Utils.formatCurrency(balance)
-    }
-
-    fun getTotalExpense(list: List<TransactionEntity>): String {
-        var total = 0.0
-        for (expense in list) {
-            if (expense.type != "Income") {
-                total += expense.amount
-            }
-        }
-
+    fun getTotalExpense(transactions: List<TransactionEntity>): String {
+        val total = transactions
+            .filter { it.type == "Expense" }
+            .sumOf { it.amount }
         return Utils.formatCurrency(total)
     }
 
-    fun getTotalIncome(list: List<TransactionEntity>): String {
-        var totalIncome = 0.0
-        for (expense in list) {
-            if (expense.type == "Income") {
-                totalIncome += expense.amount
-            }
-        }
-        return Utils.formatCurrency(totalIncome)
+    fun getTotalIncome(transactions: List<TransactionEntity>): String {
+        val total = transactions
+            .filter { it.type == "Income" }
+            .sumOf { it.amount }
+        return Utils.formatCurrency(total)
+    }
+
+    fun getBalance(transactions: List<TransactionEntity>): String {
+        val income = transactions
+            .filter { it.type == "Income" }
+            .sumOf { it.amount }
+        val expense = transactions
+            .filter { it.type == "Expense" }
+            .sumOf { it.amount }
+        val balance = income - expense
+        return Utils.formatCurrency(balance)
     }
 }
 
-sealed class HomeUiEvent : UiEvent() {
-    data object OnAddExpenseClicked : HomeUiEvent()
-    data object OnAddIncomeClicked : HomeUiEvent()
-    data object OnSeeAllClicked : HomeUiEvent()
+sealed class HomeUiEvent {
+    object OnSeeAllClicked : HomeUiEvent()
+    object OnAddIncomeClicked : HomeUiEvent()
+    object OnAddExpenseClicked : HomeUiEvent()
 }
