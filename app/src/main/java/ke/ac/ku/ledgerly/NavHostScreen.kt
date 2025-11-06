@@ -5,8 +5,26 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -15,7 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.*
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.auth.api.identity.SignInClient
 import ke.ac.ku.ledgerly.auth.presentation.AuthScreen
 import ke.ac.ku.ledgerly.auth.presentation.AuthViewModel
@@ -111,7 +132,12 @@ fun NavHostScreen(
                             oneTapClient = oneTapClient,
                             viewModel = authViewModel,
                             onAuthSuccess = {
-                                navController.navigate(NavRouts.onboarding) {
+                                val destination = if (onboardingCompleted) {
+                                    NavRouts.home
+                                } else {
+                                    NavRouts.onboarding
+                                }
+                                navController.navigate(destination) {
                                     popUpTo(NavRouts.auth) { inclusive = true }
                                 }
                             }
