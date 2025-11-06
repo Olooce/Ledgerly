@@ -61,22 +61,27 @@ class SyncManager @Inject constructor(
                 if (result.isSuccessful) {
                     updateLastSyncTime()
                     withContext(Dispatchers.Main) { onSuccess?.invoke() }
-                    Log.d(TAG, "Sync completed successfully")
+                    Log.d(TAG, "Full sync completed successfully")
                 } else {
-                    val errorMessage = when {
-                        result.transactions is SyncResult.Error ->
-                            "Transaction sync failed: ${result.transactions.message}"
-                        result.budgets is SyncResult.Error ->
-                            "Budget sync failed: ${result.budgets.message}"
-                        else -> "Sync failed"
-                    }
-                    withContext(Dispatchers.Main) { onError?.invoke(errorMessage) }
+                    val errorMessage = buildString {
+                        append("Sync failed: ")
+                        if (result.transactions is SyncResult.Error)
+                            append("Transactions - ${result.transactions.message}. ")
+                        if (result.budgets is SyncResult.Error)
+                            append("Budgets - ${result.budgets.message}. ")
+                        if (result.recurringTransactions is SyncResult.Error)
+                            append("Recurring - ${result.recurringTransactions.message}. ")
+                        if (result.preferences is SyncResult.Error)
+                            append("Preferences - ${result.preferences.message}.")
+                    }.trim()
+
                     Log.e(TAG, errorMessage)
+                    withContext(Dispatchers.Main) { onError?.invoke(errorMessage) }
                 }
             } catch (e: Exception) {
                 val errorMsg = "Sync failed: ${e.message}"
-                withContext(Dispatchers.Main) { onError?.invoke(errorMsg) }
                 Log.e(TAG, errorMsg, e)
+                withContext(Dispatchers.Main) { onError?.invoke(errorMsg) }
             }
         }
     }
@@ -90,7 +95,7 @@ class SyncManager @Inject constructor(
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
         if (enabled && !authRepository.isUserAuthenticated()) {
-            Log.w(TAG, "Ignoring cloud sync enable while user is signed out")
+            Log.w(TAG, "Cannot enable cloud sync while user is signed out")
             return
         }
 
@@ -98,7 +103,7 @@ class SyncManager @Inject constructor(
 
         if (enabled) {
             syncAllData(
-                onSuccess = { Log.d(TAG, "Manual sync completed") },
+                onSuccess = { Log.d(TAG, "Manual sync completed successfully") },
                 onError = { e ->
                     prefs.edit { putBoolean(KEY_SYNC_ENABLED, false) }
                     Log.e(TAG, "Manual sync failed: $e")
@@ -121,13 +126,17 @@ class SyncManager @Inject constructor(
         prefs.edit { putLong(KEY_LAST_SYNC, System.currentTimeMillis()) }
     }
 
-    fun syncUserPreferences(darkMode: Boolean, syncEnabled: Boolean) {
+    fun syncUserPreferences() {
         scope.launch {
             try {
-                syncRepository.syncUserPreferences(darkMode, syncEnabled)
-                Log.d(TAG, "User preferences synced successfully")
+                val result = syncRepository.syncUserPreferences()
+                if (result is SyncResult.Success) {
+                    Log.d(TAG, "User preferences synced successfully")
+                } else if (result is SyncResult.Error) {
+                    Log.e(TAG, "Failed to sync preferences: ${result.message}")
+                }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to sync preferences: ${e.message}", e)
+                Log.e(TAG, "Error syncing preferences: ${e.message}", e)
             }
         }
     }

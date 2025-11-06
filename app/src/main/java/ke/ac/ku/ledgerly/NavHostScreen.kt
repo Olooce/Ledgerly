@@ -19,6 +19,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -38,10 +40,12 @@ import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.auth.api.identity.SignInClient
 import ke.ac.ku.ledgerly.auth.presentation.AuthScreen
 import ke.ac.ku.ledgerly.auth.presentation.AuthViewModel
+import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
 import ke.ac.ku.ledgerly.feature.add_transaction.AddTransaction
 import ke.ac.ku.ledgerly.feature.budget.AddBudgetScreen
 import ke.ac.ku.ledgerly.feature.budget.BudgetScreen
 import ke.ac.ku.ledgerly.feature.home.HomeScreen
+import ke.ac.ku.ledgerly.feature.onboarding.OnboardingScreen
 import ke.ac.ku.ledgerly.feature.settings.SettingsScreen
 import ke.ac.ku.ledgerly.feature.settings.SettingsViewModel
 import ke.ac.ku.ledgerly.feature.stats.StatsScreen
@@ -58,15 +62,26 @@ fun NavHostScreen(
     oneTapClient: SignInClient,
     themeViewModel: ThemeViewModel,
     settingsViewModel: SettingsViewModel,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel = hiltViewModel(),
+    userPreferencesRepository: UserPreferencesRepository
 ) {
     val navController = rememberNavController()
-    var bottomBarVisibility by remember { mutableStateOf(false) }
-
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
+    val authState by authViewModel.state.collectAsState()
+    val onboardingCompleted by userPreferencesRepository.onboardingCompleted.collectAsState(initial = false)
+
+    val startDestination = when {
+        !authState.isAuthenticated -> NavRouts.auth
+        !onboardingCompleted -> NavRouts.onboarding
+        else -> NavRouts.home
+    }
+
+    var bottomBarVisible by remember { mutableStateOf(false) }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route ?: NavRouts.home
+    val currentRoute = navBackStackEntry?.destination?.route
+
     val showMenuButton = currentRoute in listOf(
         NavRouts.home,
         NavRouts.budget,
@@ -78,7 +93,7 @@ fun NavHostScreen(
         drawerState = drawerState,
         gesturesEnabled = currentRoute != NavRouts.auth,
         drawerContent = {
-            ModalDrawerSheet{
+            ModalDrawerSheet {
                 DrawerContent(
                     navController = navController,
                     themeViewModel = themeViewModel,
@@ -93,7 +108,7 @@ fun NavHostScreen(
                 containerColor = Color.Transparent,
                 topBar = {},
                 bottomBar = {
-                    AnimatedVisibility(visible = bottomBarVisibility) {
+                    AnimatedVisibility(visible = bottomBarVisible) {
                         NavigationBottomBar(
                             navController = navController,
                             items = listOf(
@@ -108,64 +123,80 @@ fun NavHostScreen(
             ) { padding ->
                 NavHost(
                     navController = navController,
-                    startDestination = NavRouts.auth,
+                    startDestination = startDestination,
                     modifier = Modifier.padding(padding)
                 ) {
                     composable(NavRouts.auth) {
-                        bottomBarVisibility = false
+                        bottomBarVisible = false
                         AuthScreen(
                             oneTapClient = oneTapClient,
+                            viewModel = authViewModel,
                             onAuthSuccess = {
-                                navController.navigate(NavRouts.home) {
+                                val destination = if (onboardingCompleted) {
+                                    NavRouts.home
+                                } else {
+                                    NavRouts.onboarding
+                                }
+                                navController.navigate(destination) {
                                     popUpTo(NavRouts.auth) { inclusive = true }
                                 }
                             }
                         )
                     }
 
+                    composable(NavRouts.onboarding) {
+                        bottomBarVisible = false
+                        OnboardingScreen(
+                            onComplete = {
+                                navController.navigate(NavRouts.home) {
+                                    popUpTo(NavRouts.onboarding) { inclusive = true }
+                                }
+                            }
+                        )
+                    }
+
                     composable(NavRouts.home) {
-                        bottomBarVisibility = true
+                        bottomBarVisible = true
                         HomeScreen(navController)
                     }
 
                     composable(NavRouts.addIncome) {
-                        bottomBarVisibility = false
+                        bottomBarVisible = false
                         AddTransaction(navController, isIncome = true)
                     }
 
                     composable(NavRouts.addExpense) {
-                        bottomBarVisibility = false
+                        bottomBarVisible = false
                         AddTransaction(navController, isIncome = false)
                     }
 
                     composable(NavRouts.stats) {
-                        bottomBarVisibility = true
+                        bottomBarVisible = true
                         StatsScreen(navController)
                     }
 
                     composable(NavRouts.allTransactions) {
-                        bottomBarVisibility = true
+                        bottomBarVisible = true
                         TransactionListScreen(navController)
                     }
 
                     composable(NavRouts.budget) {
-                        bottomBarVisibility = true
+                        bottomBarVisible = true
                         BudgetScreen(navController)
                     }
 
                     composable(NavRouts.addBudget) {
-                        bottomBarVisibility = false
+                        bottomBarVisible = false
                         AddBudgetScreen(navController)
                     }
 
                     composable(NavRouts.settings) {
-                        bottomBarVisibility = false
+                        bottomBarVisible = false
                         SettingsScreen(navController, themeViewModel, settingsViewModel)
                     }
                 }
             }
 
-            // Floating top bar overlay
             if (showMenuButton) {
                 CenterAlignedTopAppBar(
                     title = {},
@@ -177,8 +208,7 @@ fun NavHostScreen(
                             )
                         }
                     },
-                    modifier = Modifier
-                        .zIndex(10f),
+                    modifier = Modifier.zIndex(10f),
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Color.Transparent,
                         scrolledContainerColor = Color.Transparent,
@@ -188,11 +218,9 @@ fun NavHostScreen(
                     )
                 )
             }
-
         }
     }
 }
-
 
 data class NavItem(
     val route: String,

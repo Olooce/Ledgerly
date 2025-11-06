@@ -2,6 +2,7 @@ package ke.ac.ku.ledgerly.utils
 
 object NavRouts {
     const val auth = "auth"
+    const val onboarding = "onboarding"
     const val home = "/home"
     const val profile = "profile"
     const val stats = "/stats"

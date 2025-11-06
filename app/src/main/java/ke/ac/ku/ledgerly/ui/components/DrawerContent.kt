@@ -38,6 +38,7 @@ import androidx.core.net.toUri
 import androidx.navigation.NavController
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.auth.presentation.AuthViewModel
+import ke.ac.ku.ledgerly.domain.AuthEvent
 import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
 import ke.ac.ku.ledgerly.utils.NavRouts
 
@@ -210,7 +211,7 @@ fun DrawerContent(
 
             Button(
                 onClick = {
-                    authViewModel.onEvent(ke.ac.ku.ledgerly.auth.domain.AuthEvent.SignOut)
+                    authViewModel.onEvent(AuthEvent.SignOut)
                     onCloseDrawer()
                     navController.navigate(NavRouts.auth) {
                         popUpTo(NavRouts.home) { inclusive = true }
