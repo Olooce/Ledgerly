@@ -43,7 +43,7 @@ class OnboardingViewModel @Inject constructor(
     }
 
     fun toggleNotification() {
-        _state.update { it.copy(notificationEnabled = !it.notificationEnabled) }
+        _state.update { it.copy(notificationEnabled = !_state.value.notificationEnabled) }
     }
 
     fun nextStep() {
@@ -59,11 +59,7 @@ class OnboardingViewModel @Inject constructor(
 
     fun previousStep() {
         _state.update {
-            if (it.currentStep > 0) {
-                it.copy(currentStep = it.currentStep - 1)
-            } else {
-                it
-            }
+            if (it.currentStep > 0) it.copy(currentStep = it.currentStep - 1) else it
         }
         updateCanProceed()
     }
@@ -71,24 +67,24 @@ class OnboardingViewModel @Inject constructor(
     private fun updateCanProceed() {
         val currentState = _state.value
         val canProceed = when (currentState.currentStep) {
-            0 -> true
             1 -> currentState.userName.isNotBlank()
             2 -> currentState.currency.isNotBlank()
-            3 -> true
-            else -> false
+            else -> true
         }
         _state.update { it.copy(canProceed = canProceed) }
     }
 
     private fun completeOnboarding() {
         viewModelScope.launch {
-            val currentState = _state.value
+            val current = _state.value
 
-            userPreferencesRepository.saveUserName(currentState.userName)
-            userPreferencesRepository.saveCurrency(currentState.currency)
-            userPreferencesRepository.saveMonthlyBudget(currentState.monthlyBudget)
-            userPreferencesRepository.saveNotificationEnabled(currentState.notificationEnabled)
-            userPreferencesRepository.completeOnboarding()
+            userPreferencesRepository.batchSave {
+                saveUserName(current.userName, syncNow = false)
+                saveCurrency(current.currency, syncNow = false)
+                saveMonthlyBudget(current.monthlyBudget, syncNow = false)
+                saveNotificationEnabled(current.notificationEnabled, syncNow = false)
+                completeOnboarding(syncNow = false)
+            }
 
             _state.update { it.copy(isCompleted = true) }
         }
