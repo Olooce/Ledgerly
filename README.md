@@ -6,9 +6,12 @@
 
 </p>
 
-Ledgerly is a small personal-finance Android app (a school project) built with Kotlin and modern Android libraries. It helps users track expenses, income, budgets and goals.
+Ledgerly is a learning project . A personal finance management app built with Kotlin, Jetpack Compose, 
+Room, and Firebase. It helps users track expenses, income, budgets, and goals with analytics, reports, and cloud sync, showcasing modern Android development.
 
-This repository contains the Android app source for the SCO 306 — Project 2 assignment. See the original assignment here: [📄 SCO 306 - Project 2 (PDF)](./SCO%20306%20-project%202.pdf).
+This project was developed as part of a school assignment.
+You can view the original assignment instructions here:
+[SCO 306 - Project 2 (PDF)](./SCO%20306%20-project%202.pdf)
 
 ## Features
 
