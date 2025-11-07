@@ -97,6 +97,8 @@ dependencies {
     implementation(libs.androidx.compose.material.core)
     implementation(libs.firebase.firestore)
     testImplementation(libs.junit)
+
+    ksp(libs.androidx.hilt.compiler)
     implementation(libs.dagger.hilt.andriod)
     ksp(libs.dagger.hilt.compiler)
     androidTestImplementation(libs.androidx.junit)

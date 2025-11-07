@@ -26,7 +26,7 @@ class WorkManagerSetup @Inject constructor(
             1, TimeUnit.DAYS // Run once per day
         )
             .setConstraints(constraints)
-            .setInitialDelay(5, TimeUnit.MINUTES)
+            .setInitialDelay(30, TimeUnit.SECONDS)
             .addTag("recurring_transactions")
             .build()
 
