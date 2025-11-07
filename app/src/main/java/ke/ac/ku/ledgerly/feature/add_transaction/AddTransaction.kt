@@ -366,7 +366,7 @@ fun DataForm(
                 value = tags.value,
                 onValueChange = { tags.value = it },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { TransactionTextView(text = "Enter tags separated by commas") },
+                placeholder = { TransactionTextView(text = "Enter tags separated by | (optional)") },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color.Black,
                     unfocusedBorderColor = Color.Black,

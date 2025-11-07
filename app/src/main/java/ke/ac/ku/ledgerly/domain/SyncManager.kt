@@ -3,6 +3,9 @@ package ke.ac.ku.ledgerly.domain
 import android.content.Context
 import android.util.Log
 import androidx.core.content.edit
+import androidx.lifecycle.asFlow
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -12,7 +15,9 @@ import ke.ac.ku.ledgerly.data.repository.SyncResult
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
@@ -24,6 +29,11 @@ class SyncManager @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
     @ApplicationContext private val context: Context
 ) {
+
+    val syncWorkInfoFlow: Flow<WorkInfo?> = WorkManager.getInstance(context)
+        .getWorkInfosForUniqueWorkLiveData("full_sync")
+        .asFlow()
+        .map { workInfos -> workInfos.firstOrNull() }
 
     private val scope = CoroutineScope(Dispatchers.IO)
 
@@ -43,53 +53,57 @@ class SyncManager @Inject constructor(
         }
     }
 
-    fun syncAllData(
+    suspend fun syncAllData(
         onSuccess: (() -> Unit)? = null,
         onError: ((String) -> Unit)? = null
     ) {
-        scope.launch {
-            try {
-                if (!authRepository.isUserAuthenticated()) {
-                    withContext(Dispatchers.Main) {
-                        onError?.invoke("Please sign in to enable cloud sync")
-                    }
-                    return@launch
+        try {
+            if (!authRepository.isUserAuthenticated()) {
+                withContext(Dispatchers.Main) {
+                    onError?.invoke("Please sign in to enable cloud sync")
                 }
-
-                val deviceId = getDeviceId()
-                val result = syncRepository.fullSync(deviceId)
-
-                // Sync preferences separately via repository
-                val prefResult = userPreferencesRepository.syncToFirestore()
-                if (prefResult.isFailure) Log.e(TAG, "Preferences sync failed: ${prefResult.exceptionOrNull()}")
-
-                if (result.isSuccessful && prefResult.isSuccess) {
-                    updateLastSyncTime()
-                    withContext(Dispatchers.Main) { onSuccess?.invoke() }
-                    Log.d(TAG, "Full sync completed successfully")
-                } else {
-                    val errorMessage = buildString {
-                        append("Sync failed: ")
-                        if (result.transactions is SyncResult.Error)
-                            append("Transactions - ${result.transactions.message}. ")
-                        if (result.budgets is SyncResult.Error)
-                            append("Budgets - ${result.budgets.message}. ")
-                        if (result.recurringTransactions is SyncResult.Error)
-                            append("Recurring - ${result.recurringTransactions.message}. ")
-                        if (prefResult.isFailure)
-                            append("Preferences - ${prefResult.exceptionOrNull()?.message}.")
-                    }.trim()
-
-                    Log.e(TAG, errorMessage)
-                    withContext(Dispatchers.Main) { onError?.invoke(errorMessage) }
-                }
-            } catch (e: Exception) {
-                val errorMsg = "Sync failed: ${e.message}"
-                Log.e(TAG, errorMsg, e)
-                withContext(Dispatchers.Main) { onError?.invoke(errorMsg) }
+                return
             }
+
+            val deviceId = getDeviceId()
+
+            // run heavy tasks on IO thread
+            val result = withContext(Dispatchers.IO) {
+                syncRepository.fullSync(deviceId)
+            }
+
+            val prefResult = withContext(Dispatchers.IO) {
+                userPreferencesRepository.syncToFirestore()
+            }
+
+            if (result.isSuccessful && prefResult.isSuccess) {
+                updateLastSyncTime()
+                withContext(Dispatchers.Main.immediate) { onSuccess?.invoke() }
+                Log.d(TAG, "Full sync completed successfully")
+            } else {
+                val errorMessage = buildString {
+                    append("Sync failed: ")
+                    if (result.transactions is SyncResult.Error)
+                        append("Transactions - ${result.transactions.message}. ")
+                    if (result.budgets is SyncResult.Error)
+                        append("Budgets - ${result.budgets.message}. ")
+                    if (result.recurringTransactions is SyncResult.Error)
+                        append("Recurring - ${result.recurringTransactions.message}. ")
+                    if (prefResult.isFailure)
+                        append("Preferences - ${prefResult.exceptionOrNull()?.message}.")
+                }.trim()
+
+                Log.e(TAG, errorMessage)
+                withContext(Dispatchers.Main.immediate) { onError?.invoke(errorMessage) }
+            }
+        } catch (e: Exception) {
+            val errorMsg = "Sync failed: ${e.message}"
+            Log.e(TAG, errorMsg, e)
+            withContext(Dispatchers.Main.immediate) { onError?.invoke(errorMsg) }
+            throw e
         }
     }
+
 
     suspend fun isCloudSyncEnabled(): Boolean {
         return userPreferencesRepository.syncEnabled.first()
