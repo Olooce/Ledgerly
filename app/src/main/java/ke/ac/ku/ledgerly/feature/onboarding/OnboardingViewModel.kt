@@ -81,25 +81,34 @@ class OnboardingViewModel @Inject constructor(
             val current = _state.value
 
             val result = userPreferencesRepository.batchSave {
-                listOf(
-                    saveUserName(current.userName, syncNow = false),
-                    saveCurrency(current.currency, syncNow = false),
-                    saveMonthlyBudget(current.monthlyBudget, syncNow = false),
-                    saveNotificationEnabled(current.notificationEnabled, syncNow = false),
-                    completeOnboarding(syncNow = false)
+                val steps = listOf<suspend () -> Result<Unit>>(
+                    { saveUserName(current.userName, syncNow = false) },
+                    { saveCurrency(current.currency, syncNow = false) },
+                    { saveMonthlyBudget(current.monthlyBudget, syncNow = false) },
+                    { saveNotificationEnabled(current.notificationEnabled, syncNow = false) },
+                    { completeOnboarding(syncNow = false) }
                 )
+
+                val results = mutableListOf<Result<Unit>>()
+                for (step in steps) {
+                    val res = step()
+                    results.add(res)
+                    if (res.isFailure) {
+                        break
+                    }
+                }
+                results
             }
 
             result.fold(
-                onSuccess = {
-                    _state.update { it.copy(isCompleted = true) }
-                },
-                onFailure = { e ->
-                    //TODO: This type of fails need user notifications
+                onSuccess = { _state.update { it.copy(isCompleted = true) } },
+                onFailure = {
+                    // TODO: Notify user of failure cause
                     _state.update { it.copy(isCompleted = false) }
                 }
             )
         }
     }
+
 
 }
