@@ -182,8 +182,8 @@ class UserPreferencesRepository @Inject constructor(
             val localPrefs = getCurrentPreferences()
 
             // Only update local preferences if remote is newer
-            if (remotePrefs.lastUpdated > localPrefs.lastUpdated) {
-                updatePreferences(
+            val updateResult = if (remotePrefs.lastUpdated > localPrefs.lastUpdated) {
+                                updatePreferences(
                     userName = remotePrefs.userName,
                     currency = remotePrefs.currency,
                     monthlyBudget = remotePrefs.monthlyBudget.toString(),
@@ -194,9 +194,11 @@ class UserPreferencesRepository @Inject constructor(
                     lastUpdated = remotePrefs.lastUpdated,
                     syncNow = false
                 )
+            } else {
+                Result.success(Unit)
             }
 
-            Result.success(Unit)
+            updateResult
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load preferences from Firestore", e)
             Result.failure(e)
@@ -216,7 +218,7 @@ class UserPreferencesRepository @Inject constructor(
                 onboardingCompleted = localPrefs.onboardingCompleted,
                 darkMode = localPrefs.darkMode,
                 syncEnabled = localPrefs.syncEnabled,
-                lastUpdated = System.currentTimeMillis()
+                lastUpdated = localPrefs.lastUpdated
             )
 
             firestore.collection("user_preferences")
