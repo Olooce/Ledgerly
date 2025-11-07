@@ -27,21 +27,17 @@ class ThemeViewModel @Inject constructor(
         private const val TIMEOUT_MILLIS = 5000L
     }
 
-    val isDarkMode: StateFlow<Boolean> = dataStore.data
+    val isDarkMode: StateFlow<Boolean?> = dataStore.data
         .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
-            }
+            if (exception is IOException) emit(emptyPreferences()) else throw exception
         }
         .map { preferences ->
-            preferences[DARK_MODE_KEY] ?: false
+            preferences.asMap()[DARK_MODE_KEY] as? Boolean
         }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-            initialValue = false
+            initialValue = null
         )
 
     fun toggleTheme() {
@@ -51,8 +47,7 @@ class ThemeViewModel @Inject constructor(
                     val currentValue = preferences[DARK_MODE_KEY] ?: false
                     preferences[DARK_MODE_KEY] = !currentValue
                 }
-            } catch (e: IOException) {
-                // silently fail to prevent crashes
+            } catch (_: IOException) {
             }
         }
     }
@@ -63,7 +58,7 @@ class ThemeViewModel @Inject constructor(
                 dataStore.edit { preferences ->
                     preferences[DARK_MODE_KEY] = enabled
                 }
-            } catch (e: IOException) {
+            } catch (_: IOException) {
             }
         }
     }

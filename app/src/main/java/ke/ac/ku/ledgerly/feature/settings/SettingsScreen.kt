@@ -58,7 +58,7 @@ fun SettingsScreen(
     }
 
     LaunchedEffect(isDarkMode) {
-        themeViewModel.setDarkMode(isDarkMode)
+        themeViewModel.setDarkMode(isDarkMode!!)
     }
 
     Scaffold(
@@ -122,7 +122,7 @@ fun SettingsScreen(
             SettingRow(
                 title = "Dark Mode",
                 description = "Switch between light and dark theme",
-                checked = isDarkMode,
+                checked = isDarkMode ?: false,
                 onCheckedChange = { settingsViewModel.toggleDarkMode(it) }
             )
 
