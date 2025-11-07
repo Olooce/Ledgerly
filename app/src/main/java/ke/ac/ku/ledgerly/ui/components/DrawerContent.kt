@@ -109,7 +109,7 @@ fun DrawerContent(
                     ) {
                         Icon(
                             painter = painterResource(
-                                id = if (isDarkMode) R.drawable.ic_light_mode else R.drawable.ic_dark_mode
+                                id = if (isDarkMode?: false) R.drawable.ic_light_mode else R.drawable.ic_dark_mode
                             ),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurface,
@@ -122,7 +122,7 @@ fun DrawerContent(
                     )
                 }
                 Switch(
-                    checked = isDarkMode,
+                    checked = isDarkMode?: false,
                     onCheckedChange = { themeViewModel.toggleTheme() }
                 )
             }

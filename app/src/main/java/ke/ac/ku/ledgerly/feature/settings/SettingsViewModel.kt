@@ -15,14 +15,11 @@ import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val syncManager: SyncManager,
-    private val userPreferencesRepository: UserPreferencesRepository,
-    private val themeViewModel: ThemeViewModel
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
     private val _isSyncEnabled = MutableStateFlow(false)
     val isSyncEnabled: StateFlow<Boolean> = _isSyncEnabled.asStateFlow()
-
-    val isDarkMode: StateFlow<Boolean?> = themeViewModel.isDarkMode
 
     private val _isNotificationEnabled = MutableStateFlow(true)
     val isNotificationEnabled: StateFlow<Boolean> = _isNotificationEnabled.asStateFlow()
@@ -36,15 +33,11 @@ class SettingsViewModel @Inject constructor(
 
     private fun loadPreferences() {
         viewModelScope.launch {
-            userPreferencesRepository.syncEnabled.collect { enabled ->
-                _isSyncEnabled.value = enabled
-            }
+            userPreferencesRepository.syncEnabled.collect { _isSyncEnabled.value = it }
         }
 
         viewModelScope.launch {
-            userPreferencesRepository.notificationEnabled.collect { enabled ->
-                _isNotificationEnabled.value = enabled
-            }
+            userPreferencesRepository.notificationEnabled.collect { _isNotificationEnabled.value = it }
         }
     }
 
@@ -63,15 +56,10 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun toggleDarkMode(enabled: Boolean) {
-        themeViewModel.setDarkMode(enabled)
-    }
-
     fun toggleNotifications(enabled: Boolean) {
         viewModelScope.launch {
             _isNotificationEnabled.value = enabled
             val result = userPreferencesRepository.saveNotificationEnabled(enabled)
-
             if (result.isFailure) {
                 _errorMessage.value = "Failed to update notification setting"
                 _isNotificationEnabled.value = !enabled

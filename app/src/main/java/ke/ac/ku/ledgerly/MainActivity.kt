@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val isDarkMode by themeViewModel.isDarkMode.collectAsState()
-            LedgerlyTheme(darkTheme = isDarkMode) {
+            LedgerlyTheme(darkTheme = isDarkMode?: false) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

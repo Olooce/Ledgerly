@@ -43,7 +43,7 @@ fun SettingsScreen(
     themeViewModel: ThemeViewModel,
     settingsViewModel: SettingsViewModel
 ) {
-    val isDarkMode by settingsViewModel.isDarkMode.collectAsState()
+    val isDarkMode by themeViewModel.isDarkMode.collectAsState()
     val isCloudSyncEnabled by settingsViewModel.isSyncEnabled.collectAsState()
     val isNotificationEnabled by settingsViewModel.isNotificationEnabled.collectAsState()
     val errorMessage by settingsViewModel.errorMessage.collectAsState()
@@ -55,10 +55,6 @@ fun SettingsScreen(
             snackbarHostState.showSnackbar(message)
             settingsViewModel.clearError()
         }
-    }
-
-    LaunchedEffect(isDarkMode) {
-        themeViewModel.setDarkMode(isDarkMode!!)
     }
 
     Scaffold(
@@ -123,7 +119,7 @@ fun SettingsScreen(
                 title = "Dark Mode",
                 description = "Switch between light and dark theme",
                 checked = isDarkMode ?: false,
-                onCheckedChange = { settingsViewModel.toggleDarkMode(it) }
+                onCheckedChange = { themeViewModel.setDarkMode(it) }
             )
 
             HorizontalDivider()
