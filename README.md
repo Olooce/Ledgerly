@@ -9,7 +9,7 @@
 Ledgerly is a learning project . A personal finance management app built with Kotlin, Jetpack Compose, 
 Room, and Firebase. It helps users track expenses, income, budgets, and goals with analytics, reports, and cloud sync, showcasing modern Android development.
 
-This project was developed as part of a school assignment.
+This project was developed as part of a class assignment.
 You can view the original assignment instructions here:
 [SCO 306 - Project 2 (PDF)](./SCO%20306%20-project%202.pdf)
 

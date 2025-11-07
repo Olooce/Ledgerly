@@ -34,3 +34,4 @@ google-services.json
 *.hprof
 /.idea/
 /.kotlin/sessions/kotlin-compiler-17444364560467574867.salive
+/.kotlin/
