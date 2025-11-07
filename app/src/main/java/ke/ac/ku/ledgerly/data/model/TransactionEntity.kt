@@ -13,5 +13,6 @@ data class TransactionEntity(
     val type: String,
     val notes: String = "",
     val paymentMethod: String = "",
-    val tags: String = ""
+    val tags: String = "",
+    val lastModified: Long? = System.currentTimeMillis()
 )

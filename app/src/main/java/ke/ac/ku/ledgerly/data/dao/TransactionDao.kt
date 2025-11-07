@@ -32,6 +32,10 @@ interface TransactionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: TransactionEntity)
 
+    suspend fun insertTransactionWithTimestamp(transaction: TransactionEntity) {
+        insertTransaction(transaction.copy(lastModified = System.currentTimeMillis()))
+    }
+
     @Delete
     suspend fun deleteTransaction(transactionEntity: TransactionEntity)
 
@@ -42,6 +46,9 @@ interface TransactionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBudget(budget: BudgetEntity)
 
+    suspend fun insertBudgetWithTimestamp(budget: BudgetEntity) {
+        insertBudget(budget.copy(lastModified = System.currentTimeMillis()))
+    }
     @Update
     suspend fun updateBudget(budget: BudgetEntity)
 
@@ -65,6 +72,10 @@ interface TransactionDao {
     // Recurring transaction methods
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecurringTransaction(recurringTransaction: RecurringTransactionEntity): Long
+
+    suspend fun insertRecurringTransactionWithTimestamp(recurringTransaction: RecurringTransactionEntity) {
+        insertRecurringTransaction(recurringTransaction.copy(lastModified = System.currentTimeMillis()))
+    }
 
     @Update
     suspend fun updateRecurringTransaction(recurringTransaction: RecurringTransactionEntity)

@@ -8,7 +8,7 @@ import com.google.firebase.firestore.toObject
 import ke.ac.ku.ledgerly.auth.data.AuthRepository
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.model.*
-import ke.ac.ku.ledgerly.data.model.FirestoreUserPreferences
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -20,7 +20,6 @@ class SyncRepository @Inject constructor(
     private val transactionDao: TransactionDao,
     private val userPreferencesRepository: UserPreferencesRepository
 ) {
-
     companion object {
         private const val TAG = "SyncRepository"
     }
@@ -36,57 +35,93 @@ class SyncRepository @Inject constructor(
         }
     }
 
+    private suspend fun isSyncEnabled(): Boolean {
+        return userPreferencesRepository.syncEnabled.first()
+    }
+
     suspend fun syncTransactions(deviceId: String): SyncResult {
         return try {
             ensureAuthentication()
+
+            if (!isSyncEnabled()) {
+                Log.d(TAG, "Sync is disabled, skipping transaction sync")
+                return SyncResult.Success(0)
+            }
+
             val userId = getCurrentUserId()
             Log.d(TAG, "Starting transactions sync for user: $userId")
 
             val localTransactions = transactionDao.getAllTransactionsSync()
             Log.d(TAG, "Found ${localTransactions.size} local transactions")
 
-            // Push local to Firestore with batch operation for better performance
+            val remoteSnapshot = firestore.collection("transactions")
+                .whereEqualTo("userId", userId)
+                .get()
+                .await()
+
+            val remoteTransactionsMap = remoteSnapshot.documents.mapNotNull { document ->
+                try {
+                    document.toObject<FirestoreTransaction>()?.let {
+                        document.id to it
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error parsing remote transaction ${document.id}: ${e.message}")
+                    null
+                }
+            }.toMap()
+
             val batch = firestore.batch()
+            var pushedCount = 0
+
             localTransactions.forEach { localTransaction ->
                 try {
-                    val firestoreTransaction = FirestoreTransaction.fromEntity(localTransaction, userId, deviceId)
-                    val docRef = firestore.collection("transactions")
-                        .document(localTransaction.id.toString())
-                    batch.set(docRef, firestoreTransaction, SetOptions.merge())
+                    val docId = localTransaction.id.toString()
+                    val remoteTransaction = remoteTransactionsMap[docId]
+
+                    val shouldPush = remoteTransaction == null ||
+                            (localTransaction.lastModified ?: 0L) > remoteTransaction.lastModified.toDate().time
+
+                    if (shouldPush) {
+                        val firestoreTransaction = FirestoreTransaction.fromEntity(localTransaction, userId, deviceId)
+                        val docRef = firestore.collection("transactions").document(docId)
+                        batch.set(docRef, firestoreTransaction, SetOptions.merge())
+                        pushedCount++
+                    } else {
+                        Log.d(TAG, "Skipping push for transaction $docId - remote is newer")
+                    }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error preparing transaction ${localTransaction.id} for sync: ${e.message}")
                     throw e
                 }
             }
 
-            // Commit batch
             batch.commit().await()
-            Log.d(TAG, "Successfully pushed ${localTransactions.size} transactions to Firestore")
+            Log.d(TAG, "Successfully pushed $pushedCount transactions to Firestore")
 
-            // Pull Firestore updates
-            val remoteTransactions = firestore.collection("transactions")
-                .whereEqualTo("userId", userId)
-                .get()
-                .await()
-
-            val remoteTransactionList = remoteTransactions.documents.mapNotNull { document ->
+            var pulledCount = 0
+            remoteTransactionsMap.values.forEach { remoteTransaction ->
                 try {
-                    document.toObject<FirestoreTransaction>()?.let { FirestoreTransaction.toEntity(it) }
+                    val localTransaction = localTransactions.find {
+                        it.id.toString() == remoteTransaction.id
+                    }
+
+                    val shouldPull = localTransaction == null ||
+                            remoteTransaction.lastModified.toDate().time > (localTransaction.lastModified ?: 0L)
+
+                    if (shouldPull) {
+                        val entity = FirestoreTransaction.toEntity(remoteTransaction)
+                        transactionDao.insertTransaction(entity)
+                        pulledCount++
+                    } else {
+                        Log.d(TAG, "Skipping pull for transaction ${remoteTransaction.id} - local is newer")
+                    }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error parsing remote transaction ${document.id}: ${e.message}")
-                    null
+                    Log.e(TAG, "Error updating local transaction: ${e.message}")
                 }
             }
 
-            Log.d(TAG, "Retrieved ${remoteTransactionList.size} remote transactions")
-
-            // Update local database
-            remoteTransactionList.forEach { remoteTransaction ->
-                transactionDao.insertTransaction(remoteTransaction)
-            }
-
-            Log.d(TAG, "Transactions sync completed successfully")
-            SyncResult.Success(remoteTransactionList.size)
+            Log.d(TAG, "Transactions sync completed: pushed $pushedCount, pulled $pulledCount")
+            SyncResult.Success(pulledCount)
         } catch (e: Exception) {
             Log.e(TAG, "Transactions sync failed", e)
             when (e) {
@@ -110,20 +145,53 @@ class SyncRepository @Inject constructor(
     suspend fun syncRecurringTransactions(deviceId: String): SyncResult {
         return try {
             ensureAuthentication()
+
+            if (!isSyncEnabled()) {
+                Log.d(TAG, "Sync is disabled, skipping recurring transaction sync")
+                return SyncResult.Success(0)
+            }
+
             val userId = getCurrentUserId()
             Log.d(TAG, "Starting recurring transactions sync for user: $userId")
 
             val localRecurringTransactions = transactionDao.getAllRecurringTransactionsSync()
             Log.d(TAG, "Found ${localRecurringTransactions.size} local recurring transactions")
 
-            // Push local to Firestore
+            val remoteSnapshot = firestore.collection("recurring_transactions")
+                .whereEqualTo("userId", userId)
+                .get()
+                .await()
+
+            val remoteRecurringMap = remoteSnapshot.documents.mapNotNull { document ->
+                try {
+                    document.toObject<FirestoreRecurringTransaction>()?.let {
+                        document.id to it
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error parsing remote recurring transaction ${document.id}: ${e.message}")
+                    null
+                }
+            }.toMap()
+
             val batch = firestore.batch()
+            var pushedCount = 0
+
             localRecurringTransactions.forEach { localRecurring ->
                 try {
-                    val firestoreRecurring = FirestoreRecurringTransaction.fromEntity(localRecurring, userId, deviceId)
-                    val docRef = firestore.collection("recurring_transactions")
-                        .document(localRecurring.id.toString())
-                    batch.set(docRef, firestoreRecurring, SetOptions.merge())
+                    val docId = localRecurring.id.toString()
+                    val remoteRecurring = remoteRecurringMap[docId]
+
+                    val shouldPush = remoteRecurring == null ||
+                            (localRecurring.lastModified ?: 0L) > remoteRecurring.lastModified.toDate().time
+
+                    if (shouldPush) {
+                        val firestoreRecurring = FirestoreRecurringTransaction.fromEntity(localRecurring, userId, deviceId)
+                        val docRef = firestore.collection("recurring_transactions").document(docId)
+                        batch.set(docRef, firestoreRecurring, SetOptions.merge())
+                        pushedCount++
+                    } else {
+                        Log.d(TAG, "Skipping push for recurring transaction $docId - remote is newer")
+                    }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error preparing recurring transaction ${localRecurring.id} for sync: ${e.message}")
                     throw e
@@ -131,32 +199,32 @@ class SyncRepository @Inject constructor(
             }
 
             batch.commit().await()
-            Log.d(TAG, "Successfully pushed ${localRecurringTransactions.size} recurring transactions to Firestore")
+            Log.d(TAG, "Successfully pushed $pushedCount recurring transactions to Firestore")
 
-            // Pull remote updates
-            val remoteRecurringTransactions = firestore.collection("recurring_transactions")
-                .whereEqualTo("userId", userId)
-                .get()
-                .await()
-
-            val remoteRecurringList = remoteRecurringTransactions.documents.mapNotNull { document ->
+            var pulledCount = 0
+            remoteRecurringMap.values.forEach { remoteRecurring ->
                 try {
-                    document.toObject<FirestoreRecurringTransaction>()?.let { FirestoreRecurringTransaction.toEntity(it) }
+                    val localRecurring = localRecurringTransactions.find {
+                        it.id.toString() == remoteRecurring.id
+                    }
+
+                    val shouldPull = localRecurring == null ||
+                            remoteRecurring.lastModified.toDate().time > (localRecurring.lastModified ?: 0L)
+
+                    if (shouldPull) {
+                        val entity = FirestoreRecurringTransaction.toEntity(remoteRecurring)
+                        transactionDao.insertRecurringTransaction(entity)
+                        pulledCount++
+                    } else {
+                        Log.d(TAG, "Skipping pull for recurring transaction ${remoteRecurring.id} - local is newer")
+                    }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error parsing remote recurring transaction ${document.id}: ${e.message}")
-                    null
+                    Log.e(TAG, "Error updating local recurring transaction: ${e.message}")
                 }
             }
 
-            Log.d(TAG, "Retrieved ${remoteRecurringList.size} remote recurring transactions")
-
-            // Update local database
-            remoteRecurringList.forEach { remoteRecurring ->
-                transactionDao.insertRecurringTransaction(remoteRecurring)
-            }
-
-            Log.d(TAG, "Recurring transactions sync completed successfully")
-            SyncResult.Success(remoteRecurringList.size)
+            Log.d(TAG, "Recurring transactions sync completed: pushed $pushedCount, pulled $pulledCount")
+            SyncResult.Success(pulledCount)
         } catch (e: Exception) {
             Log.e(TAG, "Recurring transactions sync failed", e)
             when (e) {
@@ -177,24 +245,56 @@ class SyncRepository @Inject constructor(
         }
     }
 
-    // Keep your existing syncBudgets and syncUserPreferences methods as they're working
     suspend fun syncBudgets(deviceId: String): SyncResult {
         return try {
             ensureAuthentication()
+
+            if (!isSyncEnabled()) {
+                Log.d(TAG, "Sync is disabled, skipping budget sync")
+                return SyncResult.Success(0)
+            }
+
             val userId = getCurrentUserId()
             Log.d(TAG, "Starting budgets sync for user: $userId")
 
             val localBudgets = transactionDao.getAllBudgetsSync()
             Log.d(TAG, "Found ${localBudgets.size} local budgets")
 
-            // Push local
+            val remoteSnapshot = firestore.collection("budgets")
+                .whereEqualTo("userId", userId)
+                .get()
+                .await()
+
+            val remoteBudgetsMap = remoteSnapshot.documents.mapNotNull { document ->
+                try {
+                    document.toObject<FirestoreBudget>()?.let {
+                        document.id to it
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error parsing remote budget ${document.id}: ${e.message}")
+                    null
+                }
+            }.toMap()
+
             val batch = firestore.batch()
+            var pushedCount = 0
+
             localBudgets.forEach { localBudget ->
                 try {
-                    val firestoreBudget = FirestoreBudget.fromEntity(localBudget, userId, deviceId)
                     val documentId = "${localBudget.category}_${localBudget.monthYear}"
-                    val docRef = firestore.collection("budgets").document(documentId)
-                    batch.set(docRef, firestoreBudget, SetOptions.merge())
+                    val remoteBudget = remoteBudgetsMap[documentId]
+
+                    val shouldPush = remoteBudget == null ||
+                            (localBudget.lastModified ?: 0L) > remoteBudget.lastModified.toDate().time
+
+                    if (shouldPush) {
+                        val firestoreBudget = FirestoreBudget.fromEntity(localBudget, userId, deviceId)
+                        val docRef = firestore.collection("budgets").document(documentId)
+                        batch.set(docRef, firestoreBudget, SetOptions.merge())
+                        pushedCount++
+                    } else {
+                        Log.d(TAG, "Skipping push for budget $documentId - remote is newer")
+                    }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error preparing budget ${localBudget.category} for sync: ${e.message}")
                     throw e
@@ -202,31 +302,33 @@ class SyncRepository @Inject constructor(
             }
 
             batch.commit().await()
-            Log.d(TAG, "Successfully pushed ${localBudgets.size} budgets to Firestore")
+            Log.d(TAG, "Successfully pushed $pushedCount budgets to Firestore")
 
-            // Pull remote
-            val remoteBudgets = firestore.collection("budgets")
-                .whereEqualTo("userId", userId)
-                .get()
-                .await()
 
-            val remoteBudgetList = remoteBudgets.documents.mapNotNull { document ->
+            var pulledCount = 0
+            remoteBudgetsMap.values.forEach { remoteBudget ->
                 try {
-                    document.toObject<FirestoreBudget>()?.let { FirestoreBudget.toEntity(it) }
+                    val localBudget = localBudgets.find {
+                        it.category == remoteBudget.category && it.monthYear == remoteBudget.monthYear
+                    }
+
+                    val shouldPull = localBudget == null ||
+                            remoteBudget.lastModified.toDate().time > (localBudget.lastModified ?: 0L)
+
+                    if (shouldPull) {
+                        val entity = FirestoreBudget.toEntity(remoteBudget)
+                        transactionDao.insertBudget(entity)
+                        pulledCount++
+                    } else {
+                        Log.d(TAG, "Skipping pull for budget ${remoteBudget.category} - local is newer")
+                    }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error parsing remote budget ${document.id}: ${e.message}")
-                    null
+                    Log.e(TAG, "Error updating local budget: ${e.message}")
                 }
             }
 
-            Log.d(TAG, "Retrieved ${remoteBudgetList.size} remote budgets")
-
-            remoteBudgetList.forEach { remoteBudget ->
-                transactionDao.insertBudget(remoteBudget)
-            }
-
-            Log.d(TAG, "Budgets sync completed successfully")
-            SyncResult.Success(remoteBudgetList.size)
+            Log.d(TAG, "Budgets sync completed: pushed $pushedCount, pulled $pulledCount")
+            SyncResult.Success(pulledCount)
         } catch (e: Exception) {
             Log.e(TAG, "Budgets sync failed", e)
             SyncResult.Error(e.message ?: "Unknown error during budget sync")
@@ -236,6 +338,11 @@ class SyncRepository @Inject constructor(
     suspend fun fullSync(deviceId: String): FullSyncResult {
         return try {
             Log.d(TAG, "Starting full sync...")
+
+            if (!isSyncEnabled()) {
+                Log.d(TAG, "Sync is disabled, skipping full sync")
+                return FullSyncResult.Error("Sync is disabled")
+            }
 
             val transactionResult = syncTransactions(deviceId)
             val budgetResult = syncBudgets(deviceId)
@@ -261,10 +368,15 @@ class SyncRepository @Inject constructor(
             FullSyncResult.Error(e.message ?: "Unknown error during full sync")
         }
     }
+
     suspend fun syncUserPreferences(): SyncResult {
         return try {
-            val pushResult = userPreferencesRepository.syncToFirestore()
+            if (!isSyncEnabled()) {
+                Log.d(TAG, "Sync is disabled, skipping preferences sync")
+                return SyncResult.Success(0)
+            }
 
+            val pushResult = userPreferencesRepository.syncToFirestore()
             if (pushResult.isSuccess) {
                 userPreferencesRepository.loadFromFirestore()
                 SyncResult.Success(1)

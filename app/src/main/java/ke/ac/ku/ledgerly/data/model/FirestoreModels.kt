@@ -22,14 +22,13 @@ data class FirestoreTransaction(
                 category = entity.category,
                 amount = entity.amount,
                 date = Timestamp(entity.date / 1000, 0),
-
-                        type = entity.type,
+                type = entity.type,
                 notes = entity.notes,
                 paymentMethod = entity.paymentMethod,
                 tags = entity.tags.split(",").filter { it.isNotBlank() },
                 userId = userId,
                 deviceId = deviceId,
-                lastModified = Timestamp.now()
+                lastModified = Timestamp((entity.lastModified ?: System.currentTimeMillis()) / 1000, 0)
             )
         }
 
@@ -42,7 +41,8 @@ data class FirestoreTransaction(
                 type = firestoreTransaction.type,
                 notes = firestoreTransaction.notes,
                 paymentMethod = firestoreTransaction.paymentMethod,
-                tags = firestoreTransaction.tags.joinToString(",")
+                tags = firestoreTransaction.tags.joinToString(","),
+                lastModified = firestoreTransaction.lastModified.seconds * 1000
             )
         }
     }
@@ -66,7 +66,7 @@ data class FirestoreBudget(
                 monthYear = entity.monthYear,
                 userId = userId,
                 deviceId = deviceId,
-                lastModified = Timestamp.now()
+                lastModified = Timestamp((entity.lastModified ?: System.currentTimeMillis()) / 1000, 0)
             )
         }
 
@@ -75,7 +75,8 @@ data class FirestoreBudget(
                 category = firestoreBudget.category,
                 monthlyBudget = firestoreBudget.monthlyBudget,
                 currentSpending = firestoreBudget.currentSpending,
-                monthYear = firestoreBudget.monthYear
+                monthYear = firestoreBudget.monthYear,
+                lastModified = firestoreBudget.lastModified.seconds * 1000
             )
         }
     }
@@ -115,7 +116,7 @@ data class FirestoreRecurringTransaction(
                 isActive = entity.isActive,
                 userId = userId,
                 deviceId = deviceId,
-                lastModified = Timestamp.now()
+                lastModified = Timestamp((entity.lastModified ?: System.currentTimeMillis()) / 1000, 0)
             )
         }
 
@@ -132,7 +133,8 @@ data class FirestoreRecurringTransaction(
                 startDate = firestoreTransaction.startDate.seconds * 1000,
                 endDate = firestoreTransaction.endDate?.seconds?.times(1000),
                 lastGeneratedDate = firestoreTransaction.lastGeneratedDate?.seconds?.times(1000),
-                isActive = firestoreTransaction.isActive
+                isActive = firestoreTransaction.isActive,
+                lastModified = firestoreTransaction.lastModified.seconds * 1000
             )
         }
     }

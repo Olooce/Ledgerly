@@ -18,7 +18,8 @@ data class RecurringTransactionEntity(
     val startDate: Long,
     val endDate: Long? = null,
     val lastGeneratedDate: Long? = null,
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    val lastModified: Long? = System.currentTimeMillis()
 )
 
 enum class RecurrenceFrequency {
