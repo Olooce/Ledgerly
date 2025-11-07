@@ -43,7 +43,9 @@ class OnboardingViewModel @Inject constructor(
     }
 
     fun toggleNotification() {
-        _state.update { it.copy(notificationEnabled = !_state.value.notificationEnabled) }
+        _state.update { current ->
+            current.copy(notificationEnabled = !current.notificationEnabled)
+        }
     }
 
     fun nextStep() {
@@ -78,15 +80,26 @@ class OnboardingViewModel @Inject constructor(
         viewModelScope.launch {
             val current = _state.value
 
-            userPreferencesRepository.batchSave {
-                saveUserName(current.userName, syncNow = false)
-                saveCurrency(current.currency, syncNow = false)
-                saveMonthlyBudget(current.monthlyBudget, syncNow = false)
-                saveNotificationEnabled(current.notificationEnabled, syncNow = false)
-                completeOnboarding(syncNow = false)
+            val result = userPreferencesRepository.batchSave {
+                listOf(
+                    saveUserName(current.userName, syncNow = false),
+                    saveCurrency(current.currency, syncNow = false),
+                    saveMonthlyBudget(current.monthlyBudget, syncNow = false),
+                    saveNotificationEnabled(current.notificationEnabled, syncNow = false),
+                    completeOnboarding(syncNow = false)
+                )
             }
 
-            _state.update { it.copy(isCompleted = true) }
+            result.fold(
+                onSuccess = {
+                    _state.update { it.copy(isCompleted = true) }
+                },
+                onFailure = { e ->
+                    //TODO: This type of fails need user notifications
+                    _state.update { it.copy(isCompleted = false) }
+                }
+            )
         }
     }
+
 }

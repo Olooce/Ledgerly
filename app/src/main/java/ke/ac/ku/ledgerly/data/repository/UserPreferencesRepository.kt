@@ -101,9 +101,15 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
-    suspend fun batchSave(block: suspend UserPreferencesRepository.() -> Unit): Result<Unit> {
+    suspend fun batchSave(block: suspend UserPreferencesRepository.() -> List<Result<Unit>>): Result<Unit> {
         return try {
-            block()
+            val results = block()
+            val firstFailure = results.firstOrNull { it.isFailure }
+            if (firstFailure != null) {
+                Log.e(TAG, "Batch save aborted due to failure: ${firstFailure.exceptionOrNull()}")
+                return firstFailure
+            }
+
             syncToFirestore()
         } catch (e: Exception) {
             Log.e(TAG, "Batch save failed", e)
@@ -111,7 +117,8 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
-       suspend fun syncToFirestore(): Result<Unit> {
+
+    suspend fun syncToFirestore(): Result<Unit> {
         val userId = authRepository.getCurrentUserId()
         if (userId == null) {
             Log.w(TAG, "Cannot sync to Firestore: user not authenticated")
