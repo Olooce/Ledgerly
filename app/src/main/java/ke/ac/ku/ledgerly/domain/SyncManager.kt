@@ -3,6 +3,9 @@ package ke.ac.ku.ledgerly.domain
 import android.content.Context
 import android.util.Log
 import androidx.core.content.edit
+import androidx.lifecycle.asFlow
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -12,7 +15,9 @@ import ke.ac.ku.ledgerly.data.repository.SyncResult
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
@@ -24,6 +29,11 @@ class SyncManager @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
     @ApplicationContext private val context: Context
 ) {
+
+    val syncWorkInfoFlow: Flow<WorkInfo?> = WorkManager.getInstance(context)
+        .getWorkInfosForUniqueWorkLiveData("full_sync")
+        .asFlow()
+        .map { workInfos -> workInfos.firstOrNull() }
 
     private val scope = CoroutineScope(Dispatchers.IO)
 

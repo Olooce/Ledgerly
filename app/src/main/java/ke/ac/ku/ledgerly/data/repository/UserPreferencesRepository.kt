@@ -34,9 +34,10 @@ class UserPreferencesRepository @Inject constructor(
         val NOTIFICATION_ENABLED = booleanPreferencesKey("notification_enabled")
         val DARK_MODE = booleanPreferencesKey("dark_mode")
         val SYNC_ENABLED = booleanPreferencesKey("sync_enabled")
-
+        val SYNC_WIFI_ONLY = booleanPreferencesKey("sync_wifi_only")
+        val SYNC_CHARGING_ONLY = booleanPreferencesKey("sync_charging_only")
+        val SYNC_INTERVAL = longPreferencesKey("sync_interval")
         val LAST_UPDATED = longPreferencesKey("last_updated")
-
     }
 
     companion object {
@@ -50,6 +51,9 @@ class UserPreferencesRepository @Inject constructor(
     val notificationEnabled: Flow<Boolean> = context.dataStore.data.map { it[PreferencesKeys.NOTIFICATION_ENABLED] ?: true }
     val darkMode: Flow<Boolean> = context.dataStore.data.map { it[PreferencesKeys.DARK_MODE] ?: false }
     val syncEnabled: Flow<Boolean> = context.dataStore.data.map { it[PreferencesKeys.SYNC_ENABLED] ?: false }
+    val syncWifiOnly: Flow<Boolean> = context.dataStore.data.map { it[PreferencesKeys.SYNC_WIFI_ONLY] ?: true }
+    val syncChargingOnly: Flow<Boolean> = context.dataStore.data.map { it[PreferencesKeys.SYNC_CHARGING_ONLY] ?: false }
+    val syncInterval: Flow<Long> = context.dataStore.data.map { it[PreferencesKeys.SYNC_INTERVAL] ?: 6L }
 
     suspend fun saveUserName(name: String, syncNow: Boolean = true) =
         savePreference(PreferencesKeys.USER_NAME, name, syncNow)
@@ -62,21 +66,17 @@ class UserPreferencesRepository @Inject constructor(
             Log.i(TAG, "No budget provided — skipping save.")
             return Result.success(Unit)
         }
-
         val budgetValue = budget.toDoubleOrNull()
         if (budgetValue == null) {
             Log.w(TAG, "Invalid budget value: $budget. Cannot convert to Double.")
             return Result.failure(IllegalArgumentException("Invalid budget format: $budget"))
         }
-
         if (budgetValue < 0) {
             Log.w(TAG, "Negative budget value: $budget")
             return Result.failure(IllegalArgumentException("Budget cannot be negative"))
         }
-
         return savePreference(PreferencesKeys.MONTHLY_BUDGET, budget, syncNow)
     }
-
 
     suspend fun saveNotificationEnabled(enabled: Boolean, syncNow: Boolean = true) =
         savePreference(PreferencesKeys.NOTIFICATION_ENABLED, enabled, syncNow)
@@ -86,6 +86,15 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun saveSyncEnabled(enabled: Boolean, syncNow: Boolean = true) =
         savePreference(PreferencesKeys.SYNC_ENABLED, enabled, syncNow)
+
+    suspend fun saveSyncWifiOnly(wifiOnly: Boolean, syncNow: Boolean = true) =
+        savePreference(PreferencesKeys.SYNC_WIFI_ONLY, wifiOnly, syncNow)
+
+    suspend fun saveSyncChargingOnly(chargingOnly: Boolean, syncNow: Boolean = true) =
+        savePreference(PreferencesKeys.SYNC_CHARGING_ONLY, chargingOnly, syncNow)
+
+    suspend fun saveSyncInterval(hours: Long, syncNow: Boolean = true) =
+        savePreference(PreferencesKeys.SYNC_INTERVAL, hours, syncNow)
 
     suspend fun completeOnboarding(syncNow: Boolean = true) =
         savePreference(PreferencesKeys.ONBOARDING_COMPLETED, true, syncNow)
@@ -104,7 +113,6 @@ class UserPreferencesRepository @Inject constructor(
                 prefs[key] = value
                 prefs[PreferencesKeys.LAST_UPDATED] = now
             }
-
             if (syncNow) {
                 syncToFirestore()
             } else {
@@ -116,7 +124,6 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
-
     suspend fun updatePreferences(
         userName: String? = null,
         currency: String? = null,
@@ -125,6 +132,9 @@ class UserPreferencesRepository @Inject constructor(
         onboardingCompleted: Boolean? = null,
         darkMode: Boolean? = null,
         syncEnabled: Boolean? = null,
+        syncWifiOnly: Boolean? = null,
+        syncChargingOnly: Boolean? = null,
+        syncInterval: Long? = null,
         lastUpdated: Long = System.currentTimeMillis(),
         syncNow: Boolean = true
     ): Result<Unit> {
@@ -137,9 +147,11 @@ class UserPreferencesRepository @Inject constructor(
                 onboardingCompleted?.let { prefs[PreferencesKeys.ONBOARDING_COMPLETED] = it }
                 darkMode?.let { prefs[PreferencesKeys.DARK_MODE] = it }
                 syncEnabled?.let { prefs[PreferencesKeys.SYNC_ENABLED] = it }
+                syncWifiOnly?.let { prefs[PreferencesKeys.SYNC_WIFI_ONLY] = it }
+                syncChargingOnly?.let { prefs[PreferencesKeys.SYNC_CHARGING_ONLY] = it }
+                syncInterval?.let { prefs[PreferencesKeys.SYNC_INTERVAL] = it }
                 prefs[PreferencesKeys.LAST_UPDATED] = lastUpdated
             }
-
             if (syncNow) {
                 syncToFirestore()
             } else {
@@ -150,6 +162,7 @@ class UserPreferencesRepository @Inject constructor(
             Result.failure(e)
         }
     }
+
     suspend fun batchSave(block: suspend UserPreferencesRepository.() -> List<Result<Unit>>): Result<Unit> {
         return try {
             val results = block()
@@ -158,32 +171,27 @@ class UserPreferencesRepository @Inject constructor(
                 Log.e(TAG, "Batch save aborted due to failure: ${firstFailure.exceptionOrNull()}")
                 return firstFailure
             }
-
             syncToFirestore()
         } catch (e: Exception) {
             Log.e(TAG, "Batch save failed", e)
             Result.failure(e)
         }
     }
+
     suspend fun loadFromFirestore(): Result<Unit> {
         return try {
             val userId = authRepository.getCurrentUserId()
                 ?: return Result.failure(Exception("Not authenticated"))
-
             val document = firestore.collection("user_preferences")
                 .document(userId)
                 .get()
                 .await()
-
             if (!document.exists()) return Result.success(Unit)
-
             val remotePrefs = document.toObject<FirestoreUserPreferences>() ?: return Result.success(Unit)
-
             val localPrefs = getCurrentPreferences()
 
-            // Only update local preferences if remote is newer
             val updateResult = if (remotePrefs.lastUpdated > localPrefs.lastUpdated) {
-                                updatePreferences(
+                updatePreferences(
                     userName = remotePrefs.userName,
                     currency = remotePrefs.currency,
                     monthlyBudget = remotePrefs.monthlyBudget.toString(),
@@ -191,24 +199,26 @@ class UserPreferencesRepository @Inject constructor(
                     onboardingCompleted = remotePrefs.onboardingCompleted,
                     darkMode = remotePrefs.darkMode,
                     syncEnabled = remotePrefs.syncEnabled,
+                    syncWifiOnly = remotePrefs.syncWifiOnly,
+                    syncChargingOnly = remotePrefs.syncChargingOnly,
+                    syncInterval = remotePrefs.syncInterval,
                     lastUpdated = remotePrefs.lastUpdated,
                     syncNow = false
                 )
             } else {
                 Result.success(Unit)
             }
-
             updateResult
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load preferences from Firestore", e)
             Result.failure(e)
         }
     }
+
     suspend fun syncToFirestore(): Result<Unit> {
         return try {
             val userId = authRepository.getCurrentUserId() ?: return Result.failure(Exception("Not authenticated"))
             val localPrefs = getCurrentPreferences()
-
             val firestorePrefs = FirestoreUserPreferences(
                 userId = userId,
                 userName = localPrefs.userName,
@@ -218,19 +228,21 @@ class UserPreferencesRepository @Inject constructor(
                 onboardingCompleted = localPrefs.onboardingCompleted,
                 darkMode = localPrefs.darkMode,
                 syncEnabled = localPrefs.syncEnabled,
+                syncWifiOnly = localPrefs.syncWifiOnly,
+                syncChargingOnly = localPrefs.syncChargingOnly,
+                syncInterval = localPrefs.syncInterval,
                 lastUpdated = localPrefs.lastUpdated
             )
-
             firestore.collection("user_preferences")
                 .document(userId)
                 .set(firestorePrefs, SetOptions.merge())
                 .await()
-
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
+
     suspend fun getCurrentPreferences(): UserPreferences {
         val preferences = context.dataStore.data.first()
         return UserPreferences(
@@ -241,10 +253,12 @@ class UserPreferencesRepository @Inject constructor(
             onboardingCompleted = preferences[PreferencesKeys.ONBOARDING_COMPLETED] ?: false,
             darkMode = preferences[PreferencesKeys.DARK_MODE] ?: false,
             syncEnabled = preferences[PreferencesKeys.SYNC_ENABLED] ?: false,
+            syncWifiOnly = preferences[PreferencesKeys.SYNC_WIFI_ONLY] ?: true,
+            syncChargingOnly = preferences[PreferencesKeys.SYNC_CHARGING_ONLY] ?: false,
+            syncInterval = preferences[PreferencesKeys.SYNC_INTERVAL] ?: 6L,
             lastUpdated = preferences[PreferencesKeys.LAST_UPDATED] ?: 0L
         )
     }
-
 }
 
 data class UserPreferences(
@@ -255,5 +269,8 @@ data class UserPreferences(
     val onboardingCompleted: Boolean,
     val darkMode: Boolean,
     val syncEnabled: Boolean,
+    val syncWifiOnly: Boolean,
+    val syncChargingOnly: Boolean,
+    val syncInterval: Long,
     val lastUpdated: Long = 0L
 )
