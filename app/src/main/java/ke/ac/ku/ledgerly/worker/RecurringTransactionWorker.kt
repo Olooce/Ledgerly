@@ -1,8 +1,6 @@
 package ke.ac.ku.ledgerly.worker
 
 import android.content.Context
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -16,10 +14,10 @@ import java.time.format.DateTimeFormatter
 
 @HiltWorker
 class RecurringTransactionWorker @AssistedInject constructor(
-    @Assisted context: Context,
-    @Assisted workerParams: WorkerParameters,
+    @Assisted appContext: Context,
+    @Assisted params: WorkerParameters,
     private val dao: TransactionDao
-) : CoroutineWorker(context, workerParams) {
+) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
         return try {
@@ -44,7 +42,6 @@ class RecurringTransactionWorker @AssistedInject constructor(
             // Check if end date has passed
             val endDate = recurring.endDate?.let { LocalDate.parse(it, formatter) }
             if (endDate != null && today.isAfter(endDate)) {
-                // Deactivate expired recurring transaction
                 dao.updateRecurringTransactionStatus(recurring.id!!, false)
                 return@forEach
             }
@@ -55,26 +52,22 @@ class RecurringTransactionWorker @AssistedInject constructor(
             // Generate transactions for all missed dates up to today
             var currentDate = nextDueDate
             while (!currentDate.isAfter(today) && (endDate == null || !currentDate.isAfter(endDate))) {
-                // Create transaction
                 val transaction = TransactionEntity(
                     id = null,
                     category = recurring.category,
                     amount = recurring.amount,
                     date = currentDate.format(formatter),
                     type = recurring.type,
-                    notes = recurring.notes + " (Recurring)",
+                    notes = "${recurring.notes} (Recurring)",
                     paymentMethod = recurring.paymentMethod,
                     tags = recurring.tags
                 )
 
                 dao.insertTransaction(transaction)
-
-                // Update last generated date
                 dao.updateRecurringTransaction(
                     recurring.copy(lastGeneratedDate = currentDate.format(formatter))
                 )
 
-                // Move to next occurrence
                 currentDate = calculateNextDueDate(currentDate, recurring.frequency)
             }
         }
