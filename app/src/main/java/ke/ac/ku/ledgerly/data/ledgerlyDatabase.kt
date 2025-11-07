@@ -43,9 +43,9 @@ abstract class LedgerlyDatabase : RoomDatabase() {
                     LedgerlyDatabase::class.java,
                     DATABASE_NAME
                 )
-//                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
 
-                    .fallbackToDestructiveMigration(true) //  Delete and recreate the database: For Dev
+//                    .fallbackToDestructiveMigration(true) //  Delete and recreate the database: For Dev
                     .build()
 
                 INSTANCE = instance
@@ -124,7 +124,6 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
                 amount,
                 CASE
                     WHEN date IS NULL OR TRIM(date) = '' THEN CAST(strftime('%s', 'now') * 1000 AS INTEGER)
-                    WHEN strftime('%s', date) IS NULL THEN CAST(strftime('%s', 'now') * 1000 AS INTEGER)
                     ELSE CAST(strftime('%s', date) * 1000 AS INTEGER)
                 END AS date,
                 type,
@@ -137,8 +136,62 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
 
         db.execSQL("DROP TABLE transactions")
         db.execSQL("ALTER TABLE transactions_new RENAME TO transactions")
+
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS recurring_transactions_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                category TEXT NOT NULL,
+                amount REAL NOT NULL,
+                type TEXT NOT NULL,
+                notes TEXT NOT NULL,
+                paymentMethod TEXT NOT NULL,
+                tags TEXT NOT NULL,
+                frequency TEXT NOT NULL,
+                startDate INTEGER NOT NULL,
+                endDate INTEGER,
+                lastGeneratedDate INTEGER,
+                isActive INTEGER NOT NULL DEFAULT 1
+            )
+            """.trimIndent()
+        )
+
+        db.execSQL(
+            """
+            INSERT INTO recurring_transactions_new (
+                id, category, amount, type, notes, paymentMethod, tags, frequency, startDate, endDate, lastGeneratedDate, isActive
+            )
+            SELECT
+                id,
+                category,
+                amount,
+                type,
+                notes,
+                paymentMethod,
+                tags,
+                frequency,
+                CASE
+                    WHEN startDate IS NULL OR TRIM(startDate) = '' THEN CAST(strftime('%s', 'now') * 1000 AS INTEGER)
+                    ELSE CAST(strftime('%s', startDate) * 1000 AS INTEGER)
+                END AS startDate,
+                CASE
+                    WHEN endDate IS NULL OR TRIM(endDate) = '' THEN NULL
+                    ELSE CAST(strftime('%s', endDate) * 1000 AS INTEGER)
+                END AS endDate,
+                CASE
+                    WHEN lastGeneratedDate IS NULL OR TRIM(lastGeneratedDate) = '' THEN NULL
+                    ELSE CAST(strftime('%s', lastGeneratedDate) * 1000 AS INTEGER)
+                END AS lastGeneratedDate,
+                isActive
+            FROM recurring_transactions
+            """.trimIndent()
+        )
+
+        db.execSQL("DROP TABLE recurring_transactions")
+        db.execSQL("ALTER TABLE recurring_transactions_new RENAME TO recurring_transactions")
     }
 }
+
 
 
 

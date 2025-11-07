@@ -99,7 +99,11 @@ class UserPreferencesRepository @Inject constructor(
         syncNow: Boolean = true
     ): Result<Unit> {
         return try {
-            context.dataStore.edit { it[key] = value }
+            val now = System.currentTimeMillis()
+            context.dataStore.edit { prefs ->
+                prefs[key] = value
+                prefs[PreferencesKeys.LAST_UPDATED] = now
+            }
 
             if (syncNow) {
                 syncToFirestore()
@@ -111,6 +115,7 @@ class UserPreferencesRepository @Inject constructor(
             Result.failure(e)
         }
     }
+
 
     suspend fun updatePreferences(
         userName: String? = null,
@@ -145,9 +150,6 @@ class UserPreferencesRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
-
-
     suspend fun batchSave(block: suspend UserPreferencesRepository.() -> List<Result<Unit>>): Result<Unit> {
         return try {
             val results = block()
@@ -163,7 +165,6 @@ class UserPreferencesRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
     suspend fun loadFromFirestore(): Result<Unit> {
         return try {
             val userId = authRepository.getCurrentUserId()
@@ -201,8 +202,6 @@ class UserPreferencesRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
-
     suspend fun syncToFirestore(): Result<Unit> {
         return try {
             val userId = authRepository.getCurrentUserId() ?: return Result.failure(Exception("Not authenticated"))
@@ -230,7 +229,6 @@ class UserPreferencesRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
     suspend fun getCurrentPreferences(): UserPreferences {
         val preferences = context.dataStore.data.first()
         return UserPreferences(
