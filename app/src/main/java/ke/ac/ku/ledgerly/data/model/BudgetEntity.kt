@@ -3,13 +3,13 @@ package ke.ac.ku.ledgerly.data.model
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "budgets")
+@Entity(tableName = "budgets", primaryKeys = ["category", "monthYear"])
 data class BudgetEntity(
-    @PrimaryKey
     val category: String,
     val monthlyBudget: Double,
     val currentSpending: Double = 0.0,
-    val monthYear: String // Format: "YYYY-MM"
+    val monthYear: String, // Format: "YYYY-MM"
+    val lastModified: Long? = System.currentTimeMillis()
 ) {
     val remainingBudget: Double
         get() = monthlyBudget - currentSpending

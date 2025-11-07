@@ -6,6 +6,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.toObject
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ke.ac.ku.ledgerly.auth.data.AuthRepository
 import ke.ac.ku.ledgerly.data.model.FirestoreUserPreferences
@@ -32,6 +34,9 @@ class UserPreferencesRepository @Inject constructor(
         val NOTIFICATION_ENABLED = booleanPreferencesKey("notification_enabled")
         val DARK_MODE = booleanPreferencesKey("dark_mode")
         val SYNC_ENABLED = booleanPreferencesKey("sync_enabled")
+
+        val LAST_UPDATED = longPreferencesKey("last_updated")
+
     }
 
     companion object {
@@ -94,7 +99,11 @@ class UserPreferencesRepository @Inject constructor(
         syncNow: Boolean = true
     ): Result<Unit> {
         return try {
-            context.dataStore.edit { it[key] = value }
+            val now = System.currentTimeMillis()
+            context.dataStore.edit { prefs ->
+                prefs[key] = value
+                prefs[PreferencesKeys.LAST_UPDATED] = now
+            }
 
             if (syncNow) {
                 syncToFirestore()
@@ -107,6 +116,40 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
+
+    suspend fun updatePreferences(
+        userName: String? = null,
+        currency: String? = null,
+        monthlyBudget: String? = null,
+        notificationEnabled: Boolean? = null,
+        onboardingCompleted: Boolean? = null,
+        darkMode: Boolean? = null,
+        syncEnabled: Boolean? = null,
+        lastUpdated: Long = System.currentTimeMillis(),
+        syncNow: Boolean = true
+    ): Result<Unit> {
+        return try {
+            context.dataStore.edit { prefs ->
+                userName?.let { prefs[PreferencesKeys.USER_NAME] = it }
+                currency?.let { prefs[PreferencesKeys.CURRENCY] = it }
+                monthlyBudget?.let { prefs[PreferencesKeys.MONTHLY_BUDGET] = it }
+                notificationEnabled?.let { prefs[PreferencesKeys.NOTIFICATION_ENABLED] = it }
+                onboardingCompleted?.let { prefs[PreferencesKeys.ONBOARDING_COMPLETED] = it }
+                darkMode?.let { prefs[PreferencesKeys.DARK_MODE] = it }
+                syncEnabled?.let { prefs[PreferencesKeys.SYNC_ENABLED] = it }
+                prefs[PreferencesKeys.LAST_UPDATED] = lastUpdated
+            }
+
+            if (syncNow) {
+                syncToFirestore()
+            } else {
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to update preferences", e)
+            Result.failure(e)
+        }
+    }
     suspend fun batchSave(block: suspend UserPreferencesRepository.() -> List<Result<Unit>>): Result<Unit> {
         return try {
             val results = block()
@@ -122,93 +165,72 @@ class UserPreferencesRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
-
-    suspend fun syncToFirestore(): Result<Unit> {
-        val userId = authRepository.getCurrentUserId()
-        if (userId == null) {
-            Log.w(TAG, "Cannot sync to Firestore: user not authenticated")
-            return Result.failure(IllegalStateException("User not authenticated"))
-        }
-
-        return try {
-            val preferences = context.dataStore.data.first()
-
-            val budgetString = preferences[PreferencesKeys.MONTHLY_BUDGET] ?: "0"
-            val budgetValue = budgetString.toDoubleOrNull()
-
-            if (budgetValue == null) {
-                Log.e(TAG, "Budget conversion failed for value: $budgetString. Defaulting to 0.0")
-            }
-
-            val userPreference = FirestoreUserPreferences(
-                userId = userId,
-                userName = preferences[PreferencesKeys.USER_NAME] ?: "",
-                currency = preferences[PreferencesKeys.CURRENCY] ?: "KES",
-                monthlyBudget = budgetValue ?: 0.0,
-                notificationEnabled = preferences[PreferencesKeys.NOTIFICATION_ENABLED] ?: true,
-                onboardingCompleted = preferences[PreferencesKeys.ONBOARDING_COMPLETED] ?: false,
-                darkMode = preferences[PreferencesKeys.DARK_MODE] ?: false,
-                syncEnabled = preferences[PreferencesKeys.SYNC_ENABLED] ?: false,
-                lastUpdated = System.currentTimeMillis()
-            )
-
-            firestore.collection("user_preferences")
-                .document(userId)
-                .set(userPreference)
-                .await()
-
-            Log.d(TAG, "Successfully synced preferences to Firestore for user: $userId")
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to sync preferences to Firestore", e)
-            Result.failure(e)
-        }
-    }
-
     suspend fun loadFromFirestore(): Result<Unit> {
-        val userId = authRepository.getCurrentUserId()
-        if (userId == null) {
-            Log.w(TAG, "Cannot load from Firestore: user not authenticated")
-            return Result.failure(IllegalStateException("User not authenticated"))
-        }
-
         return try {
+            val userId = authRepository.getCurrentUserId()
+                ?: return Result.failure(Exception("Not authenticated"))
+
             val document = firestore.collection("user_preferences")
                 .document(userId)
                 .get()
                 .await()
 
-            if (!document.exists()) {
-                Log.i(TAG, "No preferences found in Firestore for user: $userId")
-                return Result.failure(NoSuchElementException("No preferences found in Firestore"))
+            if (!document.exists()) return Result.success(Unit)
+
+            val remotePrefs = document.toObject<FirestoreUserPreferences>() ?: return Result.success(Unit)
+
+            val localPrefs = getCurrentPreferences()
+
+            // Only update local preferences if remote is newer
+            val updateResult = if (remotePrefs.lastUpdated > localPrefs.lastUpdated) {
+                                updatePreferences(
+                    userName = remotePrefs.userName,
+                    currency = remotePrefs.currency,
+                    monthlyBudget = remotePrefs.monthlyBudget.toString(),
+                    notificationEnabled = remotePrefs.notificationEnabled,
+                    onboardingCompleted = remotePrefs.onboardingCompleted,
+                    darkMode = remotePrefs.darkMode,
+                    syncEnabled = remotePrefs.syncEnabled,
+                    lastUpdated = remotePrefs.lastUpdated,
+                    syncNow = false
+                )
+            } else {
+                Result.success(Unit)
             }
 
-            val pref = document.toObject(FirestoreUserPreferences::class.java)
-
-            if (pref == null) {
-                Log.e(TAG, "Failed to deserialize preferences from Firestore")
-                return Result.failure(IllegalStateException("Failed to parse Firestore preferences"))
-            }
-
-            context.dataStore.edit { preferences ->
-                preferences[PreferencesKeys.USER_NAME] = pref.userName
-                preferences[PreferencesKeys.CURRENCY] = pref.currency
-                preferences[PreferencesKeys.MONTHLY_BUDGET] = pref.monthlyBudget.toString()
-                preferences[PreferencesKeys.NOTIFICATION_ENABLED] = pref.notificationEnabled
-                preferences[PreferencesKeys.ONBOARDING_COMPLETED] = pref.onboardingCompleted
-                preferences[PreferencesKeys.DARK_MODE] = pref.darkMode
-                preferences[PreferencesKeys.SYNC_ENABLED] = pref.syncEnabled
-            }
-
-            Log.d(TAG, "Successfully loaded preferences from Firestore for user: $userId")
-            Result.success(Unit)
+            updateResult
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load preferences from Firestore", e)
             Result.failure(e)
         }
     }
+    suspend fun syncToFirestore(): Result<Unit> {
+        return try {
+            val userId = authRepository.getCurrentUserId() ?: return Result.failure(Exception("Not authenticated"))
+            val localPrefs = getCurrentPreferences()
 
+            val firestorePrefs = FirestoreUserPreferences(
+                userId = userId,
+                userName = localPrefs.userName,
+                currency = localPrefs.currency,
+                monthlyBudget = localPrefs.monthlyBudget.toDoubleOrNull() ?: 0.0,
+                notificationEnabled = localPrefs.notificationEnabled,
+                onboardingCompleted = localPrefs.onboardingCompleted,
+                darkMode = localPrefs.darkMode,
+                syncEnabled = localPrefs.syncEnabled,
+                lastUpdated = localPrefs.lastUpdated
+            )
+
+            firestore.collection("user_preferences")
+                .document(userId)
+                .set(firestorePrefs, SetOptions.merge())
+                .await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
     suspend fun getCurrentPreferences(): UserPreferences {
         val preferences = context.dataStore.data.first()
         return UserPreferences(
@@ -218,9 +240,11 @@ class UserPreferencesRepository @Inject constructor(
             notificationEnabled = preferences[PreferencesKeys.NOTIFICATION_ENABLED] ?: true,
             onboardingCompleted = preferences[PreferencesKeys.ONBOARDING_COMPLETED] ?: false,
             darkMode = preferences[PreferencesKeys.DARK_MODE] ?: false,
-            syncEnabled = preferences[PreferencesKeys.SYNC_ENABLED] ?: false
+            syncEnabled = preferences[PreferencesKeys.SYNC_ENABLED] ?: false,
+            lastUpdated = preferences[PreferencesKeys.LAST_UPDATED] ?: 0L
         )
     }
+
 }
 
 data class UserPreferences(
@@ -230,5 +254,6 @@ data class UserPreferences(
     val notificationEnabled: Boolean,
     val onboardingCompleted: Boolean,
     val darkMode: Boolean,
-    val syncEnabled: Boolean
+    val syncEnabled: Boolean,
+    val lastUpdated: Long = 0L
 )

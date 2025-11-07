@@ -28,9 +28,9 @@ class StatsViewModel @Inject constructor(val dao: TransactionDao) : BaseViewMode
 
     fun getEntriesForChart(entries: List<TransactionSummary>): List<Entry> {
         return entries
-            .sortedBy { Utils.getMillisFromDate(it.date) }
+            .sortedBy { it.date }
             .map {
-                val millis = Utils.getMillisFromDate(it.date)
+                val millis = it.date
                 Entry(millis.toFloat(), it.total_amount.toFloat())
             }
     }

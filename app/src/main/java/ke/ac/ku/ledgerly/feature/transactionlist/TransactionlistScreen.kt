@@ -191,7 +191,7 @@ fun TransactionListScreen(
                             paymentMethod = transaction.paymentMethod,
                             amount = Utils.formatCurrency(transaction.amount),
                             icon = icon ?: R.drawable.ic_default_category,
-                            date = transaction.date,
+                            date = Utils.formatDayMonth(transaction.date),
                             notes = transaction.notes,
                             tags = transaction.tags,
                             color = if (transaction.type.equals("Income", true))

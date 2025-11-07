@@ -357,7 +357,7 @@ fun TransactionList(
                 title = item.category,
                 amount = Utils.formatCurrency(item.amount),
                 icon = icon,
-                date = Utils.formatStringDateToMonthDayYear(item.date),
+                date = Utils.formatDayMonth(item.date),
                 paymentMethod = item.paymentMethod,
                 notes = item.notes,
                 tags = item.tags,

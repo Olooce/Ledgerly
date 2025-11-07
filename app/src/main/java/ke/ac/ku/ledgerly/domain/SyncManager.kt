@@ -9,6 +9,7 @@ import javax.inject.Singleton
 import ke.ac.ku.ledgerly.auth.data.AuthRepository
 import ke.ac.ku.ledgerly.data.repository.SyncRepository
 import ke.ac.ku.ledgerly.data.repository.SyncResult
+import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -20,6 +21,7 @@ import java.util.UUID
 class SyncManager @Inject constructor(
     private val syncRepository: SyncRepository,
     private val authRepository: AuthRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
     @ApplicationContext private val context: Context
 ) {
 
@@ -30,7 +32,6 @@ class SyncManager @Inject constructor(
         private const val PREFS_NAME = "sync_prefs"
         private const val KEY_DEVICE_ID = "device_id"
         private const val KEY_LAST_SYNC = "last_sync"
-        private const val KEY_SYNC_ENABLED = "sync_enabled"
     }
 
     private fun getDeviceId(): String {
@@ -58,7 +59,11 @@ class SyncManager @Inject constructor(
                 val deviceId = getDeviceId()
                 val result = syncRepository.fullSync(deviceId)
 
-                if (result.isSuccessful) {
+                // Sync preferences separately via repository
+                val prefResult = userPreferencesRepository.syncToFirestore()
+                if (prefResult.isFailure) Log.e(TAG, "Preferences sync failed: ${prefResult.exceptionOrNull()}")
+
+                if (result.isSuccessful && prefResult.isSuccess) {
                     updateLastSyncTime()
                     withContext(Dispatchers.Main) { onSuccess?.invoke() }
                     Log.d(TAG, "Full sync completed successfully")
@@ -71,8 +76,8 @@ class SyncManager @Inject constructor(
                             append("Budgets - ${result.budgets.message}. ")
                         if (result.recurringTransactions is SyncResult.Error)
                             append("Recurring - ${result.recurringTransactions.message}. ")
-                        if (result.preferences is SyncResult.Error)
-                            append("Preferences - ${result.preferences.message}.")
+                        if (prefResult.isFailure)
+                            append("Preferences - ${prefResult.exceptionOrNull()?.message}.")
                     }.trim()
 
                     Log.e(TAG, errorMessage)
@@ -86,34 +91,25 @@ class SyncManager @Inject constructor(
         }
     }
 
-    fun isCloudSyncEnabled(): Boolean {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getBoolean(KEY_SYNC_ENABLED, false)
+    suspend fun isCloudSyncEnabled(): Boolean {
+        return userPreferencesRepository.syncEnabled.first()
     }
-
     fun setCloudSyncEnabled(enabled: Boolean) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        scope.launch {
+            if (enabled && !authRepository.isUserAuthenticated()) {
+                Log.w(TAG, "Cannot enable cloud sync while user is signed out")
+                return@launch
+            }
 
-        if (enabled && !authRepository.isUserAuthenticated()) {
-            Log.w(TAG, "Cannot enable cloud sync while user is signed out")
-            return
+            if (enabled) {
+                syncAllData(
+                    onSuccess = { Log.d(TAG, "Manual sync completed successfully") },
+                    onError = { e ->
+                        Log.e(TAG, "Manual sync failed: $e")
+                    }
+                )
+            }
         }
-
-        prefs.edit { putBoolean(KEY_SYNC_ENABLED, enabled) }
-
-        if (enabled) {
-            syncAllData(
-                onSuccess = { Log.d(TAG, "Manual sync completed successfully") },
-                onError = { e ->
-                    prefs.edit { putBoolean(KEY_SYNC_ENABLED, false) }
-                    Log.e(TAG, "Manual sync failed: $e")
-                }
-            )
-        }
-    }
-
-    suspend fun isSyncEnabled(): Boolean {
-        return authRepository.authState.first()
     }
 
     fun getLastSyncTime(): Long {
@@ -125,19 +121,6 @@ class SyncManager @Inject constructor(
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit { putLong(KEY_LAST_SYNC, System.currentTimeMillis()) }
     }
-
-    fun syncUserPreferences() {
-        scope.launch {
-            try {
-                val result = syncRepository.syncUserPreferences()
-                if (result is SyncResult.Success) {
-                    Log.d(TAG, "User preferences synced successfully")
-                } else if (result is SyncResult.Error) {
-                    Log.e(TAG, "Failed to sync preferences: ${result.message}")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error syncing preferences: ${e.message}", e)
-            }
-        }
-    }
 }
+
+

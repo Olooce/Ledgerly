@@ -60,6 +60,7 @@ import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.formatter.ValueFormatter
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.CategorySummary
@@ -443,15 +444,17 @@ private fun BarChartView(
 
         barData?.let {
             chart.apply {
+                val labels = viewModel.getMonthLabels(monthlyData)
+
                 xAxis.apply {
-                    valueFormatter = object : ValueFormatter() {
-                        val labels = viewModel.getMonthLabels(monthlyData)
-                        override fun getFormattedValue(value: Float) =
-                            labels.getOrNull(value.toInt()) ?: ""
-                    }
+                    valueFormatter = IndexAxisValueFormatter(labels)
                     position = XAxis.XAxisPosition.BOTTOM
                     setDrawGridLines(false)
+                    granularity = 1f
+                    isGranularityEnabled = true
+                    labelCount = labels.size
                 }
+
                 axisLeft.apply {
                     setDrawGridLines(true)
                 }
@@ -461,13 +464,24 @@ private fun BarChartView(
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)
 
                 data = barData
-                groupBars(0f, 0.4f, 0f)
+
+                val groupSpace = 0.3f
+                val barSpace = 0.05f
+                val barWidth = 0.3f
+                val groupWidth = (barWidth + barSpace) * 2 + groupSpace
+
+                barData.barWidth = barWidth
+                xAxis.axisMinimum = 0f
+                xAxis.axisMaximum = monthlyData.size * groupWidth
+                groupBars(0f, groupSpace, barSpace)
+
                 animateY(1200, Easing.EaseInOutQuad)
                 invalidate()
             }
         }
     }
 }
+
 
 
 private fun getColors(context: Context, count: Int): List<Int> {

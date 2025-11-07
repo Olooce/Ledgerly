@@ -38,7 +38,7 @@ class AddTransactionViewModel @Inject constructor(
 
     suspend fun addRecurringTransaction(recurringTransaction: RecurringTransactionEntity): Boolean {
         return try {
-            val recurringId = dao.insertRecurringTransaction(recurringTransaction)
+            val recurringId: Long = dao.insertRecurringTransaction(recurringTransaction)
 
             val firstTransaction = TransactionEntity(
                 id = null,

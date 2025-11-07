@@ -1,7 +1,6 @@
 package ke.ac.ku.ledgerly.data.model
 
 import com.google.firebase.Timestamp
-import java.util.Date
 
 data class FirestoreTransaction(
     val id: String? = null,
@@ -22,14 +21,14 @@ data class FirestoreTransaction(
                 id = entity.id?.toString(),
                 category = entity.category,
                 amount = entity.amount,
-                date = Timestamp(Date(entity.date)),
+                date = Timestamp(entity.date / 1000, 0),
                 type = entity.type,
                 notes = entity.notes,
                 paymentMethod = entity.paymentMethod,
-                tags = entity.tags.split(",").filter { it.isNotBlank() },
+                tags = entity.tags.split("|").filter { it.isNotBlank() },
                 userId = userId,
                 deviceId = deviceId,
-                lastModified = Timestamp.now()
+                lastModified = Timestamp((entity.lastModified ?: System.currentTimeMillis()) / 1000, 0)
             )
         }
 
@@ -38,11 +37,12 @@ data class FirestoreTransaction(
                 id = firestoreTransaction.id?.toLongOrNull(),
                 category = firestoreTransaction.category,
                 amount = firestoreTransaction.amount,
-                date = firestoreTransaction.date.toDate().toString(),
+                date = firestoreTransaction.date.seconds * 1000,
                 type = firestoreTransaction.type,
                 notes = firestoreTransaction.notes,
                 paymentMethod = firestoreTransaction.paymentMethod,
-                tags = firestoreTransaction.tags.joinToString(",")
+                tags = firestoreTransaction.tags.joinToString("|"),
+                lastModified = firestoreTransaction.lastModified.seconds * 1000
             )
         }
     }
@@ -66,7 +66,7 @@ data class FirestoreBudget(
                 monthYear = entity.monthYear,
                 userId = userId,
                 deviceId = deviceId,
-                lastModified = Timestamp.now()
+                lastModified = Timestamp((entity.lastModified ?: System.currentTimeMillis()) / 1000, 0)
             )
         }
 
@@ -75,7 +75,8 @@ data class FirestoreBudget(
                 category = firestoreBudget.category,
                 monthlyBudget = firestoreBudget.monthlyBudget,
                 currentSpending = firestoreBudget.currentSpending,
-                monthYear = firestoreBudget.monthYear
+                monthYear = firestoreBudget.monthYear,
+                lastModified = firestoreBudget.lastModified.seconds * 1000
             )
         }
     }
@@ -107,15 +108,15 @@ data class FirestoreRecurringTransaction(
                 type = entity.type,
                 notes = entity.notes,
                 paymentMethod = entity.paymentMethod,
-                tags = entity.tags.split(",").filter { it.isNotBlank() },
+                tags = entity.tags.split("|").filter { it.isNotBlank() },
                 frequency = entity.frequency.name,
-                startDate = Timestamp(Date(entity.startDate)),
-                endDate = entity.endDate?.let { Timestamp(Date(it)) },
-                lastGeneratedDate = entity.lastGeneratedDate?.let { Timestamp(Date(it)) },
+                startDate = Timestamp(entity.startDate / 1000, 0),
+                endDate = entity.endDate?.let { Timestamp(it / 1000, 0) },
+                lastGeneratedDate = entity.lastGeneratedDate?.let { Timestamp(it / 1000, 0) },
                 isActive = entity.isActive,
                 userId = userId,
                 deviceId = deviceId,
-                lastModified = Timestamp.now()
+                lastModified = Timestamp((entity.lastModified ?: System.currentTimeMillis()) / 1000, 0)
             )
         }
 
@@ -127,12 +128,13 @@ data class FirestoreRecurringTransaction(
                 type = firestoreTransaction.type,
                 notes = firestoreTransaction.notes,
                 paymentMethod = firestoreTransaction.paymentMethod,
-                tags = firestoreTransaction.tags.joinToString(","),
+                tags = firestoreTransaction.tags.joinToString("|"),
                 frequency = RecurrenceFrequency.valueOf(firestoreTransaction.frequency),
-                startDate = firestoreTransaction.startDate.toDate().toString(),
-                endDate = firestoreTransaction.endDate?.toDate()?.toString(),
-                lastGeneratedDate = firestoreTransaction.lastGeneratedDate?.toDate()?.toString(),
-                isActive = firestoreTransaction.isActive
+                startDate = firestoreTransaction.startDate.seconds * 1000,
+                endDate = firestoreTransaction.endDate?.seconds?.times(1000),
+                lastGeneratedDate = firestoreTransaction.lastGeneratedDate?.seconds?.times(1000),
+                isActive = firestoreTransaction.isActive,
+                lastModified = firestoreTransaction.lastModified.seconds * 1000
             )
         }
     }
