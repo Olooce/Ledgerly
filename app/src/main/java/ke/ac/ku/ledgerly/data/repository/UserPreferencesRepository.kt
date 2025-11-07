@@ -52,7 +52,12 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun saveCurrency(currency: String, syncNow: Boolean = true) =
         savePreference(PreferencesKeys.CURRENCY, currency, syncNow)
 
-    suspend fun saveMonthlyBudget(budget: String, syncNow: Boolean = true): Result<Unit> {
+    suspend fun saveMonthlyBudget(budget: String?, syncNow: Boolean = true): Result<Unit> {
+        if (budget.isNullOrBlank()) {
+            Log.i(TAG, "No budget provided — skipping save.")
+            return Result.success(Unit)
+        }
+
         val budgetValue = budget.toDoubleOrNull()
         if (budgetValue == null) {
             Log.w(TAG, "Invalid budget value: $budget. Cannot convert to Double.")
@@ -66,6 +71,7 @@ class UserPreferencesRepository @Inject constructor(
 
         return savePreference(PreferencesKeys.MONTHLY_BUDGET, budget, syncNow)
     }
+
 
     suspend fun saveNotificationEnabled(enabled: Boolean, syncNow: Boolean = true) =
         savePreference(PreferencesKeys.NOTIFICATION_ENABLED, enabled, syncNow)
