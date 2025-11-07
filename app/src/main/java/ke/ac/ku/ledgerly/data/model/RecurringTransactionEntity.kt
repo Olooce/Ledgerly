@@ -10,14 +10,14 @@ data class RecurringTransactionEntity(
     val id: Long? = null,
     val category: String,
     val amount: Double,
-    val type: String, // "Income" or "Expense"
+    val type: String,
     val notes: String = "",
     val paymentMethod: String = "",
     val tags: String = "",
     val frequency: RecurrenceFrequency,
-    val startDate: String,
-    val endDate: String? = null,
-    val lastGeneratedDate: String? = null,
+    val startDate: Long,
+    val endDate: Long? = null,
+    val lastGeneratedDate: Long? = null,
     val isActive: Boolean = true
 )
 

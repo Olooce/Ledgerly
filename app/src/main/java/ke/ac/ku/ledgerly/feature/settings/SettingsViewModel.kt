@@ -44,11 +44,15 @@ class SettingsViewModel @Inject constructor(
     fun toggleCloudSync(enabled: Boolean) {
         viewModelScope.launch {
             _isSyncEnabled.value = enabled
+
             val result = userPreferencesRepository.saveSyncEnabled(enabled, syncNow = false)
 
             if (result.isSuccess) {
-                syncManager.setCloudSyncEnabled(enabled)
-                if (enabled) userPreferencesRepository.syncToFirestore()
+                userPreferencesRepository.syncToFirestore()
+
+                if (enabled) {
+                    syncManager.setCloudSyncEnabled(enabled)
+                }
             } else {
                 _errorMessage.value = "Failed to update sync settings"
                 _isSyncEnabled.value = !enabled

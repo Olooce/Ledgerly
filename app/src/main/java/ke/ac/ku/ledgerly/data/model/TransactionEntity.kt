@@ -9,9 +9,9 @@ data class TransactionEntity(
     val id: Long? = null,
     val category: String,
     val amount: Double,
-    val date: String,
-    val type: String, // "Income" or "Expense"
+    val date: Long,
+    val type: String,
     val notes: String = "",
     val paymentMethod: String = "",
-    val tags: String = "" // Comma-separated tags
+    val tags: String = ""
 )

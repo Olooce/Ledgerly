@@ -21,7 +21,7 @@ import javax.inject.Singleton
         BudgetEntity::class,
         RecurringTransactionEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -43,11 +43,8 @@ abstract class LedgerlyDatabase : RoomDatabase() {
                     LedgerlyDatabase::class.java,
                     DATABASE_NAME
                 )
-                    //                    .addMigrations(
-                    //                        MIGRATION_1_2,
-                    //                        MIGRATION_2_3,
-                    //                        MIGRATION_3_4
-                    //                    )
+//                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+
                     .fallbackToDestructiveMigration(true) //  Delete and recreate the database: For Dev
                     .build()
 
@@ -100,3 +97,48 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
         )
     }
 }
+
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS transactions_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                category TEXT NOT NULL,
+                amount REAL NOT NULL,
+                date INTEGER NOT NULL,
+                type TEXT NOT NULL,
+                notes TEXT NOT NULL,
+                paymentMethod TEXT NOT NULL,
+                tags TEXT NOT NULL
+            )
+            """.trimIndent()
+        )
+
+        db.execSQL(
+            """
+            INSERT INTO transactions_new (id, category, amount, date, type, notes, paymentMethod, tags)
+            SELECT 
+                id,
+                category,
+                amount,
+                CASE
+                    WHEN date IS NULL OR TRIM(date) = '' THEN CAST(strftime('%s', 'now') * 1000 AS INTEGER)
+                    WHEN strftime('%s', date) IS NULL THEN CAST(strftime('%s', 'now') * 1000 AS INTEGER)
+                    ELSE CAST(strftime('%s', date) * 1000 AS INTEGER)
+                END AS date,
+                type,
+                notes,
+                paymentMethod,
+                tags
+            FROM transactions
+            """.trimIndent()
+        )
+
+        db.execSQL("DROP TABLE transactions")
+        db.execSQL("ALTER TABLE transactions_new RENAME TO transactions")
+    }
+}
+
+
+

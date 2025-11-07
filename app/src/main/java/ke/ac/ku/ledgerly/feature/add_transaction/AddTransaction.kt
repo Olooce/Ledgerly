@@ -383,7 +383,7 @@ fun DataForm(
                     id = null,
                     category = category.value,
                     amount = amount.value.toDoubleOrNull() ?: 0.0,
-                    date = Utils.formatDateToISO(date.longValue),
+                    date = date.longValue,
                     type = type.value,
                     notes = notes.value,
                     paymentMethod = paymentMethod.value,
@@ -400,9 +400,9 @@ fun DataForm(
                         paymentMethod = paymentMethod.value,
                         tags = tags.value,
                         frequency = frequency.value,
-                        startDate = Utils.formatDateToISO(date.longValue),
+                        startDate = date.longValue,
                         endDate = if (endDate.longValue != 0L)
-                            Utils.formatDateToISO(endDate.longValue) else null,
+                            endDate.longValue else null,
                         isActive = true
                     )
                 } else null

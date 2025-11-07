@@ -88,38 +88,36 @@ interface TransactionDao {
     suspend fun getAllRecurringTransactionsSync(): List<RecurringTransactionEntity>
 
     @Query("""
-    SELECT category, SUM(amount) as total_amount 
-    FROM transactions 
-    WHERE type = 'Expense' 
-    AND strftime('%Y-%m', date) = :monthYear 
-    GROUP BY category
-    HAVING total_amount > 0
+SELECT category, SUM(amount) as total_amount 
+FROM transactions 
+WHERE type = 'Expense' 
+AND strftime('%Y-%m', datetime(date / 1000, 'unixepoch')) = :monthYear 
+GROUP BY category
+HAVING total_amount > 0
 """)
     fun getExpenseByCategoryForMonth(monthYear: String): Flow<List<CategorySummary>>
 
     @Query("""
-    SELECT strftime('%Y-%m', date) as month, 
-           SUM(CASE WHEN type = 'Income' THEN amount ELSE 0 END) as income,
-           SUM(CASE WHEN type = 'Expense' THEN amount ELSE 0 END) as expense
-    FROM transactions 
-    WHERE date IS NOT NULL AND strftime('%Y-%m', date) IS NOT NULL
-    GROUP BY strftime('%Y-%m', date)
-    HAVING income > 0 OR expense > 0
-    ORDER BY month
+SELECT strftime('%Y-%m', datetime(date / 1000, 'unixepoch')) AS month,
+       SUM(CASE WHEN type = 'Income' THEN amount ELSE 0 END) AS income,
+       SUM(CASE WHEN type = 'Expense' THEN amount ELSE 0 END) AS expense
+FROM transactions
+GROUP BY month
+ORDER BY month
 """)
     fun getMonthlyIncomeVsExpense(): Flow<List<MonthlyComparison>>
 
+
     @Query("""
-    SELECT strftime('%Y-%m', date) as month,
-           category,
-           SUM(amount) as total_amount
-    FROM transactions 
-    WHERE type = 'Expense' 
-    AND date IS NOT NULL 
-    AND strftime('%Y-%m', date) IS NOT NULL
-    GROUP BY strftime('%Y-%m', date), category
-    HAVING total_amount > 0
-    ORDER BY month
+SELECT strftime('%Y-%m', datetime(date / 1000, 'unixepoch')) as month,
+       category,
+       SUM(amount) as total_amount
+FROM transactions 
+WHERE type = 'Expense' 
+AND date IS NOT NULL 
+GROUP BY strftime('%Y-%m', datetime(date / 1000, 'unixepoch')), category
+HAVING total_amount > 0
+ORDER BY month
 """)
     fun getMonthlySpendingTrends(): Flow<List<MonthlyTrend>>
 }
