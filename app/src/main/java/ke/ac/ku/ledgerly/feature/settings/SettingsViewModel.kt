@@ -77,16 +77,19 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _isSyncEnabled.value = enabled
             val result = userPreferencesRepository.saveSyncEnabled(enabled, syncNow = false)
+
             if (result.isSuccess) {
+                val remoteResult = userPreferencesRepository.syncToFirestore()
+                if (remoteResult.isFailure) {
+                    _errorMessage.value = "Failed to sync preference to Firestore"
+                }
+
                 if (enabled) {
-                    // Sync immediately when enabled
-                    userPreferencesRepository.syncToFirestore()
-                    // Schedule periodic sync (auto-sync)
                     schedulePeriodicSync()
                 } else {
-                    // Cancel periodic sync when disabled
                     workManagerSetup.cancelPeriodicSync()
                 }
+
                 syncManager.setCloudSyncEnabled(enabled)
             } else {
                 _errorMessage.value = "Failed to update sync settings"
@@ -94,6 +97,7 @@ class SettingsViewModel @Inject constructor(
             }
         }
     }
+
 
     fun toggleNotifications(enabled: Boolean) {
         viewModelScope.launch {
