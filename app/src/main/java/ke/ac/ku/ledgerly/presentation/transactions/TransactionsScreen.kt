@@ -39,6 +39,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.base.HomeNavigationEvent
+import ke.ac.ku.ledgerly.data.constants.NavRouts
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.presentation.home.HomeUiEvent
@@ -73,8 +74,8 @@ fun TransactionsScreen(
     LaunchedEffect(Unit) {
         homeViewModel.navigationEvent.collect { event ->
             when (event) {
-                HomeNavigationEvent.NavigateToAddIncome -> navController.navigate("/add_income")
-                HomeNavigationEvent.NavigateToAddExpense -> navController.navigate("/add_transaction")
+                HomeNavigationEvent.NavigateToAddIncome -> navController.navigate(NavRouts.addIncome)
+                HomeNavigationEvent.NavigateToAddExpense -> navController.navigate(NavRouts.addExpense)
                 else -> {}
             }
         }

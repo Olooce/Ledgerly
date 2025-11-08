@@ -34,6 +34,7 @@ import androidx.navigation.compose.rememberNavController
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.base.HomeNavigationEvent
 import ke.ac.ku.ledgerly.base.NavigationEvent
+import ke.ac.ku.ledgerly.data.constants.NavRouts
 import ke.ac.ku.ledgerly.ui.components.TransactionList
 import ke.ac.ku.ledgerly.ui.theme.Typography
 import ke.ac.ku.ledgerly.ui.theme.Zinc
@@ -48,18 +49,9 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
         viewModel.navigationEvent.collect { event ->
             when (event) {
                 NavigationEvent.NavigateBack -> navController.popBackStack()
-                HomeNavigationEvent.NavigateToSeeAll -> {
-                    navController.navigate("/all_transactions")
-                }
-
-                HomeNavigationEvent.NavigateToAddIncome -> {
-                    navController.navigate("/add_income")
-                }
-
-                HomeNavigationEvent.NavigateToAddExpense -> {
-                    navController.navigate("/add_transaction")
-                }
-
+                HomeNavigationEvent.NavigateToSeeAll -> { navController.navigate(NavRouts.allTransactions) }
+                HomeNavigationEvent.NavigateToAddIncome -> navController.navigate(NavRouts.addIncome)
+                HomeNavigationEvent.NavigateToAddExpense -> navController.navigate(NavRouts.addExpense)
                 else -> {}
             }
         }

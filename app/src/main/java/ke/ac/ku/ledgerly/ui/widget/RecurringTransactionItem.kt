@@ -105,7 +105,7 @@ fun RecurringTransactionItem(
                 Text(
                     text = buildString {
                         append("Start: ${FormatingUtils.formatDateToHumanReadableForm(recurring.startDate)}")
-                        recurring.endDate?.let { append(" • End: $it") }
+                        recurring.endDate?.let { append(" • End: ${FormatingUtils.formatDateToHumanReadableForm(it)}") }
                     },
                     style = MaterialTheme.typography.bodySmall.copy(
                         color = MaterialTheme.colorScheme.outline
