@@ -10,6 +10,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import ke.ac.ku.ledgerly.auth.data.AuthRepository
+import ke.ac.ku.ledgerly.auth.domain.AuthStateProvider
 import ke.ac.ku.ledgerly.data.repository.SyncRepository
 import ke.ac.ku.ledgerly.data.repository.SyncResult
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
@@ -26,6 +27,7 @@ import java.util.UUID
 class SyncManager @Inject constructor(
     private val syncRepository: SyncRepository,
     private val authRepository: AuthRepository,
+    private val authStateProvider: AuthStateProvider,
     private val userPreferencesRepository: UserPreferencesRepository,
     @ApplicationContext private val context: Context
 ) {
@@ -58,7 +60,7 @@ class SyncManager @Inject constructor(
         onError: ((String) -> Unit)? = null
     ) {
         try {
-            if (!authRepository.isUserAuthenticated()) {
+            if (!authStateProvider.isUserAuthenticated()) {
                 withContext(Dispatchers.Main) {
                     onError?.invoke("Please sign in to enable cloud sync")
                 }
@@ -67,8 +69,9 @@ class SyncManager @Inject constructor(
 
             val deviceId = getDeviceId()
 
-            // run heavy tasks on IO thread
             val result = withContext(Dispatchers.IO) {
+                userPreferencesRepository.loadFromFirestore()
+
                 syncRepository.fullSync(deviceId)
             }
 
@@ -104,13 +107,13 @@ class SyncManager @Inject constructor(
         }
     }
 
-
     suspend fun isCloudSyncEnabled(): Boolean {
         return userPreferencesRepository.syncEnabled.first()
     }
+
     fun setCloudSyncEnabled(enabled: Boolean) {
         scope.launch {
-            if (enabled && !authRepository.isUserAuthenticated()) {
+            if (enabled && !authStateProvider.isUserAuthenticated()) {
                 Log.w(TAG, "Cannot enable cloud sync while user is signed out")
                 return@launch
             }
@@ -136,5 +139,3 @@ class SyncManager @Inject constructor(
         prefs.edit { putLong(KEY_LAST_SYNC, System.currentTimeMillis()) }
     }
 }
-
-

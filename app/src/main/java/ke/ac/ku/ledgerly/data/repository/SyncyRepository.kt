@@ -6,6 +6,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.toObject
 import ke.ac.ku.ledgerly.auth.data.AuthRepository
+import ke.ac.ku.ledgerly.auth.domain.AuthStateProvider
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.model.*
 import kotlinx.coroutines.flow.first
@@ -17,6 +18,7 @@ import javax.inject.Singleton
 class SyncRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val authRepository: AuthRepository,
+    private val authStateProvider: AuthStateProvider,
     private val transactionDao: TransactionDao,
     private val userPreferencesRepository: UserPreferencesRepository
 ) {
@@ -25,12 +27,12 @@ class SyncRepository @Inject constructor(
     }
 
     private suspend fun getCurrentUserId(): String {
-        return authRepository.getCurrentUserId()
+        return authStateProvider.getCurrentUserId()
             ?: throw IllegalStateException("User not authenticated")
     }
 
     private suspend fun ensureAuthentication() {
-        if (!authRepository.isUserAuthenticated()) {
+        if (!authStateProvider.isUserAuthenticated()) {
             throw IllegalStateException("User not authenticated")
         }
     }
