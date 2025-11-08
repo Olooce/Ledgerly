@@ -75,11 +75,11 @@ fun BudgetItem(
             Spacer(Modifier.height(8.dp))
 
             LinearProgressIndicator(
-                progress = progress,
-                modifier = Modifier.fillMaxWidth().height(8.dp).clip(MaterialTheme.shapes.small),
-                color = progressColor,
-                trackColor = LedgerlyGreenLight.copy(alpha = 0.3f),
-                strokeCap = ProgressIndicatorDefaults.LinearStrokeCap
+            progress = { progress },
+            modifier = Modifier.fillMaxWidth().height(8.dp).clip(MaterialTheme.shapes.small),
+            color = progressColor,
+            trackColor = LedgerlyGreenLight.copy(alpha = 0.3f),
+            strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
             )
 
             Spacer(Modifier.height(6.dp))
