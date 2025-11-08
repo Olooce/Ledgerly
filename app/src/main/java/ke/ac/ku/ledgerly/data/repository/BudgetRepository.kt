@@ -1,46 +1,46 @@
 package ke.ac.ku.ledgerly.data.repository
 
-import ke.ac.ku.ledgerly.data.dao.TransactionDao
+import ke.ac.ku.ledgerly.data.dao.BudgetDao
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.utils.Utils
 import javax.inject.Inject
 
 class BudgetRepository @Inject constructor(
-    private val transactionDao: TransactionDao
+    private val dao: BudgetDao
 ) {
     suspend fun setBudget(budget: BudgetEntity) {
-        transactionDao.insertBudget(budget)
+        dao.insertBudget(budget)
     }
 
     suspend fun updateBudget(budget: BudgetEntity) {
-        transactionDao.updateBudget(budget)
+        dao.updateBudget(budget)
     }
 
     suspend fun getBudgetsForCurrentMonth(): List<BudgetEntity> {
         val currentMonth = Utils.getCurrentMonthYear()
-        return transactionDao.getBudgetsForMonth(currentMonth)
+        return dao.getBudgetsForMonth(currentMonth)
     }
 
     suspend fun getBudgetForCategory(category: String): BudgetEntity? {
         val currentMonth = Utils.getCurrentMonthYear()
-        return transactionDao.getBudgetForCategory(category, currentMonth)
+        return dao.getBudgetForCategory(category, currentMonth)
     }
 
     suspend fun deleteBudget(category: String) {
         val currentMonth = Utils.getCurrentMonthYear()
-        transactionDao.deleteBudget(category, currentMonth)
+        dao.deleteBudget(category, currentMonth)
     }
 
     suspend fun refreshBudgetSpending() {
         val currentMonth = Utils.getCurrentMonthYear()
-        val budgets = transactionDao.getBudgetsForMonth(currentMonth)
+        val budgets = dao.getBudgetsForMonth(currentMonth)
 
         budgets.forEach { budget ->
             val currentSpending =
-                transactionDao.getCurrentSpendingForCategory(budget.category, currentMonth)
+                dao.getCurrentSpendingForCategory(budget.category, currentMonth)
             if (budget.currentSpending != currentSpending) {
                 val updatedBudget = budget.copy(currentSpending = currentSpending)
-                transactionDao.updateBudget(updatedBudget)
+                dao.updateBudget(updatedBudget)
             }
         }
     }

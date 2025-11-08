@@ -6,6 +6,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.model.RecurrenceFrequency
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
@@ -17,7 +18,8 @@ import java.time.ZoneId
 class RecurringTransactionWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted params: WorkerParameters,
-    private val dao: TransactionDao
+    private val dao: RecurringTransactionDao,
+    private val transDao: TransactionDao
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
@@ -58,7 +60,7 @@ class RecurringTransactionWorker @AssistedInject constructor(
                     tags = recurring.tags
                 )
 
-                dao.insertTransaction(transaction)
+                transDao.insertTransaction(transaction)
                 dao.updateRecurringTransaction(
                     recurring.copy(lastGeneratedDate = currentDate.toEpochMillis())
                 )

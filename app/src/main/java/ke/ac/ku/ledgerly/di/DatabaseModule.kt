@@ -8,6 +8,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import ke.ac.ku.ledgerly.data.LedgerlyDatabase
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
+import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
+import ke.ac.ku.ledgerly.data.dao.BudgetDao
 import javax.inject.Singleton
 
 @Module
@@ -16,12 +18,16 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): LedgerlyDatabase {
-        return LedgerlyDatabase.getInstance(context)
-    }
+    fun provideDatabase(@ApplicationContext context: Context): LedgerlyDatabase =
+        LedgerlyDatabase.getInstance(context)
 
     @Provides
-    fun provideExpenseDao(database: LedgerlyDatabase): TransactionDao {
-        return database.expenseDao()
-    }
+    fun provideTransactionDao(db: LedgerlyDatabase): TransactionDao = db.transactionDao()
+
+    @Provides
+    fun provideRecurringTransactionDao(db: LedgerlyDatabase): RecurringTransactionDao =
+        db.recurringTransactionDao()
+
+    @Provides
+    fun provideBudgetDao(db: LedgerlyDatabase): BudgetDao = db.budgetDao()
 }

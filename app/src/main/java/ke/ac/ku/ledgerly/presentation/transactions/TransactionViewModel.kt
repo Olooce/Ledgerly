@@ -3,6 +3,7 @@ package ke.ac.ku.ledgerly.presentation.transactions
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import kotlinx.coroutines.Dispatchers
@@ -13,7 +14,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TransactionViewModel @Inject constructor(
-    private val dao: TransactionDao
+    private val dao: RecurringTransactionDao
 ) : ViewModel() {
 
     val recurringTransactions: Flow<List<RecurringTransactionEntity>> =

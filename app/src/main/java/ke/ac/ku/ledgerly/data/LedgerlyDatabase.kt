@@ -8,6 +8,8 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import dagger.hilt.android.qualifiers.ApplicationContext
+import ke.ac.ku.ledgerly.data.dao.BudgetDao
+import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.data.model.Converters
@@ -28,7 +30,9 @@ import javax.inject.Singleton
 @Singleton
 abstract class LedgerlyDatabase : RoomDatabase() {
 
-    abstract fun expenseDao(): TransactionDao
+    abstract fun transactionDao(): TransactionDao
+    abstract fun recurringTransactionDao(): RecurringTransactionDao
+    abstract fun budgetDao(): BudgetDao
 
     companion object {
         const val DATABASE_NAME = "ledgerly_db"

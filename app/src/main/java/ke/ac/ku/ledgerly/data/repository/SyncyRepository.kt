@@ -5,6 +5,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.toObject
+import ke.ac.ku.ledgerly.data.dao.BudgetDao
+import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.model.FirestoreBudget
 import ke.ac.ku.ledgerly.data.model.FirestoreRecurringTransaction
@@ -18,9 +20,10 @@ import javax.inject.Singleton
 @Singleton
 class SyncRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
-    private val authRepository: AuthRepository,
     private val authStateProvider: AuthStateProvider,
     private val transactionDao: TransactionDao,
+    private val recurringTransactionDao: RecurringTransactionDao,
+    private val budgetDao: BudgetDao,
     private val userPreferencesRepository: UserPreferencesRepository
 ) {
     companion object {
@@ -170,7 +173,7 @@ class SyncRepository @Inject constructor(
             val userId = getCurrentUserId()
             Log.d(TAG, "Starting recurring transactions sync for user: $userId")
 
-            val localRecurringTransactions = transactionDao.getAllRecurringTransactionsSync()
+            val localRecurringTransactions = recurringTransactionDao.getAllRecurringTransactionsSync()
             Log.d(TAG, "Found ${localRecurringTransactions.size} local recurring transactions")
 
             val remoteSnapshot = firestore.collection("recurring_transactions")
@@ -244,7 +247,7 @@ class SyncRepository @Inject constructor(
 
                     if (shouldPull) {
                         val entity = FirestoreRecurringTransaction.toEntity(remoteRecurring)
-                        transactionDao.insertRecurringTransaction(entity)
+                        recurringTransactionDao.insertRecurringTransaction(entity)
                         pulledCount++
                     } else {
                         Log.d(
@@ -298,7 +301,7 @@ class SyncRepository @Inject constructor(
             val userId = getCurrentUserId()
             Log.d(TAG, "Starting budgets sync for user: $userId")
 
-            val localBudgets = transactionDao.getAllBudgetsSync()
+            val localBudgets = budgetDao.getAllBudgetsSync()
             Log.d(TAG, "Found ${localBudgets.size} local budgets")
 
             val remoteSnapshot = firestore.collection("budgets")
@@ -364,7 +367,7 @@ class SyncRepository @Inject constructor(
 
                     if (shouldPull) {
                         val entity = FirestoreBudget.toEntity(remoteBudget)
-                        transactionDao.insertBudget(entity)
+                        budgetDao.insertBudget(entity)
                         pulledCount++
                     } else {
                         Log.d(
