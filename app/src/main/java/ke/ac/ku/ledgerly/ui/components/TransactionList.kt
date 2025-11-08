@@ -55,13 +55,10 @@ fun TransactionList(
         items(
             items = list,
             key = { item -> item.id ?: 0 }) { item ->
-            val icon = Utils.getItemIcon(item.category)
-
             TransactionItem(
                 title = item.category,
                 amount = FormatingUtils.formatCurrency(item.amount),
-                icon = icon,
-                date = FormatingUtils.formatDayMonth(item.date),
+                date = FormatingUtils.formatDateToHumanReadableForm(item.date),
                 paymentMethod = item.paymentMethod,
                 notes = item.notes,
                 tags = item.tags,

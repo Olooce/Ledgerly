@@ -2,7 +2,6 @@ package ke.ac.ku.ledgerly.presentation.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,8 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -37,16 +34,11 @@ import androidx.navigation.compose.rememberNavController
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.base.HomeNavigationEvent
 import ke.ac.ku.ledgerly.base.NavigationEvent
-import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.ui.components.TransactionList
-import ke.ac.ku.ledgerly.ui.theme.Green
-import ke.ac.ku.ledgerly.ui.theme.Red
 import ke.ac.ku.ledgerly.ui.theme.Typography
 import ke.ac.ku.ledgerly.ui.theme.Zinc
 import ke.ac.ku.ledgerly.ui.widget.MultiFloatingActionButton
-import ke.ac.ku.ledgerly.ui.widget.TransactionItem
 import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
-import ke.ac.ku.ledgerly.utils.FormatingUtils
 import ke.ac.ku.ledgerly.utils.Utils
 
 
