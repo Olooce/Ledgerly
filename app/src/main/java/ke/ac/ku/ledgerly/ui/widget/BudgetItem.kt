@@ -44,7 +44,12 @@ fun BudgetItem(
     iconSize: Dp = 40.dp,
     iconTint: Color = MaterialTheme.colorScheme.primary
 ) {
-    val progress = ((budget.currentSpending / budget.monthlyBudget).coerceIn(0.0, 1.0)).toFloat()
+    val rawProgress = if (budget.monthlyBudget <= 0.0) {
+        0.0
+    } else {
+        budget.currentSpending / budget.monthlyBudget
+    }
+    val progress = rawProgress.coerceIn(0.0, 1.0).toFloat()
     val progressColor = when {
         budget.isExceeded() -> LedgerlyBlue
         budget.isNearLimit() -> LedgerlyGreenLight
@@ -127,7 +132,7 @@ fun BudgetItem(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "${String.format("%.1f", budget.percentageUsed)}% used",
+                        text = "${String.format(java.util.Locale.US, "%.1f", budget.percentageUsed)}% used",
                         style = MaterialTheme.typography.bodySmall.copy(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
