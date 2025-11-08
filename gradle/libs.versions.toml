@@ -36,6 +36,7 @@ composeMaterialCore = "1.5.5"
 materialIconsExtended = "1.7.8"
 datastorePreferences = "1.1.7"
 uiGraphics = "1.9.4"
+uiGeometry = "1.9.4"
 
 
 [libraries]
@@ -83,6 +84,7 @@ androidx-compose-material-core = { group = "androidx.wear.compose", name = "comp
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIconsExtended" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
 androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
+androidx-compose-ui-geometry = { group = "androidx.compose.ui", name = "ui-geometry", version.ref = "uiGeometry" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

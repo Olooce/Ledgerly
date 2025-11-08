@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -39,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -77,7 +79,7 @@ fun StatsScreen(
     viewModel: StatsViewModel = hiltViewModel()
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Trends", "Categories", "Comparison")
+    val tabs = listOf("Comparison", "Trends", "Categories")
 
     Box(modifier = Modifier.fillMaxSize()) {
         ConstraintLayout(modifier = Modifier.fillMaxSize()) {
@@ -117,7 +119,7 @@ fun StatsScreen(
                         )
                     )
                 }
-            ){ padding ->
+            ) { padding ->
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -149,9 +151,9 @@ fun StatsScreen(
                         modifier = Modifier.fillMaxSize()
                     ) { index ->
                         when (index) {
-                            0 -> TrendsTab(viewModel, navController)
-                            1 -> CategoriesTab(viewModel)
-                            2 -> ComparisonTab(viewModel)
+                            0 -> ComparisonTab(viewModel)
+                            1 -> TrendsTab(viewModel, navController)
+                            2 -> CategoriesTab(viewModel)
                         }
                     }
                 }
@@ -270,7 +272,7 @@ private fun ComparisonTab(viewModel: StatsViewModel) {
                         title = "Expenses",
                         value = FormatingUtils.formatCurrency(latest.expense),
                         modifier = Modifier.weight(1f),
-                        color =Color(0xFFC62828)
+                        color = Color(0xFFC62828)
                     )
                 }
             }
@@ -343,6 +345,14 @@ private fun EmptyState(message: String) {
             .height(200.dp),
         contentAlignment = Alignment.Center
     ) {
+        Image(
+            painter = painterResource(id = R.drawable.ic_empty_state),
+            contentDescription = "No Data",
+            modifier = Modifier
+                .size(120.dp)
+                .padding(bottom = 16.dp),
+            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
+        )
         Text(
             text = message,
             style = MaterialTheme.typography.bodyMedium,
@@ -356,7 +366,7 @@ private fun LineChartView(entries: List<Entry>) {
     val context = LocalContext.current
     val valTextColor = MaterialTheme.colorScheme.onSurface.toArgb()
     val valGridColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f).toArgb()
-    val primaryColor = MaterialTheme.colorScheme.primary.toArgb()
+    val primaryColor = MaterialTheme.colorScheme.inversePrimary.toArgb()
 
     AndroidView(
         factory = {
@@ -373,8 +383,6 @@ private fun LineChartView(entries: List<Entry>) {
             color = primaryColor
             lineWidth = 3f
             mode = LineDataSet.Mode.CUBIC_BEZIER
-            setDrawFilled(true)
-            fillDrawable = ContextCompat.getDrawable(context, R.drawable.char_gradient)
             valueTextSize = 11f
             valueTextColor = valTextColor
             setDrawCircles(true)

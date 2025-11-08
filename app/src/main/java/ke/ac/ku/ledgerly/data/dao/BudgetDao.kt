@@ -12,6 +12,7 @@ interface BudgetDao {
     suspend fun insertBudgetWithTimestamp(transactionDao: TransactionDao, budget: BudgetEntity) {
         insertBudget(budget.copy(lastModified = System.currentTimeMillis()))
     }
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBudget(budget: BudgetEntity)
 
@@ -28,13 +29,15 @@ interface BudgetDao {
     suspend fun deleteBudget(category: String, monthYear: String)
 
     // Get current spending for a category in a specific month
-    @Query("""
+    @Query(
+        """
     SELECT COALESCE(SUM(amount), 0)
     FROM transactions
     WHERE category = :category
       AND type = 'Expense'
       AND strftime('%Y-%m', datetime(date / 1000, 'unixepoch')) = :monthYear
-""")
+"""
+    )
     suspend fun getCurrentSpendingForCategory(category: String, monthYear: String): Double
 
 

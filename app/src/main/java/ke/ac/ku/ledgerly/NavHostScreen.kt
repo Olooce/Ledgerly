@@ -110,8 +110,8 @@ fun NavHostScreen(
                             navController = navController,
                             items = listOf(
                                 NavItem(NavRouts.home, R.drawable.ic_home),
-                                NavItem(NavRouts.budget, R.drawable.ic_budget),
                                 NavItem(NavRouts.allTransactions, R.drawable.ic_transaction),
+                                NavItem(NavRouts.budget, R.drawable.ic_budget),
                                 NavItem(NavRouts.stats, R.drawable.ic_stats)
                             )
                         )
@@ -245,7 +245,7 @@ fun NavigationBottomBar(
     val isDarkTheme = androidx.compose.foundation.isSystemInDarkTheme()
 
     val backgroundColor = if (isDarkTheme)
-        MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f)
     else
         MaterialTheme.colorScheme.background.copy(alpha = 0.95f)
 

@@ -173,7 +173,8 @@ class SyncRepository @Inject constructor(
             val userId = getCurrentUserId()
             Log.d(TAG, "Starting recurring transactions sync for user: $userId")
 
-            val localRecurringTransactions = recurringTransactionDao.getAllRecurringTransactionsSync()
+            val localRecurringTransactions =
+                recurringTransactionDao.getAllRecurringTransactionsSync()
             Log.d(TAG, "Found ${localRecurringTransactions.size} local recurring transactions")
 
             val remoteSnapshot = firestore.collection("recurring_transactions")
