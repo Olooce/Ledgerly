@@ -121,12 +121,13 @@ fun RecurringTransactionItem(
             ) {
                 Switch(
                     checked = recurring.isActive,
+                    enabled = recurring.id != null,
                     onCheckedChange = { isActive ->
                         recurring.id?.let { onToggleActive(it, isActive) }
                     }
                 )
 
-                IconButton(onClick = { recurring.id?.let { onDelete(it) } }) {
+                IconButton(onClick = { recurring.id?.let { onDelete(it) } },  enabled = recurring.id != null) {
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Delete",
