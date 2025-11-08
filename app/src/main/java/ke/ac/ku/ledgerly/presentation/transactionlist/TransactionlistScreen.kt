@@ -5,7 +5,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,13 +14,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,11 +36,12 @@ import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import ke.ac.ku.ledgerly.R
-import ke.ac.ku.ledgerly.data.model.TransactionEntity
+import ke.ac.ku.ledgerly.base.HomeNavigationEvent
+import ke.ac.ku.ledgerly.presentation.home.HomeUiEvent
 import ke.ac.ku.ledgerly.presentation.home.HomeViewModel
 import ke.ac.ku.ledgerly.ui.theme.Typography
-import ke.ac.ku.ledgerly.ui.theme.Zinc
 import ke.ac.ku.ledgerly.ui.widget.DropDown
+import ke.ac.ku.ledgerly.ui.widget.MultiFloatingActionButton
 import ke.ac.ku.ledgerly.ui.widget.TransactionItem
 import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
 import ke.ac.ku.ledgerly.utils.FormatingUtils
@@ -55,11 +53,20 @@ fun TransactionListScreen(
     navController: NavController,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
-    val transactions by viewModel.transactions.collectAsState(initial = emptyList<TransactionEntity>())
+    val transactions by viewModel.transactions.collectAsState(initial = emptyList())
     var filterType by remember { mutableStateOf("All") }
     var dateRange by remember { mutableStateOf("All Time") }
     var menuExpanded by remember { mutableStateOf(false) }
-    var fabExpanded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collect { event ->
+            when (event) {
+                HomeNavigationEvent.NavigateToAddIncome -> navController.navigate("/add_income")
+                HomeNavigationEvent.NavigateToAddExpense -> navController.navigate("/add_transaction")
+                else -> {}
+            }
+        }
+    }
 
 
     val filteredByType = when (filterType) {
@@ -72,7 +79,7 @@ fun TransactionListScreen(
 
     Surface(modifier = Modifier.fillMaxSize()) {
         ConstraintLayout(modifier = Modifier.fillMaxSize()) {
-            val (topBar, header, content, fab) = createRefs()
+            val (topBar, header, content, add) = createRefs()
 
             // Top Bar
             Image(
@@ -202,83 +209,26 @@ fun TransactionListScreen(
                     }
                 }
             }
-
-            // Floating Action Button
             Box(
                 modifier = Modifier
-                    .constrainAs(fab) {
+                    .fillMaxSize()
+                    .constrainAs(add) {
                         bottom.linkTo(parent.bottom)
                         end.linkTo(parent.end)
                     },
                 contentAlignment = Alignment.BottomEnd
             ) {
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    AnimatedVisibility(visible = fabExpanded) {
-                        Column(horizontalAlignment = Alignment.End) {
-                            // Add Income
-                            Box(
-                                modifier = Modifier
-                                    .size(56.dp)
-                                    .background(color = Zinc, shape = RoundedCornerShape(16.dp))
-                                    .clickable {
-                                        viewModel.onEvent(
-                                            ke.ac.ku.ledgerly.presentation.home.HomeUiEvent.OnAddIncomeClicked
-                                        )
-                                        fabExpanded = false
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_income),
-                                    contentDescription = "Add Income",
-                                    tint = Color.White
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            // Add Expense
-                            Box(
-                                modifier = Modifier
-                                    .size(56.dp)
-                                    .background(color = Zinc, shape = RoundedCornerShape(16.dp))
-                                    .clickable {
-                                        viewModel.onEvent(
-                                            ke.ac.ku.ledgerly.presentation.home.HomeUiEvent.OnAddExpenseClicked
-                                        )
-                                        fabExpanded = false
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_expense),
-                                    contentDescription = "Add Expense",
-                                    tint = Color.White
-                                )
-                            }
-                        }
+                MultiFloatingActionButton(
+                    modifier = Modifier,
+                    onAddExpenseClicked = {
+                        viewModel.onEvent(HomeUiEvent.OnAddExpenseClicked)
+                    },
+                    onAddIncomeClicked = {
+                        viewModel.onEvent(HomeUiEvent.OnAddIncomeClicked)
                     }
-
-                    // Main FAB
-                    Box(
-                        modifier = Modifier
-                            .size(64.dp)
-                            .background(color = Zinc, shape = RoundedCornerShape(16.dp))
-                            .clickable { fabExpanded = !fabExpanded },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.ic_addbutton),
-                            contentDescription = "Add Transaction",
-                            modifier = Modifier.size(40.dp)
-                        )
-                    }
-                }
+                )
             }
+
         }
     }
 }

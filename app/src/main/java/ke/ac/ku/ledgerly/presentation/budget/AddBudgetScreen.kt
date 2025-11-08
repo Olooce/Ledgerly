@@ -43,6 +43,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import ke.ac.ku.ledgerly.R
+import ke.ac.ku.ledgerly.data.constants.Categories
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.ui.theme.LightGrey
 import ke.ac.ku.ledgerly.ui.theme.Typography
@@ -156,11 +157,7 @@ fun AddBudgetForm(
     ) {
         TitleComponent("Category")
         DropDown(
-            listOf(
-                "Grocery", "Rent", "Utilities", "Transport", "Education",
-                "Entertainment", "Healthcare", "Insurance", "Dining Out",
-                "Travel", "Shopping", "Subscriptions", "Other"
-            )
+            Categories.Expenses
         ) { selected -> category.value = selected }
 
         Spacer(modifier = Modifier.size(24.dp))
