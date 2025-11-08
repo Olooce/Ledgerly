@@ -46,8 +46,10 @@ import ke.ac.ku.ledgerly.ui.theme.LedgerlyAccent
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyBlue
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyGreen
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyGreenLight
+import ke.ac.ku.ledgerly.ui.theme.Typography
 import ke.ac.ku.ledgerly.ui.theme.WarningYellow
 import ke.ac.ku.ledgerly.ui.theme.Zinc
+import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
 import ke.ac.ku.ledgerly.utils.FormatingUtils
 import ke.ac.ku.ledgerly.utils.Utils
 
@@ -171,19 +173,31 @@ fun BudgetScreen(
 
                     else -> {
                         if (budgets.isEmpty()) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "No budgets set for ${
-                                        FormatingUtils.formatMonthYear(
-                                            Utils.getCurrentMonthYear()
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.ic_empty_state),
+                                            contentDescription = "No Budgets",
+                                            modifier = Modifier
+                                                .size(120.dp)
+                                                .padding(bottom = 16.dp),
+                                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
                                         )
-                                    }",
-                                    color = LedgerlyGreenLight
-                                )
-                            }
+                                        Text(
+                                            text = "No budgets set for ${
+                                                FormatingUtils.formatMonthYear(
+                                                    Utils.getCurrentMonthYear()
+                                                )
+                                            }",
+                                            color = MaterialTheme.colorScheme.secondary
+                                        )
+                                    }
+                                }
                         } else {
                             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 items(budgets) { budget ->
