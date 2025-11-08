@@ -12,15 +12,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.ui.theme.Green
 import ke.ac.ku.ledgerly.ui.theme.Red
 import ke.ac.ku.ledgerly.ui.theme.Typography
-import ke.ac.ku.ledgerly.ui.widget.TransactionItem
 import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
 import ke.ac.ku.ledgerly.utils.FormatingUtils
-import ke.ac.ku.ledgerly.utils.Utils
 
 @Composable
 fun TransactionList(
@@ -62,7 +61,7 @@ fun TransactionList(
                 paymentMethod = item.paymentMethod,
                 notes = item.notes,
                 tags = item.tags,
-                color = if (item.type == "Income") Green else Red,
+                color = if (item.type == "Income")  Color(0xFF2E7D32) else Color(0xFFC62828),
                 modifier = Modifier
             )
         }

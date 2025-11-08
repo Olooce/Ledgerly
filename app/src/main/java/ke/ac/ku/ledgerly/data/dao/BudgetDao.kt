@@ -28,8 +28,15 @@ interface BudgetDao {
     suspend fun deleteBudget(category: String, monthYear: String)
 
     // Get current spending for a category in a specific month
-    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE category = :category AND type = 'Expense' AND strftime('%Y-%m', date) = :monthYear")
+    @Query("""
+    SELECT COALESCE(SUM(amount), 0)
+    FROM transactions
+    WHERE category = :category
+      AND type = 'Expense'
+      AND strftime('%Y-%m', datetime(date / 1000, 'unixepoch')) = :monthYear
+""")
     suspend fun getCurrentSpendingForCategory(category: String, monthYear: String): Double
+
 
     @Query("SELECT * FROM budgets")
     suspend fun getAllBudgetsSync(): List<BudgetEntity>
