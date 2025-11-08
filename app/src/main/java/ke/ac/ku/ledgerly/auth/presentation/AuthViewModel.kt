@@ -1,5 +1,6 @@
 package ke.ac.ku.ledgerly.auth.presentation
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.identity.SignInClient
@@ -203,26 +204,59 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
 
-            repository.signOut()
-                .onSuccess {
-                    _state.update {
-                        AuthState(
-                            isAuthenticated = false,
-                            isBiometricAvailable = repository.isBiometricAvailable(),
-                            isLoading = false
-                        )
+            syncManager.syncAllData(
+                onSuccess = {
+                    viewModelScope.launch {
+                        repository.signOut()
+                            .onSuccess {
+                                _state.update {
+                                    AuthState(
+                                        isAuthenticated = false,
+                                        isBiometricAvailable = repository.isBiometricAvailable(),
+                                        isLoading = false
+                                    )
+                                }
+                            }
+                            .onFailure { e ->
+                                _state.update {
+                                    it.copy(
+                                        error = "Logout failed: ${e.message}",
+                                        isLoading = false
+                                    )
+                                }
+                            }
+                    }
+                },
+                onError = { error ->
+
+                    // TODO: Should I really logout?
+                    Log.e("AuthViewModel", "Sync failed before logout: $error")
+
+                    viewModelScope.launch {
+                        repository.signOut()
+                            .onSuccess {
+                                _state.update {
+                                    AuthState(
+                                        isAuthenticated = false,
+                                        isBiometricAvailable = repository.isBiometricAvailable(),
+                                        isLoading = false
+                                    )
+                                }
+                            }
+                            .onFailure { e ->
+                                _state.update {
+                                    it.copy(
+                                        error = "Logout failed: ${e.message}",
+                                        isLoading = false
+                                    )
+                                }
+                            }
                     }
                 }
-                .onFailure { e ->
-                    _state.update {
-                        it.copy(
-                            error = "Logout failed: ${e.message}",
-                            isLoading = false
-                        )
-                    }
-                }
+            )
         }
     }
+
 
     private fun dismissError() {
         _state.update { it.copy(error = null) }

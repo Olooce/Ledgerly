@@ -73,6 +73,7 @@ class AuthRepository @Inject constructor(
     }
 
     suspend fun signOut(): Result<Unit> = try {
+
         workManagerSetup.cancelAllWork()
         workManagerSetup.pruneWork()
 
