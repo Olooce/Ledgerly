@@ -7,6 +7,7 @@ import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -31,5 +32,18 @@ class TransactionViewModel @Inject constructor(
                 dao.deleteRecurringTransaction(it)
             }
         }
+    }
+
+    private val _recurringTransactions = MutableStateFlow(emptyList<RecurringTransactionEntity>())
+
+
+    private fun loadRecurringTransactions() {
+        viewModelScope.launch {
+            _recurringTransactions.value = dao.getAllRecurringTransactionsSync()
+        }
+    }
+
+    init {
+        loadRecurringTransactions()
     }
 }
