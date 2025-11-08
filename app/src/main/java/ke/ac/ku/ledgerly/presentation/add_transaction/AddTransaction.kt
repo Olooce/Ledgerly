@@ -56,6 +56,7 @@ import androidx.navigation.NavController
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.base.AddTransactionNavigationEvent
 import ke.ac.ku.ledgerly.base.NavigationEvent
+import ke.ac.ku.ledgerly.data.constants.Categories
 import ke.ac.ku.ledgerly.data.model.RecurrenceFrequency
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
@@ -214,17 +215,10 @@ fun DataForm(
         ) {
             TitleComponent(title = "Category")
             DropDown(
-                if (isIncome) listOf(
-                    "Paypal", "Salary", "Freelance", "Investments", "Bonus",
-                    "Rental Income", "Other Income"
-                ) else listOf(
-                    "Grocery", "Netflix", "Rent", "Paypal", "Starbucks", "Shopping",
-                    "Transport", "Utilities", "Dining Out", "Entertainment", "Healthcare",
-                    "Insurance", "Subscriptions", "Education", "Debt Payments",
-                    "Gifts & Donations", "Travel", "Other Expenses"
-                ),
+                if (isIncome) Categories.Income else Categories.Expenses,
                 onItemSelected = { category.value = it }
             )
+
 
             Spacer(modifier = Modifier.size(24.dp))
 
