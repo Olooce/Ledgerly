@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
@@ -96,17 +97,20 @@ fun BudgetItem(
                 )
             }
         }
-
-        Icon(
-            painter = painterResource(ke.ac.ku.ledgerly.R.drawable.ic_delete),
-            contentDescription = "Delete",
-            tint = MaterialTheme.colorScheme.error,
-            modifier = Modifier
-                .size(24.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.error.copy(alpha = 0.1f))
-                .padding(4.dp)
-                .clickable(onClick = onDelete)
-        )
+        IconButton(
+            onClick = onDelete,
+            modifier = Modifier.size(48.dp)
+        ) {
+            Icon(
+                painter = painterResource(ke.ac.ku.ledgerly.R.drawable.ic_delete),
+                contentDescription = "Delete",
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.error.copy(alpha = 0.1f))
+                    .padding(4.dp)
+            )
+        }
     }
 }
