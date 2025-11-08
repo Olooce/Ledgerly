@@ -45,6 +45,7 @@ object TransactionFilterUtils {
                 val startOfDay = calendar.timeInMillis
                 this.filter { it.date in startOfDay..currentTime }
             }
+
             "Yesterday" -> {
                 calendar.add(Calendar.DAY_OF_YEAR, -1)
                 calendar.set(Calendar.HOUR_OF_DAY, 0)
@@ -59,26 +60,31 @@ object TransactionFilterUtils {
                 val endOfYesterday = calendar.timeInMillis
                 this.filter { it.date in startOfYesterday..endOfYesterday }
             }
+
             "Last 7 Days" -> {
                 calendar.add(Calendar.DAY_OF_YEAR, -7)
                 val sevenDaysAgo = calendar.timeInMillis
                 this.filter { it.date >= sevenDaysAgo }
             }
+
             "Last 30 Days" -> {
                 calendar.add(Calendar.DAY_OF_YEAR, -30)
                 val thirtyDaysAgo = calendar.timeInMillis
                 this.filter { it.date >= thirtyDaysAgo }
             }
+
             "Last 90 Days" -> {
                 calendar.add(Calendar.DAY_OF_YEAR, -90)
                 val ninetyDaysAgo = calendar.timeInMillis
                 this.filter { it.date >= ninetyDaysAgo }
             }
+
             "Last Year" -> {
                 calendar.add(Calendar.YEAR, -1)
                 val oneYearAgo = calendar.timeInMillis
                 this.filter { it.date >= oneYearAgo }
             }
+
             "This Month" -> {
                 calendar.set(Calendar.DAY_OF_MONTH, 1)
                 calendar.set(Calendar.HOUR_OF_DAY, 0)
@@ -88,6 +94,7 @@ object TransactionFilterUtils {
                 val startOfMonth = calendar.timeInMillis
                 this.filter { it.date >= startOfMonth }
             }
+
             else -> this // "All Time"
         }
     }

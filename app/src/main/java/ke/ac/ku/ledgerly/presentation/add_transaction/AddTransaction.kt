@@ -251,7 +251,9 @@ fun DataForm(
             // Date Field
             TitleComponent("Date")
             OutlinedTextField(
-                value = if (date.longValue == 0L) "" else FormatingUtils.formatDateToHumanReadableForm(date.longValue),
+                value = if (date.longValue == 0L) "" else FormatingUtils.formatDateToHumanReadableForm(
+                    date.longValue
+                ),
                 onValueChange = {},
                 modifier = Modifier
                     .fillMaxWidth()

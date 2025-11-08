@@ -1,6 +1,7 @@
 package ke.ac.ku.ledgerly.ui.widget
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -26,7 +27,12 @@ fun CircularIcon(
         modifier = Modifier
             .size(iconSize + 12.dp)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.secondaryContainer),
+            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f))
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                shape = CircleShape
+            ),
         contentAlignment = Alignment.Center
     ) {
         Icon(

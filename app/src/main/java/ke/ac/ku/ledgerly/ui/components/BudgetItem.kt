@@ -1,7 +1,6 @@
 package ke.ac.ku.ledgerly.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -44,7 +43,9 @@ fun BudgetItem(
     iconSize: Dp = 40.dp,
     iconTint: Color = MaterialTheme.colorScheme.primary
 ) {
-    val progress = (budget.currentSpending / budget.monthlyBudget.coerceAtLeast(0.01)).coerceIn(0.0, 1.0).toFloat()
+    val progress =
+        (budget.currentSpending / budget.monthlyBudget.coerceAtLeast(0.01)).coerceIn(0.0, 1.0)
+            .toFloat()
     val progressColor = when {
         budget.isExceeded() -> LedgerlyBlue
         budget.isNearLimit() -> LedgerlyGreenLight
@@ -61,12 +62,16 @@ fun BudgetItem(
                     text = budget.category,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color =    Color.Transparent,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "${FormatingUtils.formatCurrency(budget.currentSpending)} / ${FormatingUtils.formatCurrency(budget.monthlyBudget)}",
+                    text = "${FormatingUtils.formatCurrency(budget.currentSpending)} / ${
+                        FormatingUtils.formatCurrency(
+                            budget.monthlyBudget
+                        )
+                    }",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -75,18 +80,27 @@ fun BudgetItem(
             Spacer(Modifier.height(8.dp))
 
             LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier.fillMaxWidth().height(8.dp).clip(MaterialTheme.shapes.small),
-            color = progressColor,
-            trackColor = LedgerlyGreenLight.copy(alpha = 0.3f),
-            strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+                progress = { progress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(MaterialTheme.shapes.small),
+                color = progressColor,
+                trackColor = LedgerlyGreenLight.copy(alpha = 0.3f),
+                strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
             )
 
             Spacer(Modifier.height(6.dp))
 
             Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
                 Text(
-                    text = "${String.format(java.util.Locale.US, "%.1f", budget.percentageUsed)}% used",
+                    text = "${
+                        String.format(
+                            java.util.Locale.US,
+                            "%.1f",
+                            budget.percentageUsed
+                        )
+                    }% used",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

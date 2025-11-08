@@ -117,7 +117,7 @@ fun StatsScreen(
                         )
                     )
                 }
-            ){ padding ->
+            ) { padding ->
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -270,7 +270,7 @@ private fun ComparisonTab(viewModel: StatsViewModel) {
                         title = "Expenses",
                         value = FormatingUtils.formatCurrency(latest.expense),
                         modifier = Modifier.weight(1f),
-                        color =Color(0xFFC62828)
+                        color = Color(0xFFC62828)
                     )
                 }
             }
@@ -356,7 +356,7 @@ private fun LineChartView(entries: List<Entry>) {
     val context = LocalContext.current
     val valTextColor = MaterialTheme.colorScheme.onSurface.toArgb()
     val valGridColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f).toArgb()
-    val primaryColor = MaterialTheme.colorScheme.primary.toArgb()
+    val primaryColor = MaterialTheme.colorScheme.inversePrimary.toArgb()
 
     AndroidView(
         factory = {
@@ -373,8 +373,6 @@ private fun LineChartView(entries: List<Entry>) {
             color = primaryColor
             lineWidth = 3f
             mode = LineDataSet.Mode.CUBIC_BEZIER
-            setDrawFilled(true)
-            fillDrawable = ContextCompat.getDrawable(context, R.drawable.char_gradient)
             valueTextSize = 11f
             valueTextColor = valTextColor
             setDrawCircles(true)

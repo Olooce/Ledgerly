@@ -19,8 +19,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
-import ke.ac.ku.ledgerly.ui.theme.Green
-import ke.ac.ku.ledgerly.ui.theme.Red
 import ke.ac.ku.ledgerly.ui.widget.CircularIcon
 import ke.ac.ku.ledgerly.ui.widget.ItemSurface
 import ke.ac.ku.ledgerly.utils.FormatingUtils
@@ -32,10 +30,14 @@ fun RecurringTransactionItem(
     onDelete: (Long) -> Unit
 ) {
     val isIncome = recurring.type == "Income"
-    val amountColor = if (isIncome)  Color(0xFF2E7D32) else Color(0xFFC62828)
+    val amountColor = if (isIncome) Color(0xFF2E7D32) else Color(0xFFC62828)
 
     ItemSurface {
-        CircularIcon(recurring.category, iconSize = 60.dp, iconTint = MaterialTheme.colorScheme.primary)
+        CircularIcon(
+            recurring.category,
+            iconSize = 60.dp,
+            iconTint = MaterialTheme.colorScheme.primary
+        )
         Spacer(Modifier.width(12.dp))
 
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
@@ -64,14 +66,24 @@ fun RecurringTransactionItem(
                 )
             }
             Text(
-                text = "Frequency: ${recurring.frequency.name.lowercase().replaceFirstChar { it.uppercase() }}",
+                text = "Frequency: ${
+                    recurring.frequency.name.lowercase().replaceFirstChar { it.uppercase() }
+                }",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = buildString {
                     append("Start: ${FormatingUtils.formatDateToHumanReadableForm(recurring.startDate)}")
-                    recurring.endDate?.let { append(" • End: ${FormatingUtils.formatDateToHumanReadableForm(it)}") }
+                    recurring.endDate?.let {
+                        append(
+                            " • End: ${
+                                FormatingUtils.formatDateToHumanReadableForm(
+                                    it
+                                )
+                            }"
+                        )
+                    }
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline
@@ -80,7 +92,10 @@ fun RecurringTransactionItem(
 
         Spacer(Modifier.width(8.dp))
 
-        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
             Switch(
                 checked = recurring.isActive,
                 enabled = recurring.id != null,

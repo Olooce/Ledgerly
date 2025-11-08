@@ -7,9 +7,9 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import ke.ac.ku.ledgerly.data.LedgerlyDatabase
-import ke.ac.ku.ledgerly.data.dao.TransactionDao
-import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
 import ke.ac.ku.ledgerly.data.dao.BudgetDao
+import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
+import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import javax.inject.Singleton
 
 @Module

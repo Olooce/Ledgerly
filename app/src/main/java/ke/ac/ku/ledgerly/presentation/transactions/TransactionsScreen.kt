@@ -48,14 +48,14 @@ import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.presentation.home.HomeUiEvent
 import ke.ac.ku.ledgerly.presentation.home.HomeViewModel
+import ke.ac.ku.ledgerly.ui.components.RecurringTransactionItem
+import ke.ac.ku.ledgerly.ui.components.TransactionItem
 import ke.ac.ku.ledgerly.ui.theme.Typography
 import ke.ac.ku.ledgerly.ui.widget.AmountRangeFilter
 import ke.ac.ku.ledgerly.ui.widget.CategoryFilter
 import ke.ac.ku.ledgerly.ui.widget.DropDown
 import ke.ac.ku.ledgerly.ui.widget.MultiFloatingActionButton
-import ke.ac.ku.ledgerly.ui.components.RecurringTransactionItem
 import ke.ac.ku.ledgerly.ui.widget.SearchBar
-import ke.ac.ku.ledgerly.ui.components.TransactionItem
 import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
 import ke.ac.ku.ledgerly.utils.FormatingUtils
 import ke.ac.ku.ledgerly.utils.TransactionFilterUtils
@@ -212,7 +212,7 @@ fun TransactionsScreen(
                             style = Typography.bodyMedium,
                             color = iconColor.copy(alpha = 0.9f)
                         )
-                    } else{
+                    } else {
                         TransactionTextView(
                             text = statusFilter,
                             style = Typography.bodyMedium,

@@ -15,8 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
-import ke.ac.ku.ledgerly.ui.theme.Green
-import ke.ac.ku.ledgerly.ui.theme.Red
 import ke.ac.ku.ledgerly.ui.theme.Typography
 import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
 import ke.ac.ku.ledgerly.utils.FormatingUtils
@@ -34,12 +32,12 @@ fun TransactionList(
                 Box(modifier = modifier.fillMaxWidth()) {
                     TransactionTextView(
                         text = title,
-                        style = Typography.titleLarge,
+                        style = Typography.titleMedium,
                     )
                     if (title == "Recent Transactions") {
                         TransactionTextView(
                             text = "See all",
-                            style = Typography.bodyMedium,
+                            style = Typography.bodySmall,
                             modifier = Modifier
                                 .align(Alignment.CenterEnd)
                                 .clickable {
@@ -61,7 +59,7 @@ fun TransactionList(
                 paymentMethod = item.paymentMethod,
                 notes = item.notes,
                 tags = item.tags,
-                color = if (item.type == "Income")  Color(0xFF2E7D32) else Color(0xFFC62828),
+                color = if (item.type == "Income") Color(0xFF2E7D32) else Color(0xFFC62828),
                 modifier = Modifier
             )
         }
