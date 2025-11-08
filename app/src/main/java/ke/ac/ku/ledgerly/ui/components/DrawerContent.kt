@@ -56,7 +56,7 @@ fun DrawerContent(
 
     val authState by authViewModel.state.collectAsState()
 
-    LaunchedEffect(authState.isAuthenticated) {
+    LaunchedEffect(authState.isAuthenticated, authState.isLoading) {
         if (!authState.isAuthenticated && !authState.isLoading) {
             navController.navigate(NavRouts.auth) {
                 popUpTo(0) { inclusive = true }

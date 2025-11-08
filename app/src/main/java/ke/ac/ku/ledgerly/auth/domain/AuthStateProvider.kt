@@ -1,8 +1,8 @@
 package ke.ac.ku.ledgerly.auth.domain
 
 import com.google.firebase.auth.FirebaseAuth
-import jakarta.inject.Inject
-import jakarta.inject.Singleton
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
