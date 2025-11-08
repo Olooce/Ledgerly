@@ -19,7 +19,6 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -46,11 +45,9 @@ import ke.ac.ku.ledgerly.ui.theme.LedgerlyAccent
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyBlue
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyGreen
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyGreenLight
-import ke.ac.ku.ledgerly.ui.theme.Typography
 import ke.ac.ku.ledgerly.ui.theme.WarningYellow
 import ke.ac.ku.ledgerly.ui.theme.Zinc
-import ke.ac.ku.ledgerly.ui.widget.BudgetItem
-import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
+import ke.ac.ku.ledgerly.ui.components.BudgetItem
 import ke.ac.ku.ledgerly.utils.FormatingUtils
 import ke.ac.ku.ledgerly.utils.Utils
 

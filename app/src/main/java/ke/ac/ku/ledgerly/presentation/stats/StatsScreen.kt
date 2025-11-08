@@ -67,6 +67,7 @@ import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.CategorySummary
 import ke.ac.ku.ledgerly.data.model.MonthlyComparison
 import ke.ac.ku.ledgerly.ui.components.TransactionList
+import ke.ac.ku.ledgerly.ui.theme.White
 import ke.ac.ku.ledgerly.utils.FormatingUtils
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
@@ -263,13 +264,13 @@ private fun ComparisonTab(viewModel: StatsViewModel) {
                         title = "Income",
                         value = FormatingUtils.formatCurrency(latest.income),
                         modifier = Modifier.weight(1f),
-                        color = MaterialTheme.colorScheme.primary
+                        color = Color(0xFF2E7D32),
                     )
                     SummaryCard(
                         title = "Expenses",
                         value = FormatingUtils.formatCurrency(latest.expense),
                         modifier = Modifier.weight(1f),
-                        color = MaterialTheme.colorScheme.error
+                        color =Color(0xFFC62828)
                     )
                 }
             }
@@ -310,7 +311,7 @@ private fun SummaryCard(
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
-            containerColor = color.copy(alpha = 0.12f)
+            containerColor = White.copy(alpha = 0.12f)
         ),
         shape = RoundedCornerShape(16.dp)
     ) {

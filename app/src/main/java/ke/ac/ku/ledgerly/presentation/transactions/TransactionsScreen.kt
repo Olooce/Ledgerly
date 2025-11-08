@@ -53,9 +53,9 @@ import ke.ac.ku.ledgerly.ui.widget.AmountRangeFilter
 import ke.ac.ku.ledgerly.ui.widget.CategoryFilter
 import ke.ac.ku.ledgerly.ui.widget.DropDown
 import ke.ac.ku.ledgerly.ui.widget.MultiFloatingActionButton
-import ke.ac.ku.ledgerly.ui.widget.RecurringTransactionItem
+import ke.ac.ku.ledgerly.ui.components.RecurringTransactionItem
 import ke.ac.ku.ledgerly.ui.widget.SearchBar
-import ke.ac.ku.ledgerly.ui.widget.TransactionItem
+import ke.ac.ku.ledgerly.ui.components.TransactionItem
 import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
 import ke.ac.ku.ledgerly.utils.FormatingUtils
 import ke.ac.ku.ledgerly.utils.TransactionFilterUtils
