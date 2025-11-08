@@ -38,6 +38,7 @@ import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.base.HomeNavigationEvent
 import ke.ac.ku.ledgerly.base.NavigationEvent
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
+import ke.ac.ku.ledgerly.ui.components.TransactionList
 import ke.ac.ku.ledgerly.ui.theme.Green
 import ke.ac.ku.ledgerly.ui.theme.Red
 import ke.ac.ku.ledgerly.ui.theme.Typography
@@ -223,55 +224,6 @@ fun CardItem(
     }
 }
 
-@Composable
-fun TransactionList(
-    modifier: Modifier,
-    list: List<TransactionEntity>,
-    title: String = "Recent Transactions",
-    onSeeAllClicked: () -> Unit
-) {
-    LazyColumn(modifier = modifier.padding(horizontal = 16.dp)) {
-        item {
-            Column {
-                Box(modifier = modifier.fillMaxWidth()) {
-                    TransactionTextView(
-                        text = title,
-                        style = Typography.titleLarge,
-                    )
-                    if (title == "Recent Transactions") {
-                        TransactionTextView(
-                            text = "See all",
-                            style = Typography.bodyMedium,
-                            modifier = Modifier
-                                .align(Alignment.CenterEnd)
-                                .clickable {
-                                    onSeeAllClicked.invoke()
-                                }
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.size(12.dp))
-            }
-        }
-        items(
-            items = list,
-            key = { item -> item.id ?: 0 }) { item ->
-            val icon = Utils.getItemIcon(item.category)
-
-            TransactionItem(
-                title = item.category,
-                amount = FormatingUtils.formatCurrency(item.amount),
-                icon = icon,
-                date = FormatingUtils.formatDayMonth(item.date),
-                paymentMethod = item.paymentMethod,
-                notes = item.notes,
-                tags = item.tags,
-                color = if (item.type == "Income") Green else Red,
-                modifier = Modifier
-            )
-        }
-    }
-}
 
 
 @Composable
