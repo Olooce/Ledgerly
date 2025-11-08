@@ -96,7 +96,6 @@ dependencies {
     implementation(libs.androidx.compose.ui.unit)
     implementation(libs.androidx.compose.material.core)
     implementation(libs.firebase.firestore)
-    implementation(libs.androidx.compose.ui.graphics)
     testImplementation(libs.junit)
 
     ksp(libs.androidx.hilt.compiler)
