@@ -9,6 +9,7 @@ import ke.ac.ku.ledgerly.auth.data.AuthRepository
 import ke.ac.ku.ledgerly.domain.AuthEvent
 import ke.ac.ku.ledgerly.auth.domain.AuthState
 import ke.ac.ku.ledgerly.domain.SyncManager
+import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +22,8 @@ import javax.inject.Inject
 class AuthViewModel @Inject constructor(
     private val repository: AuthRepository,
     private val oneTapClient: SignInClient,
-    private val syncManager: SyncManager
+    private val syncManager: SyncManager,
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthState())
@@ -60,16 +62,7 @@ class AuthViewModel @Inject constructor(
 
             repository.signInWithEmail(email, password)
                 .onSuccess { user ->
-                    _state.update {
-                        it.copy(
-                            isAuthenticated = true,
-                            error = null,
-                            isLoading = false
-                        )
-                    }
-                    viewModelScope.launch {
-                        syncManager.syncAllData()
-                    }
+                    performInitialSyncAndAuthenticate()
                 }
                 .onFailure { e ->
                     _state.update {
@@ -97,7 +90,6 @@ class AuthViewModel @Inject constructor(
                             isLoading = false
                         )
                     }
-
                     viewModelScope.launch {
                         syncManager.syncAllData()
                     }
@@ -123,7 +115,6 @@ class AuthViewModel @Inject constructor(
                         val result = oneTapClient.beginSignIn(signInRequest).await()
                         _state.update {
                             it.copy(
-//                                googleSignInRequest = result,
                                 isLoading = false
                             )
                         }
@@ -154,16 +145,7 @@ class AuthViewModel @Inject constructor(
             val credential = GoogleAuthProvider.getCredential(idToken, null)
             repository.signInWithGoogleCredential(credential)
                 .onSuccess { user ->
-                    _state.update {
-                        it.copy(
-                            isAuthenticated = true,
-                            error = null,
-                            isLoading = false
-                        )
-                    }
-                    viewModelScope.launch {
-                        syncManager.syncAllData()
-                    }
+                    performInitialSyncAndAuthenticate()
                 }
                 .onFailure { e ->
                     _state.update {
@@ -181,31 +163,64 @@ class AuthViewModel @Inject constructor(
 
     fun onBiometricSuccess() {
         viewModelScope.launch {
-            _state.update {
-                it.copy(
-                    isAuthenticated = true,
-                    error = null
-                )
-            }
-            syncManager.syncAllData()
+            performInitialSyncAndAuthenticate()
         }
     }
 
     fun onBiometricError(errorMessage: String) {
         _state.update {
-            it.copy(error = "Biometric authentication failed: $errorMessage")
+            it.copy(error( "Biometric authentication failed: $errorMessage"))
+        }
+    }
+
+    private fun performInitialSyncAndAuthenticate() {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+
+            userPreferencesRepository.loadFromFirestore()
+                .onSuccess {
+                    viewModelScope.launch {
+                        syncManager.syncAllData()
+                    }
+                }
+                .onFailure { e ->
+                    viewModelScope.launch {
+                        syncManager.syncAllData()
+                    }
+                }
+
+            _state.update {
+                it.copy(
+                    isAuthenticated = true,
+                    error = null,
+                    isLoading = false
+                )
+            }
         }
     }
 
     private fun signOut() {
         viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+
             repository.signOut()
-            _state.update {
-                AuthState(
-                    isAuthenticated = false,
-                    isBiometricAvailable = repository.isBiometricAvailable()
-                )
-            }
+                .onSuccess {
+                    _state.update {
+                        AuthState(
+                            isAuthenticated = false,
+                            isBiometricAvailable = repository.isBiometricAvailable(),
+                            isLoading = false
+                        )
+                    }
+                }
+                .onFailure { e ->
+                    _state.update {
+                        it.copy(
+                            error = "Logout failed: ${e.message}",
+                            isLoading = false
+                        )
+                    }
+                }
         }
     }
 

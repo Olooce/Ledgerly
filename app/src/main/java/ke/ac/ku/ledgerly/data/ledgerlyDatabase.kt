@@ -52,7 +52,16 @@ abstract class LedgerlyDatabase : RoomDatabase() {
                 instance
             }
         }
+
+
     }
+
+    fun clearAllData() {
+        clearAllTables()
+    }
+
+
+
 }
 
 val MIGRATION_1_2 = object : Migration(1, 2) {

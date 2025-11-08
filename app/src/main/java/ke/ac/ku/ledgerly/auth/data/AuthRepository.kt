@@ -1,6 +1,7 @@
 package ke.ac.ku.ledgerly.auth.data
 
 import android.content.Context
+import android.util.Log
 import androidx.biometric.BiometricManager
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.SignInClient
@@ -8,9 +9,15 @@ import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ke.ac.ku.ledgerly.BuildConfig
+import ke.ac.ku.ledgerly.WorkManagerSetup
+import ke.ac.ku.ledgerly.auth.domain.AuthStateProvider
+import ke.ac.ku.ledgerly.data.LedgerlyDatabase
+import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,7 +25,10 @@ import javax.inject.Singleton
 class AuthRepository @Inject constructor(
     private val auth: FirebaseAuth,
     private val oneTapClient: SignInClient,
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val workManagerSetup: WorkManagerSetup,
+    private val authStateProvider: AuthStateProvider
 ) {
     suspend fun signInWithEmail(email: String, password: String): Result<Unit> = try {
         auth.signInWithEmailAndPassword(email, password).await()
@@ -62,20 +72,28 @@ class AuthRepository @Inject constructor(
                 BiometricManager.BIOMETRIC_SUCCESS
     }
 
-    fun signOut() {
+    suspend fun signOut(): Result<Unit> = try {
+        workManagerSetup.cancelAllWork()
+        workManagerSetup.pruneWork()
+
+        withContext(Dispatchers.IO) {
+            LedgerlyDatabase.getInstance(context).clearAllTables()
+        }
+
+
+        userPreferencesRepository.clearAll()
+
+
         auth.signOut()
-        oneTapClient.signOut()
+        oneTapClient.signOut().await()
+
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Log.e("AuthRepository", "Sign out failed", e)
+        Result.failure(e)
     }
 
     fun getCurrentUser() = auth.currentUser
-
-    fun getCurrentUserId(): String? {
-        return auth.currentUser?.uid
-    }
-
-    fun isUserAuthenticated(): Boolean {
-        return auth.currentUser != null
-    }
 
     private val _authState = MutableStateFlow(auth.currentUser != null)
     val authState = _authState.asStateFlow()

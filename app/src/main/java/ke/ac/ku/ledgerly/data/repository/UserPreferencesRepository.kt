@@ -10,6 +10,7 @@ import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.toObject
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ke.ac.ku.ledgerly.auth.data.AuthRepository
+import ke.ac.ku.ledgerly.auth.domain.AuthStateProvider
 import ke.ac.ku.ledgerly.data.model.FirestoreUserPreferences
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -24,7 +25,7 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 class UserPreferencesRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val firestore: FirebaseFirestore,
-    private val authRepository: AuthRepository
+    private val authStateProvider: AuthStateProvider
 ) {
     private object PreferencesKeys {
         val USER_NAME = stringPreferencesKey("user_name")
@@ -180,7 +181,7 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun loadFromFirestore(): Result<Unit> {
         return try {
-            val userId = authRepository.getCurrentUserId()
+            val userId = authStateProvider.getCurrentUserId()
                 ?: return Result.failure(Exception("Not authenticated"))
             val document = firestore.collection("user_preferences")
                 .document(userId)
@@ -217,7 +218,7 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun syncToFirestore(): Result<Unit> {
         return try {
-            val userId = authRepository.getCurrentUserId() ?: return Result.failure(Exception("Not authenticated"))
+            val userId = authStateProvider.getCurrentUserId() ?: return Result.failure(Exception("Not authenticated"))
             val localPrefs = getCurrentPreferences()
             val firestorePrefs = FirestoreUserPreferences(
                 userId = userId,
@@ -258,6 +259,9 @@ class UserPreferencesRepository @Inject constructor(
             syncInterval = preferences[PreferencesKeys.SYNC_INTERVAL] ?: 6L,
             lastUpdated = preferences[PreferencesKeys.LAST_UPDATED] ?: 0L
         )
+    }
+    suspend fun clearAll() {
+        context.dataStore.edit { it.clear() }
     }
 }
 

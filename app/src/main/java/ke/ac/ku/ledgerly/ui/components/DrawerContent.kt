@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -25,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -51,6 +53,17 @@ fun DrawerContent(
 ) {
     val context = LocalContext.current
     val isDarkMode by themeViewModel.isDarkMode.collectAsState()
+
+    val authState by authViewModel.state.collectAsState()
+
+    LaunchedEffect(authState.isAuthenticated) {
+        if (!authState.isAuthenticated && !authState.isLoading) {
+            navController.navigate(NavRouts.auth) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
+
 
     Column(
         modifier = Modifier
@@ -213,17 +226,23 @@ fun DrawerContent(
                 onClick = {
                     authViewModel.onEvent(AuthEvent.SignOut)
                     onCloseDrawer()
-                    navController.navigate(NavRouts.auth) {
-                        popUpTo(NavRouts.home) { inclusive = true }
-                    }
+
                 },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = !authState.isLoading,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer
                 )
             ) {
-                Text("Logout")
+                if (authState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                } else {
+                    Text("Logout")
+                }
             }
         }
     }

@@ -19,6 +19,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +55,7 @@ import ke.ac.ku.ledgerly.ui.components.DrawerContent
 import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
 import ke.ac.ku.ledgerly.ui.theme.Zinc
 import ke.ac.ku.ledgerly.utils.NavRouts
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,13 +72,8 @@ fun NavHostScreen(
     val scope = rememberCoroutineScope()
 
     val authState by authViewModel.state.collectAsState()
-    val onboardingCompleted by userPreferencesRepository.onboardingCompleted.collectAsState(initial = false)
 
-    val startDestination = when {
-        !authState.isAuthenticated -> NavRouts.auth
-        !onboardingCompleted -> NavRouts.onboarding
-        else -> NavRouts.home
-    }
+    val startDestination = if (!authState.isAuthenticated) NavRouts.auth else NavRouts.auth
 
     var bottomBarVisible by remember { mutableStateOf(false) }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -128,18 +125,28 @@ fun NavHostScreen(
                 ) {
                     composable(NavRouts.auth) {
                         bottomBarVisible = false
-                        AuthScreen(
-                            oneTapClient = oneTapClient,
-                            viewModel = authViewModel,
-                            onAuthSuccess = {
-                                val destination = if (onboardingCompleted) {
+
+                        LaunchedEffect(authState.isAuthenticated, authState.isLoading) {
+                            if (authState.isAuthenticated && !authState.isLoading) {
+                                val isOnboardingComplete = userPreferencesRepository.onboardingCompleted.first()
+
+                                val destination = if (isOnboardingComplete) {
                                     NavRouts.home
                                 } else {
                                     NavRouts.onboarding
                                 }
+
                                 navController.navigate(destination) {
                                     popUpTo(NavRouts.auth) { inclusive = true }
                                 }
+                            }
+                        }
+
+                        AuthScreen(
+                            oneTapClient = oneTapClient,
+                            viewModel = authViewModel,
+                            onAuthSuccess = {
+
                             }
                         )
                     }
@@ -284,6 +291,3 @@ fun NavigationBottomBar(
         }
     }
 }
-
-
-
