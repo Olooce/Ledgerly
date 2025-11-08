@@ -24,6 +24,7 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -181,6 +182,7 @@ fun AddTransaction(
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun DataForm(
     modifier: Modifier,
     onAddTransactionClick: (model: TransactionEntity, recurring: RecurringTransactionEntity?) -> Unit,
@@ -199,14 +201,15 @@ fun DataForm(
     val endDate = remember { mutableLongStateOf(0L) }
     val endDateDialogVisibility = remember { mutableStateOf(false) }
 
+    val colors = MaterialTheme.colorScheme
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .shadow(16.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(Color.White)
+            .background(colors.surface)
     ) {
-
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -219,7 +222,6 @@ fun DataForm(
                 onItemSelected = { category.value = it }
             )
 
-
             Spacer(modifier = Modifier.size(24.dp))
 
             // Amount Field
@@ -229,7 +231,7 @@ fun DataForm(
                 onValueChange = { newValue ->
                     amount.value = newValue.filter { it.isDigit() || it == '.' }
                 },
-                textStyle = TextStyle(color = Color.Black),
+                textStyle = TextStyle(color = colors.onSurface),
                 visualTransformation = { text ->
                     val out = "Ksh " + text.text
                     val currencyOffsetTranslator = object : OffsetMapping {
@@ -242,11 +244,6 @@ fun DataForm(
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 placeholder = { TransactionTextView(text = "Enter amount") },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Black,
-                    unfocusedBorderColor = Color.Black,
-                    focusedTextColor = Color.Black,
-                )
             )
 
             Spacer(modifier = Modifier.size(24.dp))
@@ -254,17 +251,15 @@ fun DataForm(
             // Date Field
             TitleComponent("Date")
             OutlinedTextField(
-                value = if (date.longValue == 0L) "" else FormatingUtils.formatDateToHumanReadableForm(
-                    date.longValue
-                ),
+                value = if (date.longValue == 0L) "" else FormatingUtils.formatDateToHumanReadableForm(date.longValue),
                 onValueChange = {},
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { dateDialogVisibility.value = true },
                 enabled = false,
                 colors = OutlinedTextFieldDefaults.colors(
-                    disabledBorderColor = Color.Black,
-                    disabledTextColor = Color.Black,
+                    disabledBorderColor = colors.onSurface.copy(alpha = 0.38f),
+                    disabledTextColor = colors.onSurface
                 ),
                 placeholder = { TransactionTextView(text = "Select date") }
             )
@@ -280,17 +275,20 @@ fun DataForm(
                 TransactionTextView(
                     text = "Make this recurring",
                     fontSize = 14.sp,
-                    color = Color.Black
+                    color = colors.onSurface
                 )
                 Switch(
                     checked = isRecurring.value,
-                    onCheckedChange = { isRecurring.value = it }
+                    onCheckedChange = { isRecurring.value = it },
+                    colors = androidx.compose.material3.SwitchDefaults.colors(
+                        checkedThumbColor = colors.primary,
+                        uncheckedThumbColor = colors.onSurfaceVariant
+                    )
                 )
             }
 
             if (isRecurring.value) {
                 Spacer(modifier = Modifier.size(16.dp))
-
                 TitleComponent("Frequency")
                 DropDown(
                     listOf("Daily", "Weekly", "Monthly", "Yearly"),
@@ -306,7 +304,6 @@ fun DataForm(
                 )
 
                 Spacer(modifier = Modifier.size(16.dp))
-
                 TitleComponent("End Date (Optional)")
                 OutlinedTextField(
                     value = if (endDate.longValue == 0L) "Never"
@@ -317,8 +314,8 @@ fun DataForm(
                         .clickable { endDateDialogVisibility.value = true },
                     enabled = false,
                     colors = OutlinedTextFieldDefaults.colors(
-                        disabledBorderColor = Color.Black,
-                        disabledTextColor = Color.Black,
+                        disabledBorderColor = colors.onSurface.copy(alpha = 0.38f),
+                        disabledTextColor = colors.onSurface
                     ),
                     placeholder = { TransactionTextView(text = "Select end date") }
                 )
@@ -347,8 +344,9 @@ fun DataForm(
                 placeholder = { TransactionTextView(text = "Add any notes...") },
                 maxLines = 3,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Black,
-                    unfocusedBorderColor = Color.Black,
+                    focusedBorderColor = colors.primary,
+                    unfocusedBorderColor = colors.onSurface.copy(alpha = 0.38f),
+                    focusedTextColor = colors.onSurface
                 )
             )
 
@@ -362,8 +360,9 @@ fun DataForm(
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { TransactionTextView(text = "Enter tags separated by | (optional)") },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Black,
-                    unfocusedBorderColor = Color.Black,
+                    focusedBorderColor = colors.primary,
+                    unfocusedBorderColor = colors.onSurface.copy(alpha = 0.38f),
+                    focusedTextColor = colors.onSurface
                 )
             )
 
@@ -395,8 +394,7 @@ fun DataForm(
                         tags = tags.value,
                         frequency = frequency.value,
                         startDate = date.longValue,
-                        endDate = if (endDate.longValue != 0L)
-                            endDate.longValue else null,
+                        endDate = if (endDate.longValue != 0L) endDate.longValue else null,
                         isActive = true
                     )
                 } else null
@@ -409,13 +407,17 @@ fun DataForm(
             shape = RoundedCornerShape(8.dp),
             enabled = category.value.isNotEmpty() &&
                     amount.value.isNotEmpty() &&
-                    date.longValue != 0L
+                    date.longValue != 0L,
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                containerColor = colors.primary,
+                disabledContainerColor = colors.onSurface.copy(alpha = 0.12f)
+            )
         ) {
             TransactionTextView(
                 text = if (isRecurring.value) "Add Recurring ${if (isIncome) "Income" else "Expense"}"
                 else "Add ${if (isIncome) "Income" else "Expense"}",
                 fontSize = 14.sp,
-                color = Color.White
+                color = colors.onPrimary
             )
         }
     }
@@ -440,6 +442,7 @@ fun DataForm(
         )
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -7,6 +7,7 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -36,8 +38,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
@@ -46,6 +46,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -65,7 +66,7 @@ import com.github.mikephil.charting.formatter.ValueFormatter
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.CategorySummary
 import ke.ac.ku.ledgerly.data.model.MonthlyComparison
-import ke.ac.ku.ledgerly.presentation.home.TransactionList
+import ke.ac.ku.ledgerly.ui.components.TransactionList
 import ke.ac.ku.ledgerly.utils.FormatingUtils
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
@@ -77,83 +78,109 @@ fun StatsScreen(
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Trends", "Categories", "Comparison")
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        "Statistics",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_back),
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onSurface
+    Box(modifier = Modifier.fillMaxSize()) {
+        ConstraintLayout(modifier = Modifier.fillMaxSize()) {
+            val (topBar) = createRefs()
+            Image(
+                painter = painterResource(R.drawable.ic_topbar),
+                contentDescription = "TopBar",
+                modifier = Modifier.constrainAs(topBar) {
+                    top.linkTo(parent.top)
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                })
+
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                containerColor = Color.Transparent,
+                topBar = {
+                    CenterAlignedTopAppBar(
+                        title = {
+                            Text(
+                                "Statistics",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = { navController.navigateUp() }) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_back),
+                                    contentDescription = "Back",
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.Transparent
                         )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        }
-    ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
-            // Tab selector
-            TabRow(
-                selectedTabIndex = selectedTab,
-                containerColor = MaterialTheme.colorScheme.surface,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = { Text(title) }
                     )
                 }
-            }
-
-            // Animated content
-            AnimatedContent(
-                targetState = selectedTab,
-                transitionSpec = {
-                    slideInHorizontally { it }.togetherWith(slideOutHorizontally { -it })
-                },
-                label = "tab_animation"
-            ) { index ->
-                when (index) {
-                    0 -> TrendsTab(viewModel, navController)
-                    1 -> CategoriesTab(viewModel)
-                    2 -> ComparisonTab(viewModel)
+            ){ padding ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(
+                            top = padding.calculateTopPadding(),
+                            start = 2.dp,
+                            end = 2.dp
+                        )
+                ) {
+                    TabRow(
+                        selectedTabIndex = selectedTab,
+                        containerColor = Color.Transparent,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        tabs.forEachIndexed { index, title ->
+                            Tab(
+                                selected = selectedTab == index,
+                                onClick = { selectedTab = index },
+                                text = { Text(title) }
+                            )
+                        }
+                    }
+                    AnimatedContent(
+                        targetState = selectedTab,
+                        transitionSpec = {
+                            slideInHorizontally { it }.togetherWith(slideOutHorizontally { -it })
+                        },
+                        label = "tab_animation",
+                        modifier = Modifier.fillMaxSize()
+                    ) { index ->
+                        when (index) {
+                            0 -> TrendsTab(viewModel, navController)
+                            1 -> CategoriesTab(viewModel)
+                            2 -> ComparisonTab(viewModel)
+                        }
+                    }
                 }
             }
         }
     }
 }
 
+
 @Composable
 private fun TrendsTab(viewModel: StatsViewModel, navController: NavController) {
     val dataState by viewModel.entries.collectAsState(emptyList())
     val topExpenses by viewModel.topEntries.collectAsState(emptyList())
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        StatsCard {
-            Column {
+        item {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 Text(
                     "Spending Over Time",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 if (dataState.isNotEmpty()) {
                     LineChartView(entries = viewModel.getEntriesForChart(dataState))
@@ -164,15 +191,21 @@ private fun TrendsTab(viewModel: StatsViewModel, navController: NavController) {
         }
 
         if (topExpenses.isNotEmpty()) {
-            StatsCard {
-                TransactionList(
-                    modifier = Modifier,
-                    list = topExpenses,
-                    title = "Top Spending",
-                    onSeeAllClicked = {
-                        navController.navigate("all_transactions")
-                    }
-                )
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(360.dp)
+                ) {
+                    TransactionList(
+                        modifier = Modifier,
+                        list = topExpenses,
+                        title = "Top Spending",
+                        onSeeAllClicked = {
+                            navController.navigate("all_transactions")
+                        }
+                    )
+                }
             }
         }
     }
@@ -182,24 +215,26 @@ private fun TrendsTab(viewModel: StatsViewModel, navController: NavController) {
 private fun CategoriesTab(viewModel: StatsViewModel) {
     val categoryData by viewModel.categorySpending.collectAsState(emptyList())
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        StatsCard {
-            Column {
-                Text(
-                    "Spending by Category",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                if (categoryData.isNotEmpty()) {
-                    PieChartView(categorySummaries = categoryData)
-                } else {
-                    EmptyState("No category data for this month")
-                }
+        item {
+            Text(
+                "Spending by Category",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+
+        item {
+            if (categoryData.isNotEmpty()) {
+                PieChartView(categorySummaries = categoryData)
+            } else {
+                EmptyState("No category data for this month")
             }
         }
     }
@@ -209,42 +244,48 @@ private fun CategoriesTab(viewModel: StatsViewModel) {
 private fun ComparisonTab(viewModel: StatsViewModel) {
     val monthlyData by viewModel.monthlyComparison.collectAsState(emptyList())
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         // Summary cards
-        val filtered = monthlyData.filter { it.month != null }
-        if (filtered.isNotEmpty()) {
-            val latest = filtered.last()
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                SummaryCard(
-                    title = "Income",
-                    value = FormatingUtils.formatCurrency(latest.income),
-                    modifier = Modifier.weight(1f),
-                    color = MaterialTheme.colorScheme.primary
-                )
-                SummaryCard(
-                    title = "Expenses",
-                    value = FormatingUtils.formatCurrency(latest.expense),
-                    modifier = Modifier.weight(1f),
-                    color = MaterialTheme.colorScheme.error
-                )
+        item {
+            val filtered = monthlyData.filter { it.month != null }
+            if (filtered.isNotEmpty()) {
+                val latest = filtered.last()
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    SummaryCard(
+                        title = "Income",
+                        value = FormatingUtils.formatCurrency(latest.income),
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    SummaryCard(
+                        title = "Expenses",
+                        value = FormatingUtils.formatCurrency(latest.expense),
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
 
-        StatsCard {
-            Column {
+        // Monthly Comparison Section
+        item {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 Text(
                     "Monthly Comparison",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 if (monthlyData.isNotEmpty()) {
                     BarChartView(
@@ -260,24 +301,6 @@ private fun ComparisonTab(viewModel: StatsViewModel) {
 }
 
 @Composable
-private fun StatsCard(content: @Composable () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(2.dp, RoundedCornerShape(16.dp))
-            .clip(RoundedCornerShape(16.dp)),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Box(modifier = Modifier.padding(16.dp)) {
-            content()
-        }
-    }
-}
-
-@Composable
 private fun SummaryCard(
     title: String,
     value: String,
@@ -287,22 +310,23 @@ private fun SummaryCard(
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
-            containerColor = color.copy(alpha = 0.1f)
+            containerColor = color.copy(alpha = 0.12f)
         ),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelSmall,
                 color = color
             )
             Text(
                 text = value,
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = color
             )
@@ -329,8 +353,8 @@ private fun EmptyState(message: String) {
 @Composable
 private fun LineChartView(entries: List<Entry>) {
     val context = LocalContext.current
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5
-    val textColor = if (isDark) android.graphics.Color.WHITE else android.graphics.Color.BLACK
+    val valTextColor = MaterialTheme.colorScheme.onSurface.toArgb()
+    val valGridColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f).toArgb()
     val primaryColor = MaterialTheme.colorScheme.primary.toArgb()
 
     AndroidView(
@@ -340,7 +364,7 @@ private fun LineChartView(entries: List<Entry>) {
         },
         modifier = Modifier
             .fillMaxWidth()
-            .height(250.dp)
+            .height(280.dp)
     ) { view ->
         val chart = view.findViewById<LineChart>(R.id.lineChart)
 
@@ -350,9 +374,13 @@ private fun LineChartView(entries: List<Entry>) {
             mode = LineDataSet.Mode.CUBIC_BEZIER
             setDrawFilled(true)
             fillDrawable = ContextCompat.getDrawable(context, R.drawable.char_gradient)
-            valueTextSize = 12f
-            valueTextColor = primaryColor
-            setDrawCircles(false)
+            valueTextSize = 11f
+            valueTextColor = valTextColor
+            setDrawCircles(true)
+            circleRadius = 4f
+            setCircleColor(primaryColor)
+            circleHoleRadius = 2f
+            setDrawCircleHole(true)
         }
 
         chart.apply {
@@ -362,14 +390,26 @@ private fun LineChartView(entries: List<Entry>) {
                         FormatingUtils.formatDateForChart(value.toLong())
                 }
                 position = XAxis.XAxisPosition.BOTTOM
-                setDrawGridLines(false)
+                textColor = valTextColor
+                gridColor = valGridColor
+                setDrawGridLines(true)
                 setDrawAxisLine(false)
+                textSize = 10f
             }
-            axisLeft.isEnabled = false
+            axisLeft.apply {
+                textColor = valTextColor
+                gridColor = valGridColor
+                setDrawGridLines(true)
+                setDrawAxisLine(false)
+                textSize = 10f
+            }
             axisRight.isEnabled = false
-            legend.textColor = textColor
+            legend.textColor = valTextColor
             description.isEnabled = false
             setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            setDrawBorders(false)
+            extraBottomOffset = 10f
+            extraTopOffset = 10f
 
             data = LineData(dataSet)
             animateY(1200, Easing.EaseInOutQuad)
@@ -378,11 +418,12 @@ private fun LineChartView(entries: List<Entry>) {
     }
 }
 
+
 @Composable
 private fun PieChartView(categorySummaries: List<CategorySummary>) {
     val context = LocalContext.current
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5
-    val textColor = if (isDark) android.graphics.Color.WHITE else android.graphics.Color.BLACK
+    val valTextColor = if (isDark) android.graphics.Color.WHITE else android.graphics.Color.DKGRAY
 
     AndroidView(
         factory = {
@@ -391,7 +432,7 @@ private fun PieChartView(categorySummaries: List<CategorySummary>) {
         },
         modifier = Modifier
             .fillMaxWidth()
-            .height(300.dp)
+            .height(350.dp)
     ) { view ->
         val chart = view.findViewById<PieChart>(R.id.pieChart)
 
@@ -401,20 +442,29 @@ private fun PieChartView(categorySummaries: List<CategorySummary>) {
 
         val dataSet = PieDataSet(entries, "Category Spending").apply {
             colors = getColors(context, entries.size)
-            valueTextColor = textColor
-            valueTextSize = 12f
-            sliceSpace = 3f
-            selectionShift = 5f
+            valueTextColor = valTextColor
+            valueTextSize = 13f
+            sliceSpace = 2f
+            selectionShift = 7f
         }
 
         chart.apply {
             data = PieData(dataSet)
             setUsePercentValues(true)
             description.isEnabled = false
-            legend.textColor = textColor
-            setEntryLabelColor(textColor)
-            setEntryLabelTextSize(12f)
+            legend.apply {
+                this.textColor = valTextColor
+                textSize = 12f
+            }
+            setEntryLabelColor(valTextColor)
+            setEntryLabelTextSize(13f)
             setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            isDrawHoleEnabled = false
+//            holeRadius = 45f
+            setTransparentCircleAlpha(0)
+            centerText = "Categories"
+            setCenterTextColor(valTextColor)
+            setCenterTextSize(14f)
             animateY(1000, Easing.EaseInOutQuad)
             invalidate()
         }
@@ -427,8 +477,8 @@ private fun BarChartView(
     viewModel: StatsViewModel
 ) {
     val context = LocalContext.current
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5
-    val textColor = if (isDark) android.graphics.Color.WHITE else android.graphics.Color.BLACK
+    val valTextColor = MaterialTheme.colorScheme.onSurface.toArgb()
+    val valGridColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f).toArgb()
 
     AndroidView(
         factory = {
@@ -437,7 +487,7 @@ private fun BarChartView(
         },
         modifier = Modifier
             .fillMaxWidth()
-            .height(300.dp)
+            .height(320.dp)
     ) { view ->
         val chart = view.findViewById<BarChart>(R.id.barChart)
         val barData = viewModel.getBarChartData(monthlyData)
@@ -449,20 +499,23 @@ private fun BarChartView(
                 xAxis.apply {
                     valueFormatter = IndexAxisValueFormatter(labels)
                     position = XAxis.XAxisPosition.BOTTOM
+                    textColor = valTextColor
+                    gridColor = valGridColor
                     setDrawGridLines(false)
-                    granularity = 1f
-                    isGranularityEnabled = true
-                    labelCount = labels.size
+                    setDrawAxisLine(false)
+                    textSize = 10f
                 }
-
                 axisLeft.apply {
+                    textColor = valTextColor
+                    gridColor = valGridColor
                     setDrawGridLines(true)
+                    setDrawAxisLine(false)
+                    textSize = 10f
                 }
                 axisRight.isEnabled = false
-                legend.textColor = textColor
+                legend.textColor = valTextColor
                 description.isEnabled = false
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)
-
                 data = barData
 
                 val groupSpace = 0.3f
@@ -481,6 +534,7 @@ private fun BarChartView(
         }
     }
 }
+
 
 private fun getColors(context: Context, count: Int): List<Int> {
     val all = getThemeColors(context).shuffled()

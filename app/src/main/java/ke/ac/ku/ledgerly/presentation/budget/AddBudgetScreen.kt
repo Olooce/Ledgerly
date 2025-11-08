@@ -20,6 +20,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -151,7 +152,7 @@ fun AddBudgetForm(
             .fillMaxWidth()
             .shadow(16.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface)
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
@@ -166,16 +167,10 @@ fun AddBudgetForm(
         OutlinedTextField(
             value = monthlyBudget.value,
             onValueChange = { monthlyBudget.value = it.filter { ch -> ch.isDigit() || ch == '.' } },
-            textStyle = TextStyle(color = Color.Black),
+            textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface),
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            placeholder = { TransactionTextView(text = "Enter amount") },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.Black,
-                unfocusedBorderColor = Color.Black,
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black,
-            )
+            placeholder = { TransactionTextView(text = "Enter amount") }
         )
 
         Spacer(modifier = Modifier.size(32.dp))
@@ -192,16 +187,21 @@ fun AddBudgetForm(
             },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp),
-            enabled = category.value.isNotEmpty() && monthlyBudget.value.isNotEmpty()
+            enabled = category.value.isNotEmpty() && monthlyBudget.value.isNotEmpty(),
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
         ) {
             TransactionTextView(
                 text = "Add Budget",
                 fontSize = 14.sp,
-                color = Color.White
+                color = MaterialTheme.colorScheme.onPrimary
             )
         }
     }
 }
+
 
 @Composable
 fun TitleComponent(title: String) {
