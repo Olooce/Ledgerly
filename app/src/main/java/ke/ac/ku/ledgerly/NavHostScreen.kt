@@ -51,7 +51,7 @@ import ke.ac.ku.ledgerly.presentation.onboarding.OnboardingScreen
 import ke.ac.ku.ledgerly.presentation.settings.SettingsScreen
 import ke.ac.ku.ledgerly.presentation.settings.SettingsViewModel
 import ke.ac.ku.ledgerly.presentation.stats.StatsScreen
-import ke.ac.ku.ledgerly.presentation.transactionlist.TransactionListScreen
+import ke.ac.ku.ledgerly.presentation.transactions.TransactionsScreen
 import ke.ac.ku.ledgerly.ui.components.DrawerContent
 import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
 import ke.ac.ku.ledgerly.ui.theme.Zinc
@@ -185,7 +185,7 @@ fun NavHostScreen(
 
                     composable(NavRouts.allTransactions) {
                         bottomBarVisible = true
-                        TransactionListScreen(navController)
+                        TransactionsScreen(navController)
                     }
 
                     composable(NavRouts.budget) {

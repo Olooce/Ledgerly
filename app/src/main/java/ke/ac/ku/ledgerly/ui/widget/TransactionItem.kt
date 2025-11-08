@@ -26,12 +26,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ke.ac.ku.ledgerly.utils.Utils
 
 @Composable
 fun TransactionItem(
     title: String,
     amount: String,
-    icon: Int,
     date: String,
     paymentMethod: String,
     notes: String,
@@ -63,7 +63,7 @@ fun TransactionItem(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    painter = painterResource(id = icon),
+                    painter = painterResource(id = Utils.getItemIcon(title)),
                     contentDescription = null,
                     modifier = Modifier.size(iconSize),
                     tint = iconTint

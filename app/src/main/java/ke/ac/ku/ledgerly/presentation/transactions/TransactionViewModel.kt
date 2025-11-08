@@ -1,4 +1,4 @@
-package ke.ac.ku.ledgerly.presentation.recurring
+package ke.ac.ku.ledgerly.presentation.transactions
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class RecurringTransactionViewModel @Inject constructor(
+class TransactionViewModel @Inject constructor(
     private val dao: TransactionDao
 ) : ViewModel() {
 
