@@ -12,9 +12,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.google.android.gms.auth.api.identity.SignInClient
 import dagger.hilt.android.AndroidEntryPoint
-import ke.ac.ku.ledgerly.auth.presentation.AuthViewModel
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
-import ke.ac.ku.ledgerly.feature.settings.SettingsViewModel
+import ke.ac.ku.ledgerly.presentation.auth.AuthViewModel
+import ke.ac.ku.ledgerly.presentation.settings.SettingsViewModel
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyTheme
 import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
 import javax.inject.Inject
@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val isDarkMode by themeViewModel.isDarkMode.collectAsState()
-            LedgerlyTheme(darkTheme = isDarkMode?: false) {
+            LedgerlyTheme(darkTheme = isDarkMode ?: false) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

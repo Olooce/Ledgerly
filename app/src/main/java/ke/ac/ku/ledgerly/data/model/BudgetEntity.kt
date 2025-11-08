@@ -1,7 +1,6 @@
 package ke.ac.ku.ledgerly.data.model
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 
 @Entity(tableName = "budgets", primaryKeys = ["category", "monthYear"])
 data class BudgetEntity(

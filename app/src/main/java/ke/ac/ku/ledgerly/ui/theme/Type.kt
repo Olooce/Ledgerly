@@ -16,8 +16,6 @@ val InterFontFamily = FontFamily(
     Font(R.font.inter_medium, FontWeight.Medium),
     Font(R.font.inter_bold, FontWeight.Bold)
 )
-
-// Set of Material typography styles to start with
 val Typography = Typography(
     displayLarge = TextStyle(
         fontFamily = InterFontFamily,

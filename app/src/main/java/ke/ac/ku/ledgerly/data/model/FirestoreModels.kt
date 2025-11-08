@@ -16,7 +16,11 @@ data class FirestoreTransaction(
     val deviceId: String = ""
 ) {
     companion object {
-        fun fromEntity(entity: TransactionEntity, userId: String, deviceId: String): FirestoreTransaction {
+        fun fromEntity(
+            entity: TransactionEntity,
+            userId: String,
+            deviceId: String
+        ): FirestoreTransaction {
             return FirestoreTransaction(
                 id = entity.id?.toString(),
                 category = entity.category,
@@ -28,7 +32,10 @@ data class FirestoreTransaction(
                 tags = entity.tags.split("|").filter { it.isNotBlank() },
                 userId = userId,
                 deviceId = deviceId,
-                lastModified = Timestamp((entity.lastModified ?: System.currentTimeMillis()) / 1000, 0)
+                lastModified = Timestamp(
+                    (entity.lastModified ?: System.currentTimeMillis()) / 1000,
+                    0
+                )
             )
         }
 
@@ -66,7 +73,10 @@ data class FirestoreBudget(
                 monthYear = entity.monthYear,
                 userId = userId,
                 deviceId = deviceId,
-                lastModified = Timestamp((entity.lastModified ?: System.currentTimeMillis()) / 1000, 0)
+                lastModified = Timestamp(
+                    (entity.lastModified ?: System.currentTimeMillis()) / 1000,
+                    0
+                )
             )
         }
 
@@ -100,7 +110,11 @@ data class FirestoreRecurringTransaction(
     val deviceId: String = ""
 ) {
     companion object {
-        fun fromEntity(entity: RecurringTransactionEntity, userId: String, deviceId: String): FirestoreRecurringTransaction {
+        fun fromEntity(
+            entity: RecurringTransactionEntity,
+            userId: String,
+            deviceId: String
+        ): FirestoreRecurringTransaction {
             return FirestoreRecurringTransaction(
                 id = entity.id?.toString(),
                 category = entity.category,
@@ -116,7 +130,10 @@ data class FirestoreRecurringTransaction(
                 isActive = entity.isActive,
                 userId = userId,
                 deviceId = deviceId,
-                lastModified = Timestamp((entity.lastModified ?: System.currentTimeMillis()) / 1000, 0)
+                lastModified = Timestamp(
+                    (entity.lastModified ?: System.currentTimeMillis()) / 1000,
+                    0
+                )
             )
         }
 
