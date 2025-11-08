@@ -131,7 +131,7 @@ fun BudgetItem(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "${String.format("%.1f", budget.percentageUsed)}% used",
+                        text = "${String.format(java.util.Locale.US, "%.1f", budget.percentageUsed)}% used",
                         style = MaterialTheme.typography.bodySmall.copy(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
