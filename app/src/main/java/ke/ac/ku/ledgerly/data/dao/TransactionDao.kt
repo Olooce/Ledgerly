@@ -49,6 +49,7 @@ interface TransactionDao {
     suspend fun insertBudgetWithTimestamp(budget: BudgetEntity) {
         insertBudget(budget.copy(lastModified = System.currentTimeMillis()))
     }
+
     @Update
     suspend fun updateBudget(budget: BudgetEntity)
 
@@ -98,28 +99,33 @@ interface TransactionDao {
     @Query("SELECT * FROM recurring_transactions")
     suspend fun getAllRecurringTransactionsSync(): List<RecurringTransactionEntity>
 
-    @Query("""
+    @Query(
+        """
 SELECT category, SUM(amount) as total_amount 
 FROM transactions 
 WHERE type = 'Expense' 
 AND strftime('%Y-%m', datetime(date / 1000, 'unixepoch')) = :monthYear 
 GROUP BY category
 HAVING total_amount > 0
-""")
+"""
+    )
     fun getExpenseByCategoryForMonth(monthYear: String): Flow<List<CategorySummary>>
 
-    @Query("""
+    @Query(
+        """
 SELECT strftime('%Y-%m', datetime(date / 1000, 'unixepoch')) AS month,
        SUM(CASE WHEN type = 'Income' THEN amount ELSE 0 END) AS income,
        SUM(CASE WHEN type = 'Expense' THEN amount ELSE 0 END) AS expense
 FROM transactions
 GROUP BY month
 ORDER BY month
-""")
+"""
+    )
     fun getMonthlyIncomeVsExpense(): Flow<List<MonthlyComparison>>
 
 
-    @Query("""
+    @Query(
+        """
 SELECT strftime('%Y-%m', datetime(date / 1000, 'unixepoch')) as month,
        category,
        SUM(amount) as total_amount
@@ -129,6 +135,7 @@ AND date IS NOT NULL
 GROUP BY strftime('%Y-%m', datetime(date / 1000, 'unixepoch')), category
 HAVING total_amount > 0
 ORDER BY month
-""")
+"""
+    )
     fun getMonthlySpendingTrends(): Flow<List<MonthlyTrend>>
 }

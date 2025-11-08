@@ -39,10 +39,10 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 import ke.ac.ku.ledgerly.R
-import ke.ac.ku.ledgerly.auth.presentation.AuthViewModel
-import ke.ac.ku.ledgerly.domain.AuthEvent
+import ke.ac.ku.ledgerly.base.AuthEvent
+import ke.ac.ku.ledgerly.data.constants.NavRouts
+import ke.ac.ku.ledgerly.presentation.auth.AuthViewModel
 import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
-import ke.ac.ku.ledgerly.utils.NavRouts
 
 @Composable
 fun DrawerContent(
@@ -63,7 +63,6 @@ fun DrawerContent(
             }
         }
     }
-
 
     Column(
         modifier = Modifier
@@ -122,7 +121,9 @@ fun DrawerContent(
                     ) {
                         Icon(
                             painter = painterResource(
-                                id = if (isDarkMode?: false) R.drawable.ic_light_mode else R.drawable.ic_dark_mode
+                                id = if (isDarkMode
+                                        ?: false
+                                ) R.drawable.ic_light_mode else R.drawable.ic_dark_mode
                             ),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurface,
@@ -135,7 +136,7 @@ fun DrawerContent(
                     )
                 }
                 Switch(
-                    checked = isDarkMode?: false,
+                    checked = isDarkMode ?: false,
                     onCheckedChange = { themeViewModel.toggleTheme() }
                 )
             }

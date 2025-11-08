@@ -2,7 +2,12 @@ package ke.ac.ku.ledgerly
 
 import android.content.Context
 import android.util.Log
-import androidx.work.*
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ke.ac.ku.ledgerly.worker.RecurringTransactionWorker
 import ke.ac.ku.ledgerly.worker.SyncWorker
@@ -62,7 +67,10 @@ class WorkManagerSetup @Inject constructor(
     ) {
         val intervalHours = maxOf(1, repeatIntervalHours)
 
-        Log.d(TAG, "Scheduling periodic sync: interval=${intervalHours}h, wifi=$requireWifi, charging=$requireCharging")
+        Log.d(
+            TAG,
+            "Scheduling periodic sync: interval=${intervalHours}h, wifi=$requireWifi, charging=$requireCharging"
+        )
 
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(

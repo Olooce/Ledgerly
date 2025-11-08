@@ -39,22 +39,22 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.auth.api.identity.SignInClient
-import ke.ac.ku.ledgerly.auth.presentation.AuthScreen
-import ke.ac.ku.ledgerly.auth.presentation.AuthViewModel
+import ke.ac.ku.ledgerly.data.constants.NavRouts
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
-import ke.ac.ku.ledgerly.feature.add_transaction.AddTransaction
-import ke.ac.ku.ledgerly.feature.budget.AddBudgetScreen
-import ke.ac.ku.ledgerly.feature.budget.BudgetScreen
-import ke.ac.ku.ledgerly.feature.home.HomeScreen
-import ke.ac.ku.ledgerly.feature.onboarding.OnboardingScreen
-import ke.ac.ku.ledgerly.feature.settings.SettingsScreen
-import ke.ac.ku.ledgerly.feature.settings.SettingsViewModel
-import ke.ac.ku.ledgerly.feature.stats.StatsScreen
-import ke.ac.ku.ledgerly.feature.transactionlist.TransactionListScreen
+import ke.ac.ku.ledgerly.presentation.add_transaction.AddTransaction
+import ke.ac.ku.ledgerly.presentation.auth.AuthScreen
+import ke.ac.ku.ledgerly.presentation.auth.AuthViewModel
+import ke.ac.ku.ledgerly.presentation.budget.AddBudgetScreen
+import ke.ac.ku.ledgerly.presentation.budget.BudgetScreen
+import ke.ac.ku.ledgerly.presentation.home.HomeScreen
+import ke.ac.ku.ledgerly.presentation.onboarding.OnboardingScreen
+import ke.ac.ku.ledgerly.presentation.settings.SettingsScreen
+import ke.ac.ku.ledgerly.presentation.settings.SettingsViewModel
+import ke.ac.ku.ledgerly.presentation.stats.StatsScreen
+import ke.ac.ku.ledgerly.presentation.transactionlist.TransactionListScreen
 import ke.ac.ku.ledgerly.ui.components.DrawerContent
 import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
 import ke.ac.ku.ledgerly.ui.theme.Zinc
-import ke.ac.ku.ledgerly.utils.NavRouts
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -128,7 +128,8 @@ fun NavHostScreen(
 
                         LaunchedEffect(authState.isAuthenticated, authState.isLoading) {
                             if (authState.isAuthenticated && !authState.isLoading) {
-                                val isOnboardingComplete = userPreferencesRepository.onboardingCompleted.first()
+                                val isOnboardingComplete =
+                                    userPreferencesRepository.onboardingCompleted.first()
 
                                 val destination = if (isOnboardingComplete) {
                                     NavRouts.home

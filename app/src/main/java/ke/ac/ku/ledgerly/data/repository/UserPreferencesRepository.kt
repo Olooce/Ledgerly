@@ -3,15 +3,18 @@ package ke.ac.ku.ledgerly.data.repository
 import android.content.Context
 import android.util.Log
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.toObject
 import dagger.hilt.android.qualifiers.ApplicationContext
-import ke.ac.ku.ledgerly.auth.data.AuthRepository
-import ke.ac.ku.ledgerly.auth.domain.AuthStateProvider
 import ke.ac.ku.ledgerly.data.model.FirestoreUserPreferences
+import ke.ac.ku.ledgerly.domain.AuthStateProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -46,15 +49,24 @@ class UserPreferencesRepository @Inject constructor(
     }
 
     val userName: Flow<String> = context.dataStore.data.map { it[PreferencesKeys.USER_NAME] ?: "" }
-    val currency: Flow<String> = context.dataStore.data.map { it[PreferencesKeys.CURRENCY] ?: "KES" }
-    val onboardingCompleted: Flow<Boolean> = context.dataStore.data.map { it[PreferencesKeys.ONBOARDING_COMPLETED] ?: false }
-    val monthlyBudget: Flow<String> = context.dataStore.data.map { it[PreferencesKeys.MONTHLY_BUDGET] ?: "0" }
-    val notificationEnabled: Flow<Boolean> = context.dataStore.data.map { it[PreferencesKeys.NOTIFICATION_ENABLED] ?: true }
-    val darkMode: Flow<Boolean> = context.dataStore.data.map { it[PreferencesKeys.DARK_MODE] ?: false }
-    val syncEnabled: Flow<Boolean> = context.dataStore.data.map { it[PreferencesKeys.SYNC_ENABLED] ?: false }
-    val syncWifiOnly: Flow<Boolean> = context.dataStore.data.map { it[PreferencesKeys.SYNC_WIFI_ONLY] ?: true }
-    val syncChargingOnly: Flow<Boolean> = context.dataStore.data.map { it[PreferencesKeys.SYNC_CHARGING_ONLY] ?: false }
-    val syncInterval: Flow<Long> = context.dataStore.data.map { it[PreferencesKeys.SYNC_INTERVAL] ?: 6L }
+    val currency: Flow<String> =
+        context.dataStore.data.map { it[PreferencesKeys.CURRENCY] ?: "KES" }
+    val onboardingCompleted: Flow<Boolean> =
+        context.dataStore.data.map { it[PreferencesKeys.ONBOARDING_COMPLETED] ?: false }
+    val monthlyBudget: Flow<String> =
+        context.dataStore.data.map { it[PreferencesKeys.MONTHLY_BUDGET] ?: "0" }
+    val notificationEnabled: Flow<Boolean> =
+        context.dataStore.data.map { it[PreferencesKeys.NOTIFICATION_ENABLED] ?: true }
+    val darkMode: Flow<Boolean> =
+        context.dataStore.data.map { it[PreferencesKeys.DARK_MODE] ?: false }
+    val syncEnabled: Flow<Boolean> =
+        context.dataStore.data.map { it[PreferencesKeys.SYNC_ENABLED] ?: false }
+    val syncWifiOnly: Flow<Boolean> =
+        context.dataStore.data.map { it[PreferencesKeys.SYNC_WIFI_ONLY] ?: true }
+    val syncChargingOnly: Flow<Boolean> =
+        context.dataStore.data.map { it[PreferencesKeys.SYNC_CHARGING_ONLY] ?: false }
+    val syncInterval: Flow<Long> =
+        context.dataStore.data.map { it[PreferencesKeys.SYNC_INTERVAL] ?: 6L }
 
     suspend fun saveUserName(name: String, syncNow: Boolean = true) =
         savePreference(PreferencesKeys.USER_NAME, name, syncNow)
@@ -188,7 +200,8 @@ class UserPreferencesRepository @Inject constructor(
                 .get()
                 .await()
             if (!document.exists()) return Result.success(Unit)
-            val remotePrefs = document.toObject<FirestoreUserPreferences>() ?: return Result.success(Unit)
+            val remotePrefs =
+                document.toObject<FirestoreUserPreferences>() ?: return Result.success(Unit)
             val localPrefs = getCurrentPreferences()
 
             val updateResult = if (remotePrefs.lastUpdated > localPrefs.lastUpdated) {
@@ -218,7 +231,8 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun syncToFirestore(): Result<Unit> {
         return try {
-            val userId = authStateProvider.getCurrentUserId() ?: return Result.failure(Exception("Not authenticated"))
+            val userId = authStateProvider.getCurrentUserId()
+                ?: return Result.failure(Exception("Not authenticated"))
             val localPrefs = getCurrentPreferences()
             val firestorePrefs = FirestoreUserPreferences(
                 userId = userId,
@@ -260,6 +274,7 @@ class UserPreferencesRepository @Inject constructor(
             lastUpdated = preferences[PreferencesKeys.LAST_UPDATED] ?: 0L
         )
     }
+
     suspend fun clearAll() {
         context.dataStore.edit { it.clear() }
     }

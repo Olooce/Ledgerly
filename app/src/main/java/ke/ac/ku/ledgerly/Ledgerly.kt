@@ -19,7 +19,7 @@ class Ledgerly : Application(), Configuration.Provider {
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
             .setMinimumLoggingLevel(
-                if (BuildConfig.DEBUG) android.util.Log.DEBUG 
+                if (BuildConfig.DEBUG) android.util.Log.DEBUG
                 else android.util.Log.INFO
             )
             .build()

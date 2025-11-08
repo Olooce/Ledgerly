@@ -7,10 +7,7 @@ import androidx.lifecycle.asFlow
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
-import ke.ac.ku.ledgerly.auth.data.AuthRepository
-import ke.ac.ku.ledgerly.auth.domain.AuthStateProvider
+import ke.ac.ku.ledgerly.data.repository.AuthRepository
 import ke.ac.ku.ledgerly.data.repository.SyncRepository
 import ke.ac.ku.ledgerly.data.repository.SyncResult
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
@@ -22,6 +19,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 
 @Singleton
 class SyncManager @Inject constructor(
