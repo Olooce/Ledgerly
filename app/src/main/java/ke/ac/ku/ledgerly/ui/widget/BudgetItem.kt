@@ -1,6 +1,7 @@
 package ke.ac.ku.ledgerly.ui.widget
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -140,6 +141,18 @@ fun BudgetItem(
                     )
                 }
             }
+            Icon(
+                painter = painterResource(id = ke.ac.ku.ledgerly.R.drawable.ic_delete),
+                contentDescription = "Delete",
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.error.copy(alpha = 0.1f))
+                    .padding(4.dp)
+                    .align(Alignment.CenterVertically)
+                    .clickable { onDelete() }
+            )
         }
     }
 }
