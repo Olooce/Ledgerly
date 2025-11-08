@@ -43,7 +43,12 @@ fun BudgetItem(
     iconSize: Dp = 40.dp,
     iconTint: Color = MaterialTheme.colorScheme.primary
 ) {
-    val progress = ((budget.currentSpending / budget.monthlyBudget).coerceIn(0.0, 1.0)).toFloat()
+    val rawProgress = if (budget.monthlyBudget <= 0.0) {
+        0.0
+    } else {
+        budget.currentSpending / budget.monthlyBudget
+    }
+    val progress = rawProgress.coerceIn(0.0, 1.0).toFloat()
     val progressColor = when {
         budget.isExceeded() -> LedgerlyBlue
         budget.isNearLimit() -> LedgerlyGreenLight
