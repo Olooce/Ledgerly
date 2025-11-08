@@ -6,6 +6,7 @@ import ke.ac.ku.ledgerly.base.AddTransactionNavigationEvent
 import ke.ac.ku.ledgerly.base.BaseViewModel
 import ke.ac.ku.ledgerly.base.NavigationEvent
 import ke.ac.ku.ledgerly.base.UiEvent
+import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
@@ -20,6 +21,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AddTransactionViewModel @Inject constructor(
     val dao: TransactionDao,
+    val recurringDao: RecurringTransactionDao,
     private val budgetRepository: BudgetRepository
 ) : BaseViewModel() {
 
@@ -38,7 +40,7 @@ class AddTransactionViewModel @Inject constructor(
 
     suspend fun addRecurringTransaction(recurringTransaction: RecurringTransactionEntity): Boolean {
         return try {
-            val recurringId: Long = dao.insertRecurringTransaction(recurringTransaction)
+            val recurringId: Long = recurringDao.insertRecurringTransaction(recurringTransaction)
 
             val firstTransaction = TransactionEntity(
                 id = null,
@@ -52,7 +54,7 @@ class AddTransactionViewModel @Inject constructor(
             )
             dao.insertTransaction(firstTransaction)
 
-            dao.updateRecurringTransaction(
+            recurringDao.updateRecurringTransaction(
                 recurringTransaction.copy(
                     id = recurringId,
                     lastGeneratedDate = recurringTransaction.startDate

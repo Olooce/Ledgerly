@@ -42,62 +42,6 @@ interface TransactionDao {
     @Update
     suspend fun updateTransaction(transactionEntity: TransactionEntity)
 
-    // Budget methods
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertBudget(budget: BudgetEntity)
-
-    suspend fun insertBudgetWithTimestamp(budget: BudgetEntity) {
-        insertBudget(budget.copy(lastModified = System.currentTimeMillis()))
-    }
-
-    @Update
-    suspend fun updateBudget(budget: BudgetEntity)
-
-    @Query("SELECT * FROM budgets WHERE monthYear = :monthYear")
-    suspend fun getBudgetsForMonth(monthYear: String): List<BudgetEntity>
-
-    @Query("SELECT * FROM budgets WHERE category = :category AND monthYear = :monthYear")
-    suspend fun getBudgetForCategory(category: String, monthYear: String): BudgetEntity?
-
-    @Query("DELETE FROM budgets WHERE category = :category AND monthYear = :monthYear")
-    suspend fun deleteBudget(category: String, monthYear: String)
-
-    // Get current spending for a category in a specific month
-    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE category = :category AND type = 'Expense' AND strftime('%Y-%m', date) = :monthYear")
-    suspend fun getCurrentSpendingForCategory(category: String, monthYear: String): Double
-
-    @Query("SELECT * FROM budgets")
-    suspend fun getAllBudgetsSync(): List<BudgetEntity>
-
-
-    // Recurring transaction methods
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertRecurringTransaction(recurringTransaction: RecurringTransactionEntity): Long
-
-    suspend fun insertRecurringTransactionWithTimestamp(recurringTransaction: RecurringTransactionEntity) {
-        insertRecurringTransaction(recurringTransaction.copy(lastModified = System.currentTimeMillis()))
-    }
-
-    @Update
-    suspend fun updateRecurringTransaction(recurringTransaction: RecurringTransactionEntity)
-
-    @Delete
-    suspend fun deleteRecurringTransaction(recurringTransaction: RecurringTransactionEntity)
-
-    @Query("SELECT * FROM recurring_transactions WHERE isActive = 1")
-    suspend fun getActiveRecurringTransactions(): List<RecurringTransactionEntity>
-
-    @Query("SELECT * FROM recurring_transactions")
-    fun getAllRecurringTransactions(): Flow<List<RecurringTransactionEntity>>
-
-    @Query("SELECT * FROM recurring_transactions WHERE id = :id")
-    suspend fun getRecurringTransactionById(id: Long): RecurringTransactionEntity?
-
-    @Query("UPDATE recurring_transactions SET isActive = :isActive WHERE id = :id")
-    suspend fun updateRecurringTransactionStatus(id: Long, isActive: Boolean)
-
-    @Query("SELECT * FROM recurring_transactions")
-    suspend fun getAllRecurringTransactionsSync(): List<RecurringTransactionEntity>
 
     @Query(
         """
