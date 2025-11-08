@@ -26,6 +26,11 @@ fun AmountRangeFilter(
 ) {
     var minAmount by remember { mutableStateOf(amountRange?.start?.toString() ?: "") }
     var maxAmount by remember { mutableStateOf(amountRange?.endInclusive?.toString() ?: "") }
+    
+    LaunchedEffect(amountRange) {
+        minAmount = amountRange?.start?.toString() ?: ""
+        maxAmount = amountRange?.endInclusive?.toString() ?: ""
+    }
 
     val primaryTextColor = MaterialTheme.colorScheme.onSurface
     val secondaryTextColor = MaterialTheme.colorScheme.onSurfaceVariant
