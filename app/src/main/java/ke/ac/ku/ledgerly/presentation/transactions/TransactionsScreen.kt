@@ -65,13 +65,13 @@ import ke.ac.ku.ledgerly.utils.TransactionFilterUtils
 fun TransactionsScreen(
     navController: NavController,
     homeViewModel: HomeViewModel = hiltViewModel(),
-    recurringViewModel: TransactionViewModel = hiltViewModel()
+    transactionViewModel: TransactionViewModel = hiltViewModel()
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("All Transactions", "Recurring")
 
-    val transactions by homeViewModel.transactions.collectAsState(initial = emptyList())
-    val recurringTransactions by recurringViewModel.recurringTransactions.collectAsState(initial = emptyList())
+    val transactions by transactionViewModel.transactions.collectAsState(initial = emptyList())
+    val recurringTransactions by transactionViewModel.recurringTransactions.collectAsState(initial = emptyList())
 
     var filterType by remember { mutableStateOf("All") }
     var dateRange by remember { mutableStateOf("All Time") }
@@ -327,10 +327,10 @@ fun TransactionsScreen(
                         onAmountRangeChange = { amountRange = it },
                         onCategoriesChange = { selectedCategories = it },
                         onToggleActive = { id, isActive ->
-                            recurringViewModel.toggleRecurringTransactionStatus(id, isActive)
+                            transactionViewModel.toggleRecurringTransactionStatus(id, isActive)
                         },
                         onDelete = { id ->
-                            recurringViewModel.deleteRecurringTransaction(id)
+                            transactionViewModel.deleteRecurringTransaction(id)
                         },
                         onClearFilters = {
                             filterType = "All"

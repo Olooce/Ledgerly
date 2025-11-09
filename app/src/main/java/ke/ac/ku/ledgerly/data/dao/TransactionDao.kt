@@ -15,10 +15,10 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TransactionDao {
-    @Query("SELECT * FROM transactions")
+    @Query("SELECT * FROM transactions ORDER BY date DESC")
     fun getAllTransactions(): Flow<List<TransactionEntity>>
 
-    @Query("SELECT * FROM transactions")
+    @Query("SELECT * FROM transactions ORDER BY date DESC")
     suspend fun getAllTransactionsSync(): List<TransactionEntity>
 
     @Query("SELECT * FROM transactions WHERE type = 'Expense' ORDER BY amount DESC LIMIT 5")

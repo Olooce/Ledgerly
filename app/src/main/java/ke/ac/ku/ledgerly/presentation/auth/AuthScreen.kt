@@ -87,8 +87,8 @@ import ke.ac.ku.ledgerly.base.AuthEvent
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyAccent
 import kotlinx.coroutines.delay
 
-private val LedgerlyGreen = Color(0xFF0B3D2E)
-private val LedgerlyGreenLight = Color(0xFF1A5C47)
+private val LedgerlyGreen =  Color(0xFF11423F)
+private val LedgerlyGreenLight = Color(0xFF094540)
 private val LedgerlyAccent = Color(0xFFE6F0EC)
 private val LedgerlyBlue = Color(0xFF4A90E2)
 private val LedgerlyBlueLight = Color(0xFFD6E4F0)
@@ -154,7 +154,6 @@ fun AuthScreen(
                     colors = listOf(
                         LedgerlyGreen,
                         LedgerlyGreenLight,
-                        Color(0xFF0D4A38)
                     )
                 )
             )
@@ -178,6 +177,7 @@ fun AuthScreen(
                     )
             )
         }
+
 
         Column(
             modifier = Modifier

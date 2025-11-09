@@ -24,10 +24,10 @@ interface RecurringTransactionDao {
     @Delete
     suspend fun deleteRecurringTransaction(recurringTransaction: RecurringTransactionEntity)
 
-    @Query("SELECT * FROM recurring_transactions WHERE isActive = 1")
+    @Query("SELECT * FROM recurring_transactions WHERE isActive = 1 ORDER BY startDate DESC")
     suspend fun getActiveRecurringTransactions(): List<RecurringTransactionEntity>
 
-    @Query("SELECT * FROM recurring_transactions")
+    @Query("SELECT * FROM recurring_transactions ORDER BY startDate DESC")
     fun getAllRecurringTransactions(): Flow<List<RecurringTransactionEntity>>
 
     @Query("SELECT * FROM recurring_transactions WHERE id = :id")
@@ -36,7 +36,7 @@ interface RecurringTransactionDao {
     @Query("UPDATE recurring_transactions SET isActive = :isActive WHERE id = :id")
     suspend fun updateRecurringTransactionStatus(id: Long, isActive: Boolean)
 
-    @Query("SELECT * FROM recurring_transactions")
+    @Query("SELECT * FROM recurring_transactions ORDER BY startDate DESC")
     suspend fun getAllRecurringTransactionsSync(): List<RecurringTransactionEntity>
 
 }

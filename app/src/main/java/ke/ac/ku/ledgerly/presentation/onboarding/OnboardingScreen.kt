@@ -64,8 +64,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ke.ac.ku.ledgerly.R
 
-private val LedgerlyGreen = Color(0xFF0B3D2E)
-private val LedgerlyGreenLight = Color(0xFF1A5C47)
+private val LedgerlyGreen =  Color(0xFF11423F)
+private val LedgerlyGreenLight = Color(0xFF094540)
 private val LedgerlyAccent = Color(0xFFE6F0EC)
 
 @Composable
@@ -89,7 +89,6 @@ fun OnboardingScreen(
                     colors = listOf(
                         LedgerlyGreen,
                         LedgerlyGreenLight,
-                        Color(0xFF0D4A38)
                     )
                 )
             )

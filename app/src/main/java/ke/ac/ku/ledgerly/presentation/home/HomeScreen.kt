@@ -207,7 +207,7 @@ fun CardItem(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clip(RoundedCornerShape(60.dp))
+                .clip(RoundedCornerShape(48.dp))
                 .background(
                     Brush.linearGradient(
                         colors = listOf(
@@ -225,7 +225,7 @@ fun CardItem(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(1.dp)
-                .clip(RoundedCornerShape(60.dp))
+                .clip(RoundedCornerShape(48.dp))
                 .background(Color(0xFF1E1E1E).copy(alpha = 0.7f))
                 .border(
                     width = 1.dp,
@@ -236,7 +236,7 @@ fun CardItem(
                             Color.White.copy(alpha = 0.05f)
                         )
                     ),
-                    shape = RoundedCornerShape(60.dp)
+                    shape = RoundedCornerShape(48.dp)
                 )
         )
 
