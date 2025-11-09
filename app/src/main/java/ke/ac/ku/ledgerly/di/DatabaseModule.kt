@@ -22,12 +22,15 @@ object DatabaseModule {
         LedgerlyDatabase.getInstance(context)
 
     @Provides
+    @Singleton
     fun provideTransactionDao(db: LedgerlyDatabase): TransactionDao = db.transactionDao()
 
     @Provides
+    @Singleton
     fun provideRecurringTransactionDao(db: LedgerlyDatabase): RecurringTransactionDao =
         db.recurringTransactionDao()
 
     @Provides
+    @Singleton
     fun provideBudgetDao(db: LedgerlyDatabase): BudgetDao = db.budgetDao()
 }

@@ -1,5 +1,6 @@
 package ke.ac.ku.ledgerly.presentation.add_transaction
 
+import android.util.Log
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ke.ac.ku.ledgerly.base.AddTransactionNavigationEvent
@@ -30,10 +31,11 @@ class AddTransactionViewModel @Inject constructor(
 
     suspend fun addTransaction(transactionEntity: TransactionEntity): Boolean {
         return try {
-            dao.insertTransaction(transactionEntity)
+            dao.insertTransactionWithTimestamp(transactionEntity)
             updateBudgetSpending(transactionEntity)
             true
         } catch (ex: Throwable) {
+            Log.e("AddTransactionVM", "Failed to add transaction", ex)
             false
         }
     }

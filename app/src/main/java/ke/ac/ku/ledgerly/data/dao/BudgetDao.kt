@@ -19,10 +19,10 @@ interface BudgetDao {
     @Update
     suspend fun updateBudget(budget: BudgetEntity)
 
-    @Query("SELECT * FROM budgets WHERE monthYear = :monthYear")
+    @Query("SELECT * FROM budgets WHERE monthYear = :monthYear ORDER BY lastModified DESC")
     suspend fun getBudgetsForMonth(monthYear: String): List<BudgetEntity>
 
-    @Query("SELECT * FROM budgets WHERE category = :category AND monthYear = :monthYear")
+    @Query("SELECT * FROM budgets WHERE category = :category AND monthYear = :monthYear ORDER BY lastModified DESC")
     suspend fun getBudgetForCategory(category: String, monthYear: String): BudgetEntity?
 
     @Query("DELETE FROM budgets WHERE category = :category AND monthYear = :monthYear")
@@ -41,7 +41,7 @@ interface BudgetDao {
     suspend fun getCurrentSpendingForCategory(category: String, monthYear: String): Double
 
 
-    @Query("SELECT * FROM budgets")
+    @Query("SELECT * FROM budgets ORDER BY lastModified DESC")
     suspend fun getAllBudgetsSync(): List<BudgetEntity>
 
 }
