@@ -1,14 +1,20 @@
 package ke.ac.ku.ledgerly.presentation.onboarding
 
+import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
+import ke.ac.ku.ledgerly.domain.ExchangeRateService
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.Currency
+import java.util.Locale
 import javax.inject.Inject
 
 data class OnboardingState(
@@ -23,11 +29,48 @@ data class OnboardingState(
 
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
+    private val app: Application,
     private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(OnboardingState())
     val state: StateFlow<OnboardingState> = _state.asStateFlow()
+
+    private val _availableCurrencies = MutableStateFlow<List<String>>(emptyList())
+    val availableCurrencies: StateFlow<List<String>> = _availableCurrencies.asStateFlow()
+
+
+    init {
+        viewModelScope.launch {
+            loadAvailableCurrencies()
+        }
+    }
+
+    private suspend fun loadAvailableCurrencies() = withContext(Dispatchers.IO) {
+        try {
+            val rates = ExchangeRateService.getRates(app)
+            val codes = rates?.keys?.sorted() ?: emptyList()
+
+            val localeCurrency = try {
+                Currency.getInstance(Locale.getDefault()).currencyCode
+            } catch (e: Exception) {
+                "USD"
+            }
+
+            _state.update {
+                it.copy(
+                    currency = if (codes.contains(localeCurrency)) localeCurrency else "USD"
+                )
+            }
+
+            _availableCurrencies.value =
+                codes.ifEmpty { listOf("USD", "KES", "EUR", "GBP", "UGX", "TZS") }
+
+        } catch (e: Exception) {
+            _availableCurrencies.value = listOf("USD", "KES", "EUR", "GBP", "UGX", "TZS")
+        }
+    }
+
 
     fun updateUserName(name: String) {
         _state.update { it.copy(userName = name) }

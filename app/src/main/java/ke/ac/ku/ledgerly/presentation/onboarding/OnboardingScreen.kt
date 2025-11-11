@@ -35,6 +35,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +51,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -63,6 +67,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ke.ac.ku.ledgerly.R
+import java.util.Currency
 
 private val LedgerlyGreen =  Color(0xFF11423F)
 private val LedgerlyGreenLight = Color(0xFF094540)
@@ -322,22 +327,20 @@ private fun NameStep(
 @Composable
 private fun CurrencyStep(
     selectedCurrency: String,
-    onCurrencySelected: (String) -> Unit
+    onCurrencySelected: (String) -> Unit,
+    viewModel: OnboardingViewModel = hiltViewModel()
 ) {
-    val currencies = listOf(
-        "KES" to "Kenyan Shilling",
-        "USD" to "US Dollar",
-        "EUR" to "Euro",
-        "GBP" to "British Pound",
-        "UGX" to "Ugandan Shilling",
-        "TZS" to "Tanzanian Shilling"
-    )
+    val currencies by viewModel.availableCurrencies.collectAsState()
+    var query by remember { mutableStateOf("") }
+
+    val filtered = if (query.isBlank()) currencies else
+        currencies.filter { it.contains(query, ignoreCase = true) }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
@@ -357,29 +360,61 @@ private fun CurrencyStep(
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        Text(
-            text = "Select your preferred currency for transactions",
-            style = MaterialTheme.typography.bodyMedium,
-            color = LedgerlyAccent,
-            textAlign = TextAlign.Center
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            label = { Text("Search Currency") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.White,
+                unfocusedBorderColor = Color.White.copy(alpha = 0.6f),
+                focusedLabelColor = Color.White,
+                unfocusedLabelColor = Color.White.copy(alpha = 0.6f),
+                cursorColor = Color.White,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White
+            )
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        currencies.forEach { (code, name) ->
-            CurrencyOption(
-                code = code,
-                name = name,
-                isSelected = selectedCurrency == code,
-                onClick = { onCurrencySelected(code) }
+        if (currencies.isEmpty()) {
+            CircularProgressIndicator(
+                color = Color.White.copy(alpha = 0.7f),
+                strokeWidth = 3.dp,
+                modifier = Modifier.padding(top = 24.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
+        } else {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                filtered.forEach { code ->
+                    val displayName = Currency.getAvailableCurrencies()
+                        .find { it.currencyCode == code }?.displayName ?: code
+                    CurrencyOption(
+                        code = code,
+                        name = displayName,
+                        isSelected = selectedCurrency == code,
+                        onClick = { onCurrencySelected(code) }
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                if (filtered.isEmpty()) {
+                    Text(
+                        text = "No currencies found",
+                        color = Color.White.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
         }
     }
 }
-
 
 @Composable
 private fun BudgetStep(
