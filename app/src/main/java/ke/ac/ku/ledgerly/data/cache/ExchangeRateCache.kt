@@ -16,39 +16,38 @@ private val Context.dataStore by preferencesDataStore("exchange_rate_cache")
 class ExchangeRateCache(private val context: Context) {
     companion object {
         private val RATES_KEY = stringPreferencesKey("rates_json")
+        private val BASE_KEY = stringPreferencesKey("base_code")
         private val LAST_FETCH_KEY = longPreferencesKey("last_fetch_time")
     }
 
-    suspend fun saveRates(rates: Map<String, Double>) {
+    suspend fun saveRates(base: String, rates: Map<String, Double>) {
         context.dataStore.edit { prefs ->
-            val json = Gson().toJson(rates)
-            Log.i("ExchangeRateCache", "Saving rates: ${rates.size} entries")
-            prefs[RATES_KEY] = json
+            prefs[RATES_KEY] = Gson().toJson(rates)
+            prefs[BASE_KEY] = base
             prefs[LAST_FETCH_KEY] = System.currentTimeMillis()
+            Log.i("ExchangeRateCache", "Saved $base rates: ${rates.size} entries")
         }
     }
 
-
-    suspend fun getRates(): Map<String, Double>? {
+    suspend fun getRates(base: String): Map<String, Double>? {
         val prefs = context.dataStore.data.first()
-        val json = prefs[RATES_KEY] ?: return null
+        val cachedBase = prefs[BASE_KEY]
+        if (cachedBase != base) return null
 
+        val json = prefs[RATES_KEY] ?: return null
         return try {
             val type = object : TypeToken<Map<String, Double>>() {}.type
-            val map: Map<String, Double> = Gson().fromJson(json, type)
-            Log.i("ExchangeRateCache", "Successfully loaded cached rates: ${map.size}")
-            map
+            Gson().fromJson<Map<String, Double>>(json, type)
         } catch (e: Exception) {
-            Log.e("ExchangeRateCache", "Failed to parse cached rates, clearing cache", e)
-            context.dataStore.edit { it.remove(RATES_KEY); it.remove(LAST_FETCH_KEY) }
-            return null
+            context.dataStore.edit { it.remove(RATES_KEY); it.remove(BASE_KEY); it.remove(LAST_FETCH_KEY) }
+            null
         }
     }
 
     suspend fun isCacheValid(): Boolean {
         val prefs = context.dataStore.data.first()
         val lastFetch = prefs[LAST_FETCH_KEY] ?: return false
-        val elapsed = System.currentTimeMillis() - lastFetch
-        return elapsed < TimeUnit.DAYS.toMillis(1)
+        return System.currentTimeMillis() - lastFetch < TimeUnit.DAYS.toMillis(1)
     }
 }
+

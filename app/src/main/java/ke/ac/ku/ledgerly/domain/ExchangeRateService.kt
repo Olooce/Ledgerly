@@ -80,32 +80,20 @@ object ExchangeRateService {
         val cache = ExchangeRateCache(context)
 
         return try {
-            Log.i(TAG, "Checking cache validity...")
-            val isCacheValid = cache.isCacheValid()
-            Log.i(TAG, "Cache valid: $isCacheValid")
-
-            if (isCacheValid) {
-                Log.i(TAG, "Fetching rates from cache...")
-                val cached = cache.getRates()
-                Log.i(TAG, "Cached rates found: ${cached?.size ?: 0}")
+            val cached = cache.getRates(base)
+            if (cached != null && cache.isCacheValid()) {
+                Log.i(TAG, "Using cached rates for $base")
                 return cached
             }
 
             Log.i(TAG, "Fetching rates from API for base: $base")
             val response = api.getRates(base)
-            Log.i(TAG, "API response base: ${response.base_code}")
-            Log.i(TAG, "API response rates count: ${response.rates.size}")
-
-            cache.saveRates(response.rates)
-            Log.i(TAG, "Rates saved to cache successfully")
-
+            cache.saveRates(base, response.rates)
             response.rates
         } catch (e: Exception) {
-            Log.e(TAG, "Error fetching or caching rates: ${e.message}", e)
-            Log.i(TAG, "Attempting to load fallback cache...")
-            val fallback = cache.getRates()
-            Log.i(TAG, "Fallback cache size: ${fallback?.size ?: 0}")
-            fallback
+            Log.e(TAG, "Error fetching rates: ${e.message}", e)
+            cache.getRates(base)
         }
     }
+
 }

@@ -39,6 +39,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.auth.api.identity.SignInClient
+import ke.ac.ku.ledgerly.base.AuthEvent
 import ke.ac.ku.ledgerly.data.constants.NavRouts
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
 import ke.ac.ku.ledgerly.presentation.add_transaction.AddTransaction
@@ -157,6 +158,13 @@ fun NavHostScreen(
                         OnboardingScreen(
                             onComplete = {
                                 navController.navigate(NavRouts.home) {
+                                    popUpTo(NavRouts.onboarding) { inclusive = true }
+                                }
+                            },
+
+                            onExit = {
+                                authViewModel.onEvent(AuthEvent.SignOut)
+                                navController.navigate(NavRouts.auth) {
                                     popUpTo(NavRouts.onboarding) { inclusive = true }
                                 }
                             }
