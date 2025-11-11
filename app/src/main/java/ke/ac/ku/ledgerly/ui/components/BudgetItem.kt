@@ -62,7 +62,7 @@ fun BudgetItem(
                     text = budget.category,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color =    Color.Transparent,
+                    color =    MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
