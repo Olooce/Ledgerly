@@ -87,7 +87,7 @@ import ke.ac.ku.ledgerly.base.AuthEvent
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyAccent
 import kotlinx.coroutines.delay
 
-private val LedgerlyGreen =  Color(0xFF11423F)
+private val LedgerlyGreen = Color(0xFF11423F)
 private val LedgerlyGreenLight = Color(0xFF094540)
 private val LedgerlyAccent = Color(0xFFE6F0EC)
 private val LedgerlyBlue = Color(0xFF4A90E2)

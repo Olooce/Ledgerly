@@ -137,7 +137,10 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                 Image(
                     painter = painterResource(id = R.drawable.ic_notification),
                     contentDescription = null,
-                    modifier = Modifier.align(Alignment.CenterEnd).size(26.dp).clickable{},
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(26.dp)
+                        .clickable {},
                     colorFilter = ColorFilter.tint(Color.White)
                 )
             }
