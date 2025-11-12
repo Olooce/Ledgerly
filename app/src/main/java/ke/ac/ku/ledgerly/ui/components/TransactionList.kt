@@ -41,7 +41,10 @@ fun TransactionList(
                 .padding(16.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
                 Image(
                     painter = painterResource(id = R.drawable.ic_empty_state),
                     contentDescription = "No transactions",

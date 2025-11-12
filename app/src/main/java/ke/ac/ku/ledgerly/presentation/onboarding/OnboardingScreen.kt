@@ -26,7 +26,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Notifications
@@ -38,10 +37,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -77,7 +72,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ke.ac.ku.ledgerly.R
 import java.util.Currency
 
-private val LedgerlyGreen =  Color(0xFF11423F)
+private val LedgerlyGreen = Color(0xFF11423F)
 private val LedgerlyGreenLight = Color(0xFF094540)
 private val LedgerlyAccent = Color(0xFFE6F0EC)
 
@@ -158,7 +153,8 @@ fun OnboardingScreen(
 
                     2 -> CurrencyStep(
                         selectedCurrency = state.currency,
-                        onCurrencySelected = { viewModel.updateCurrency(it) }
+                        onCurrencySelected = { viewModel.updateCurrency(it) },
+                        viewModel = viewModel
                     )
 
                     3 -> BudgetStep(
@@ -362,7 +358,7 @@ private fun NameStep(
 private fun CurrencyStep(
     selectedCurrency: String,
     onCurrencySelected: (String) -> Unit,
-    viewModel: OnboardingViewModel = hiltViewModel()
+    viewModel: OnboardingViewModel
 ) {
     val currencies by viewModel.availableCurrencies.collectAsState()
     var query by remember { mutableStateOf("") }
@@ -423,11 +419,13 @@ private fun CurrencyStep(
                 modifier = Modifier.padding(top = 24.dp)
             )
         } else {
+            val availableCurrencies = Currency.getAvailableCurrencies()
+
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 filtered.forEach { code ->
-                    val displayName = Currency.getAvailableCurrencies()
+                    val displayName = availableCurrencies
                         .find { it.currencyCode == code }?.displayName ?: code
                     CurrencyOption(
                         code = code,

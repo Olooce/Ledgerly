@@ -39,7 +39,12 @@ class ExchangeRateCache(private val context: Context) {
             val type = object : TypeToken<Map<String, Double>>() {}.type
             Gson().fromJson<Map<String, Double>>(json, type)
         } catch (e: Exception) {
-            context.dataStore.edit { it.remove(RATES_KEY); it.remove(BASE_KEY); it.remove(LAST_FETCH_KEY) }
+            Log.e("ExchangeRateCache", "Failed to parse cached rates for $base", e)
+            context.dataStore.edit {
+                it.remove(RATES_KEY);
+                it.remove(BASE_KEY);
+                it.remove(LAST_FETCH_KEY)
+            }
             null
         }
     }
