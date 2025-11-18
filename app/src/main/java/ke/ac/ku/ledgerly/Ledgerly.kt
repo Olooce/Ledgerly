@@ -27,5 +27,6 @@ class Ledgerly : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         workManagerSetup.setupRecurringTransactionWork()
+        workManagerSetup.scheduleCleanup()
     }
-}
+    }

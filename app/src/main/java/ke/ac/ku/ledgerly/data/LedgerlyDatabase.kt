@@ -23,7 +23,7 @@ import javax.inject.Singleton
         BudgetEntity::class,
         RecurringTransactionEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -47,9 +47,9 @@ abstract class LedgerlyDatabase : RoomDatabase() {
                     LedgerlyDatabase::class.java,
                     DATABASE_NAME
                 )
-//                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
 
-                    .fallbackToDestructiveMigration(true) //  Delete and recreate the database: For Dev
+//                    .fallbackToDestructiveMigration(true) //  Delete and recreate the database: For Dev
                     .build()
 
                 INSTANCE = instance
@@ -194,11 +194,19 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
 }
 
 val MIGRATION_5_6 = object : Migration(5, 6) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("ALTER TABLE transactions ADD COLUMN lastModified INTEGER")
-        database.execSQL("ALTER TABLE budgets ADD COLUMN lastModified INTEGER")
-        database.execSQL("UPDATE budgets SET lastModified = strftime('%s','now') * 1000")
-        database.execSQL("ALTER TABLE recurring_transactions ADD COLUMN lastModified INTEGER")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE transactions ADD COLUMN lastModified INTEGER")
+        db.execSQL("ALTER TABLE budgets ADD COLUMN lastModified INTEGER")
+        db.execSQL("UPDATE budgets SET lastModified = strftime('%s','now') * 1000")
+        db.execSQL("ALTER TABLE recurring_transactions ADD COLUMN lastModified INTEGER")
+    }
+}
+
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE transactions ADD COLUMN isDeleted INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE recurring_transactions ADD COLUMN isDeleted INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE budgets ADD COLUMN isDeleted INTEGER NOT NULL DEFAULT 0")
     }
 }
 

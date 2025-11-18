@@ -14,5 +14,6 @@ data class TransactionEntity(
     val notes: String = "",
     val paymentMethod: String = "",
     val tags: String = "",
+    val isDeleted: Boolean = false,
     val lastModified: Long? = System.currentTimeMillis()
 )

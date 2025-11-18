@@ -41,15 +41,17 @@ class TransactionViewModel @Inject constructor(
 
     fun deleteRecurringTransaction(id: Long) {
         viewModelScope.launch(Dispatchers.IO) {
-            val recurring = dao.getRecurringTransactionById(id)
-            recurring?.let {
-                dao.deleteRecurringTransaction(it)
-            }
+            dao.softDeleteRecurringTransaction(id)
+        }
+    }
+
+    fun deleteTransaction(transactionId: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            transactionDao.softDeleteTransaction(transactionId)
         }
     }
 
     private val _recurringTransactions = MutableStateFlow(emptyList<RecurringTransactionEntity>())
-
 
     private fun loadRecurringTransactions() {
         viewModelScope.launch {

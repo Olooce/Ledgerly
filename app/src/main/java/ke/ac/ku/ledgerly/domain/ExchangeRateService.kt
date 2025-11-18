@@ -2,7 +2,7 @@ package ke.ac.ku.ledgerly.domain
 
 import android.content.Context
 import android.util.Log
-import ke.ac.ku.ledgerly.data.ExchangeRateApi
+import ke.ac.ku.ledgerly.data.api.ExchangeRateApi
 import ke.ac.ku.ledgerly.data.cache.ExchangeRateCache
 import okhttp3.Dns
 import okhttp3.OkHttpClient

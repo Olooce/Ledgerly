@@ -1,55 +1,110 @@
 package ke.ac.ku.ledgerly.data.model
 
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.PropertyName
 
 data class FirestoreTransaction(
-    val id: String? = null,
-    val category: String = "",
+    val id: String = "",
+    val userId: String = "",
+    val type: String = "",
     val amount: Double = 0.0,
     val date: Timestamp = Timestamp.now(),
-    val type: String = "",
+    val category: String = "",
     val notes: String = "",
     val paymentMethod: String = "",
-    val tags: List<String> = emptyList(),
-    val userId: String = "",
+    val tags: String = "",
     val lastModified: Timestamp = Timestamp.now(),
-    val deviceId: String = ""
+    val deviceId: String = "",
+    @PropertyName("deleted")
+    val isDeleted: Boolean = false
 ) {
     companion object {
-        fun fromEntity(
-            entity: TransactionEntity,
-            userId: String,
-            deviceId: String
-        ): FirestoreTransaction {
+        fun fromEntity(entity: TransactionEntity, userId: String, deviceId: String): FirestoreTransaction {
             return FirestoreTransaction(
-                id = entity.id?.toString(),
-                category = entity.category,
+                id = entity.id.toString(),
+                userId = userId,
+                type = entity.type,
                 amount = entity.amount,
                 date = Timestamp(entity.date / 1000, 0),
-                type = entity.type,
+                category = entity.category,
                 notes = entity.notes,
                 paymentMethod = entity.paymentMethod,
-                tags = entity.tags.split("|").filter { it.isNotBlank() },
-                userId = userId,
+                tags = entity.tags,
+                lastModified = Timestamp((entity.lastModified ?: System.currentTimeMillis()) / 1000, 0),
                 deviceId = deviceId,
-                lastModified = Timestamp(
-                    (entity.lastModified ?: System.currentTimeMillis()) / 1000,
-                    0
-                )
+                isDeleted = entity.isDeleted
             )
         }
 
         fun toEntity(firestoreTransaction: FirestoreTransaction): TransactionEntity {
             return TransactionEntity(
-                id = firestoreTransaction.id?.toLongOrNull(),
-                category = firestoreTransaction.category,
-                amount = firestoreTransaction.amount,
-                date = firestoreTransaction.date.seconds * 1000,
+                id = firestoreTransaction.id.toLongOrNull() ?: 0L,
                 type = firestoreTransaction.type,
+                amount = firestoreTransaction.amount,
+                date = firestoreTransaction.date.toDate().time,
+                category = firestoreTransaction.category,
                 notes = firestoreTransaction.notes,
                 paymentMethod = firestoreTransaction.paymentMethod,
-                tags = firestoreTransaction.tags.joinToString("|"),
-                lastModified = firestoreTransaction.lastModified.seconds * 1000
+                tags = firestoreTransaction.tags,
+                lastModified = firestoreTransaction.lastModified.toDate().time,
+                isDeleted = firestoreTransaction.isDeleted
+            )
+        }
+    }
+}
+
+data class FirestoreRecurringTransaction(
+    val id: String = "",
+    val userId: String = "",
+    val type: String = "",
+    val amount: Double = 0.0,
+    val category: String = "",
+    val notes: String = "",
+    val paymentMethod: String = "",
+    val frequency: RecurrenceFrequency = RecurrenceFrequency.MONTHLY,
+    val startDate: Timestamp = Timestamp.now(),
+    val endDate: Timestamp? = null,
+    @PropertyName("active")
+    val isActive: Boolean = true,
+    val lastModified: Timestamp = Timestamp.now(),
+    val deviceId: String = "",
+    @PropertyName("deleted")
+    val isDeleted: Boolean = false
+) {
+    companion object {
+        fun fromEntity(entity: RecurringTransactionEntity, userId: String, deviceId: String): FirestoreRecurringTransaction {
+            return FirestoreRecurringTransaction(
+                id = entity.id.toString(),
+                userId = userId,
+                type = entity.type,
+                amount = entity.amount,
+                category = entity.category,
+                notes = entity.notes,
+                paymentMethod = entity.paymentMethod,
+                frequency = entity.frequency,
+                startDate = Timestamp(entity.startDate / 1000, 0),
+                endDate = entity.endDate?.let { Timestamp(it / 1000, 0) },
+                isActive = entity.isActive,
+                lastModified = Timestamp((entity.lastModified ?: System.currentTimeMillis()) / 1000, 0),
+                deviceId = deviceId,
+                isDeleted = entity.isDeleted
+            )
+        }
+
+        fun toEntity(firestoreRecurring: FirestoreRecurringTransaction): RecurringTransactionEntity {
+            return RecurringTransactionEntity(
+                id = firestoreRecurring.id.toLongOrNull() ?: 0L,
+                type = firestoreRecurring.type,
+                amount = firestoreRecurring.amount,
+                category = firestoreRecurring.category,
+                notes = firestoreRecurring.notes,
+                paymentMethod = firestoreRecurring.paymentMethod,
+                frequency = firestoreRecurring.frequency,
+                startDate = firestoreRecurring.startDate.toDate().time,
+                endDate = firestoreRecurring.endDate?.toDate()?.time,
+                isActive = firestoreRecurring.isActive,
+                lastModified = firestoreRecurring.lastModified.toDate().time,
+                isDeleted = firestoreRecurring.isDeleted
             )
         }
     }
@@ -57,101 +112,37 @@ data class FirestoreTransaction(
 
 data class FirestoreBudget(
     val category: String = "",
+    val userId: String = "",
+    val monthYear: String = "",
     val monthlyBudget: Double = 0.0,
     val currentSpending: Double = 0.0,
-    val monthYear: String = "",
-    val userId: String = "",
     val lastModified: Timestamp = Timestamp.now(),
-    val deviceId: String = ""
+    val deviceId: String = "",
+    @PropertyName("deleted")
+    val isDeleted: Boolean = false
 ) {
     companion object {
         fun fromEntity(entity: BudgetEntity, userId: String, deviceId: String): FirestoreBudget {
             return FirestoreBudget(
                 category = entity.category,
+                userId = userId,
+                monthYear = entity.monthYear,
                 monthlyBudget = entity.monthlyBudget,
                 currentSpending = entity.currentSpending,
-                monthYear = entity.monthYear,
-                userId = userId,
+                lastModified = Timestamp((entity.lastModified ?: System.currentTimeMillis()) / 1000, 0),
                 deviceId = deviceId,
-                lastModified = Timestamp(
-                    (entity.lastModified ?: System.currentTimeMillis()) / 1000,
-                    0
-                )
+                isDeleted = entity.isDeleted
             )
         }
 
         fun toEntity(firestoreBudget: FirestoreBudget): BudgetEntity {
             return BudgetEntity(
                 category = firestoreBudget.category,
+                monthYear = firestoreBudget.monthYear,
                 monthlyBudget = firestoreBudget.monthlyBudget,
                 currentSpending = firestoreBudget.currentSpending,
-                monthYear = firestoreBudget.monthYear,
-                lastModified = firestoreBudget.lastModified.seconds * 1000
-            )
-        }
-    }
-}
-
-data class FirestoreRecurringTransaction(
-    val id: String? = null,
-    val category: String = "",
-    val amount: Double = 0.0,
-    val type: String = "",
-    val notes: String = "",
-    val paymentMethod: String = "",
-    val tags: List<String> = emptyList(),
-    val frequency: String = "",
-    val startDate: Timestamp = Timestamp.now(),
-    val endDate: Timestamp? = null,
-    val lastGeneratedDate: Timestamp? = null,
-    val isActive: Boolean = true,
-    val userId: String = "",
-    val lastModified: Timestamp = Timestamp.now(),
-    val deviceId: String = ""
-) {
-    companion object {
-        fun fromEntity(
-            entity: RecurringTransactionEntity,
-            userId: String,
-            deviceId: String
-        ): FirestoreRecurringTransaction {
-            return FirestoreRecurringTransaction(
-                id = entity.id?.toString(),
-                category = entity.category,
-                amount = entity.amount,
-                type = entity.type,
-                notes = entity.notes,
-                paymentMethod = entity.paymentMethod,
-                tags = entity.tags.split("|").filter { it.isNotBlank() },
-                frequency = entity.frequency.name,
-                startDate = Timestamp(entity.startDate / 1000, 0),
-                endDate = entity.endDate?.let { Timestamp(it / 1000, 0) },
-                lastGeneratedDate = entity.lastGeneratedDate?.let { Timestamp(it / 1000, 0) },
-                isActive = entity.isActive,
-                userId = userId,
-                deviceId = deviceId,
-                lastModified = Timestamp(
-                    (entity.lastModified ?: System.currentTimeMillis()) / 1000,
-                    0
-                )
-            )
-        }
-
-        fun toEntity(firestoreTransaction: FirestoreRecurringTransaction): RecurringTransactionEntity {
-            return RecurringTransactionEntity(
-                id = firestoreTransaction.id?.toLongOrNull(),
-                category = firestoreTransaction.category,
-                amount = firestoreTransaction.amount,
-                type = firestoreTransaction.type,
-                notes = firestoreTransaction.notes,
-                paymentMethod = firestoreTransaction.paymentMethod,
-                tags = firestoreTransaction.tags.joinToString("|"),
-                frequency = RecurrenceFrequency.valueOf(firestoreTransaction.frequency),
-                startDate = firestoreTransaction.startDate.seconds * 1000,
-                endDate = firestoreTransaction.endDate?.seconds?.times(1000),
-                lastGeneratedDate = firestoreTransaction.lastGeneratedDate?.seconds?.times(1000),
-                isActive = firestoreTransaction.isActive,
-                lastModified = firestoreTransaction.lastModified.seconds * 1000
+                lastModified = firestoreBudget.lastModified.toDate().time,
+                isDeleted = firestoreBudget.isDeleted
             )
         }
     }

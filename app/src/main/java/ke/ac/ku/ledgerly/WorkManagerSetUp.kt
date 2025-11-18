@@ -9,6 +9,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import dagger.hilt.android.qualifiers.ApplicationContext
+import ke.ac.ku.ledgerly.worker.CleanupWorker
 import ke.ac.ku.ledgerly.worker.RecurringTransactionWorker
 import ke.ac.ku.ledgerly.worker.SyncWorker
 import kotlinx.coroutines.flow.Flow
@@ -27,6 +28,8 @@ class WorkManagerSetup @Inject constructor(
         private const val TAG = "WorkManagerSetup"
         private const val SYNC_WORK_NAME = "full_sync_work"
         private const val RECURRING_WORK_NAME = "recurring_transactions_work"
+
+        private const val CLEANUP_WORK_NAME = "cleanup_deleted_items"
         private const val MIN_INTERVAL_MINUTES = 15L
     }
 
@@ -97,6 +100,25 @@ class WorkManagerSetup @Inject constructor(
 
         Log.d(TAG, "Periodic sync scheduled successfully")
     }
+
+    fun scheduleCleanup() {
+        val cleanupRequest = PeriodicWorkRequestBuilder<CleanupWorker>(
+            1, TimeUnit.DAYS
+        )
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
+            )
+            .build()
+
+        workManager.enqueueUniquePeriodicWork(
+            CLEANUP_WORK_NAME,
+            ExistingPeriodicWorkPolicy.KEEP,
+            cleanupRequest
+        )
+    }
+
 
     fun cancelPeriodicSync() {
         Log.d(TAG, "Cancelling periodic sync")

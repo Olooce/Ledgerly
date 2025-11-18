@@ -1,4 +1,4 @@
-package ke.ac.ku.ledgerly.data
+package ke.ac.ku.ledgerly.data.api
 
 import ke.ac.ku.ledgerly.data.model.ExchangeRateResponse
 import retrofit2.http.GET
