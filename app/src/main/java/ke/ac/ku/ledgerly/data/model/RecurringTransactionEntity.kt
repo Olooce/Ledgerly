@@ -19,6 +19,7 @@ data class RecurringTransactionEntity(
     val endDate: Long? = null,
     val lastGeneratedDate: Long? = null,
     val isActive: Boolean = true,
+    val isDeleted: Boolean = false,
     val lastModified: Long? = System.currentTimeMillis()
 )
 

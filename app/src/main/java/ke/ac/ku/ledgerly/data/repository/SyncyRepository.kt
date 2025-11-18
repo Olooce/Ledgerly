@@ -2,7 +2,6 @@ package ke.ac.ku.ledgerly.data.repository
 
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.toObject
 import ke.ac.ku.ledgerly.data.dao.BudgetDao
@@ -57,8 +56,8 @@ class SyncRepository @Inject constructor(
             val userId = getCurrentUserId()
             Log.d(TAG, "Starting transactions sync for user: $userId")
 
-            val localTransactions = transactionDao.getAllTransactionsSync()
-            Log.d(TAG, "Found ${localTransactions.size} local transactions")
+            val localTransactions = transactionDao.getAllTransactionsIncludingDeleted()
+            Log.d(TAG, "Found ${localTransactions.size} local transactions (including deleted)")
 
             val remoteSnapshot = firestore.collection("transactions")
                 .whereEqualTo("userId", userId)
@@ -78,86 +77,71 @@ class SyncRepository @Inject constructor(
 
             val batch = firestore.batch()
             var pushedCount = 0
+            var pulledCount = 0
 
             localTransactions.forEach { localTransaction ->
                 try {
                     val docId = localTransaction.id.toString()
                     val remoteTransaction = remoteTransactionsMap[docId]
 
-                    val shouldPush = remoteTransaction == null ||
-                            (localTransaction.lastModified
-                                ?: 0L) > remoteTransaction.lastModified.toDate().time
+                    val shouldPush = when {
+                        remoteTransaction == null -> true
+                        localTransaction.isDeleted && !remoteTransaction.isDeleted -> true
+                        !localTransaction.isDeleted && remoteTransaction.isDeleted -> false // Don't push if remote is deleted
+                        else -> (localTransaction.lastModified ?: 0L) > remoteTransaction.lastModified.toDate().time
+                    }
 
                     if (shouldPush) {
-                        val firestoreTransaction =
-                            FirestoreTransaction.fromEntity(localTransaction, userId, deviceId)
+                        val firestoreTransaction = FirestoreTransaction.fromEntity(localTransaction, userId, deviceId)
                         val docRef = firestore.collection("transactions").document(docId)
                         batch.set(docRef, firestoreTransaction, SetOptions.merge())
                         pushedCount++
-                    } else {
-                        Log.d(TAG, "Skipping push for transaction $docId - remote is newer")
                     }
                 } catch (e: Exception) {
-                    Log.e(
-                        TAG,
-                        "Error preparing transaction ${localTransaction.id} for sync: ${e.message}"
-                    )
-                    throw e
+                    Log.e(TAG, "Error preparing transaction ${localTransaction.id} for sync: ${e.message}")
                 }
             }
 
-            batch.commit().await()
-            Log.d(TAG, "Successfully pushed $pushedCount transactions to Firestore")
+            if (pushedCount > 0) {
+                batch.commit().await()
+                Log.d(TAG, "Successfully pushed $pushedCount transactions to Firestore")
+            }
 
-            var pulledCount = 0
             remoteTransactionsMap.values.forEach { remoteTransaction ->
                 try {
                     val localTransaction = localTransactions.find {
                         it.id.toString() == remoteTransaction.id
                     }
 
-                    val shouldPull = localTransaction == null ||
-                            remoteTransaction.lastModified.toDate().time > (localTransaction.lastModified
-                        ?: 0L)
+                    val shouldPull = when {
+                        localTransaction == null -> true
+                        remoteTransaction.isDeleted && !localTransaction.isDeleted -> true
+                        !remoteTransaction.isDeleted && localTransaction.isDeleted -> false // Don't pull if local is deleted
+                        else -> remoteTransaction.lastModified.toDate().time > (localTransaction.lastModified ?: 0L)
+                    }
 
                     if (shouldPull) {
                         val entity = FirestoreTransaction.toEntity(remoteTransaction)
-                        transactionDao.insertTransaction(entity)
+                        if (remoteTransaction.isDeleted) {
+                            // If remote is deleted, apply soft delete locally
+                            transactionDao.softDeleteTransaction(entity.id, System.currentTimeMillis())
+                            Log.d(TAG, "Applied remote deletion for transaction ${entity.id}")
+                        } else {
+                            // Insert or update the entity
+                            transactionDao.insertTransaction(entity)
+                        }
                         pulledCount++
-                    } else {
-                        Log.d(
-                            TAG,
-                            "Skipping pull for transaction ${remoteTransaction.id} - local is newer"
-                        )
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error updating local transaction: ${e.message}")
+                    Log.e(TAG, "Error updating local transaction ${remoteTransaction.id}: ${e.message}")
                 }
             }
 
             Log.d(TAG, "Transactions sync completed: pushed $pushedCount, pulled $pulledCount")
-            SyncResult.Success(pulledCount)
+            SyncResult.Success(pulledCount + pushedCount)
         } catch (e: Exception) {
             Log.e(TAG, "Transactions sync failed", e)
-            when (e) {
-                is FirebaseFirestoreException -> {
-                    when (e.code) {
-                        FirebaseFirestoreException.Code.PERMISSION_DENIED ->
-                            SyncResult.Error("Permission denied. Check Firestore rules.")
-
-                        FirebaseFirestoreException.Code.UNAVAILABLE ->
-                            SyncResult.Error("Network unavailable. Please check your connection.")
-
-                        else -> SyncResult.Error("Firestore error: ${e.message}")
-                    }
-                }
-
-                is IllegalStateException ->
-                    SyncResult.Error("Authentication error: ${e.message}")
-
-                else ->
-                    SyncResult.Error("Sync failed: ${e.message ?: "Unknown error"}")
-            }
+            SyncResult.Error(e.message ?: "Unknown error")
         }
     }
 
@@ -173,9 +157,8 @@ class SyncRepository @Inject constructor(
             val userId = getCurrentUserId()
             Log.d(TAG, "Starting recurring transactions sync for user: $userId")
 
-            val localRecurringTransactions =
-                recurringTransactionDao.getAllRecurringTransactionsSync()
-            Log.d(TAG, "Found ${localRecurringTransactions.size} local recurring transactions")
+            val localRecurringTransactions = recurringTransactionDao.getAllRecurringTransactionsIncludingDeleted()
+            Log.d(TAG, "Found ${localRecurringTransactions.size} local recurring transactions (including deleted)")
 
             val remoteSnapshot = firestore.collection("recurring_transactions")
                 .whereEqualTo("userId", userId)
@@ -188,10 +171,7 @@ class SyncRepository @Inject constructor(
                         document.id to it
                     }
                 } catch (e: Exception) {
-                    Log.e(
-                        TAG,
-                        "Error parsing remote recurring transaction ${document.id}: ${e.message}"
-                    )
+                    Log.e(TAG, "Error parsing remote recurring transaction ${document.id}: ${e.message}")
                     null
                 }
             }.toMap()
@@ -204,30 +184,21 @@ class SyncRepository @Inject constructor(
                     val docId = localRecurring.id.toString()
                     val remoteRecurring = remoteRecurringMap[docId]
 
-                    val shouldPush = remoteRecurring == null ||
-                            (localRecurring.lastModified
-                                ?: 0L) > remoteRecurring.lastModified.toDate().time
+                    val shouldPush = when {
+                        remoteRecurring == null -> true
+                        localRecurring.isDeleted && !remoteRecurring.isDeleted -> true
+                        !localRecurring.isDeleted && remoteRecurring.isDeleted -> false // remote deleted wins
+                        else -> (localRecurring.lastModified ?: 0L) > remoteRecurring.lastModified.toDate().time
+                    }
 
                     if (shouldPush) {
-                        val firestoreRecurring = FirestoreRecurringTransaction.fromEntity(
-                            localRecurring,
-                            userId,
-                            deviceId
-                        )
+                        val firestoreRecurring = FirestoreRecurringTransaction.fromEntity(localRecurring, userId, deviceId)
                         val docRef = firestore.collection("recurring_transactions").document(docId)
                         batch.set(docRef, firestoreRecurring, SetOptions.merge())
                         pushedCount++
-                    } else {
-                        Log.d(
-                            TAG,
-                            "Skipping push for recurring transaction $docId - remote is newer"
-                        )
                     }
                 } catch (e: Exception) {
-                    Log.e(
-                        TAG,
-                        "Error preparing recurring transaction ${localRecurring.id} for sync: ${e.message}"
-                    )
+                    Log.e(TAG, "Error preparing recurring transaction ${localRecurring.id} for sync: ${e.message}")
                     throw e
                 }
             }
@@ -242,51 +213,38 @@ class SyncRepository @Inject constructor(
                         it.id.toString() == remoteRecurring.id
                     }
 
-                    val shouldPull = localRecurring == null ||
-                            remoteRecurring.lastModified.toDate().time > (localRecurring.lastModified
-                        ?: 0L)
+                    val shouldPull = when {
+                        localRecurring == null -> true
+                        remoteRecurring.isDeleted && !localRecurring.isDeleted -> true
+                        !remoteRecurring.isDeleted && localRecurring.isDeleted -> false // local deleted wins
+                        else -> remoteRecurring.lastModified.toDate().time > (localRecurring.lastModified ?: 0L)
+                    }
 
                     if (shouldPull) {
                         val entity = FirestoreRecurringTransaction.toEntity(remoteRecurring)
-                        recurringTransactionDao.insertRecurringTransaction(entity)
+
+                        if (remoteRecurring.isDeleted) {
+                            recurringTransactionDao.softDeleteRecurringTransaction(
+                                entity.id,
+                                System.currentTimeMillis()
+                            )
+                            Log.d(TAG, "Applied remote deletion for recurring transaction ${entity.id}")
+                        } else {
+                            recurringTransactionDao.insertRecurringTransaction(entity)
+                        }
                         pulledCount++
-                    } else {
-                        Log.d(
-                            TAG,
-                            "Skipping pull for recurring transaction ${remoteRecurring.id} - local is newer"
-                        )
                     }
+
                 } catch (e: Exception) {
                     Log.e(TAG, "Error updating local recurring transaction: ${e.message}")
                 }
             }
 
-            Log.d(
-                TAG,
-                "Recurring transactions sync completed: pushed $pushedCount, pulled $pulledCount"
-            )
+            Log.d(TAG, "Recurring transactions sync completed: pushed $pushedCount, pulled $pulledCount")
             SyncResult.Success(pulledCount)
         } catch (e: Exception) {
             Log.e(TAG, "Recurring transactions sync failed", e)
-            when (e) {
-                is FirebaseFirestoreException -> {
-                    when (e.code) {
-                        FirebaseFirestoreException.Code.PERMISSION_DENIED ->
-                            SyncResult.Error("Permission denied. Check Firestore rules.")
-
-                        FirebaseFirestoreException.Code.UNAVAILABLE ->
-                            SyncResult.Error("Network unavailable. Please check your connection.")
-
-                        else -> SyncResult.Error("Firestore error: ${e.message}")
-                    }
-                }
-
-                is IllegalStateException ->
-                    SyncResult.Error("Authentication error: ${e.message}")
-
-                else ->
-                    SyncResult.Error("Sync failed: ${e.message ?: "Unknown error"}")
-            }
+            SyncResult.Error(e.message ?: "Unknown error")
         }
     }
 
@@ -302,8 +260,8 @@ class SyncRepository @Inject constructor(
             val userId = getCurrentUserId()
             Log.d(TAG, "Starting budgets sync for user: $userId")
 
-            val localBudgets = budgetDao.getAllBudgetsSync()
-            Log.d(TAG, "Found ${localBudgets.size} local budgets")
+            val localBudgets = budgetDao.getAllBudgetsIncludingDeleted()
+            Log.d(TAG, "Found ${localBudgets.size} local budgets (including deleted)")
 
             val remoteSnapshot = firestore.collection("budgets")
                 .whereEqualTo("userId", userId)
@@ -329,31 +287,27 @@ class SyncRepository @Inject constructor(
                     val documentId = "${localBudget.category}_${localBudget.monthYear}"
                     val remoteBudget = remoteBudgetsMap[documentId]
 
-                    val shouldPush = remoteBudget == null ||
-                            (localBudget.lastModified
-                                ?: 0L) > remoteBudget.lastModified.toDate().time
+                    val shouldPush = when {
+                        remoteBudget == null -> true
+                        localBudget.isDeleted && !remoteBudget.isDeleted -> true
+                        !localBudget.isDeleted && remoteBudget.isDeleted -> false // remote deleted wins
+                        else -> (localBudget.lastModified ?: 0L) > remoteBudget.lastModified.toDate().time
+                    }
 
                     if (shouldPush) {
-                        val firestoreBudget =
-                            FirestoreBudget.fromEntity(localBudget, userId, deviceId)
+                        val firestoreBudget = FirestoreBudget.fromEntity(localBudget, userId, deviceId)
                         val docRef = firestore.collection("budgets").document(documentId)
                         batch.set(docRef, firestoreBudget, SetOptions.merge())
                         pushedCount++
-                    } else {
-                        Log.d(TAG, "Skipping push for budget $documentId - remote is newer")
                     }
                 } catch (e: Exception) {
-                    Log.e(
-                        TAG,
-                        "Error preparing budget ${localBudget.category} for sync: ${e.message}"
-                    )
+                    Log.e(TAG, "Error preparing budget ${localBudget.category} for sync: ${e.message}")
                     throw e
                 }
             }
 
             batch.commit().await()
             Log.d(TAG, "Successfully pushed $pushedCount budgets to Firestore")
-
 
             var pulledCount = 0
             remoteBudgetsMap.values.forEach { remoteBudget ->
@@ -362,20 +316,25 @@ class SyncRepository @Inject constructor(
                         it.category == remoteBudget.category && it.monthYear == remoteBudget.monthYear
                     }
 
-                    val shouldPull = localBudget == null ||
-                            remoteBudget.lastModified.toDate().time > (localBudget.lastModified
-                        ?: 0L)
+                    val shouldPull = when {
+                        localBudget == null -> true
+                        remoteBudget.isDeleted && !localBudget.isDeleted -> true
+                        !remoteBudget.isDeleted && localBudget.isDeleted -> false // local deleted wins
+                        else -> remoteBudget.lastModified.toDate().time > (localBudget.lastModified ?: 0L)
+                    }
 
                     if (shouldPull) {
                         val entity = FirestoreBudget.toEntity(remoteBudget)
-                        budgetDao.insertBudget(entity)
+
+                        if (remoteBudget.isDeleted) {
+                            budgetDao.softDeleteBudget(entity.category, entity.monthYear, System.currentTimeMillis())
+                            Log.d(TAG, "Applied remote deletion for budget ${entity.category}")
+                        } else {
+                            budgetDao.insertBudget(entity)
+                        }
                         pulledCount++
-                    } else {
-                        Log.d(
-                            TAG,
-                            "Skipping pull for budget ${remoteBudget.category} - local is newer"
-                        )
                     }
+
                 } catch (e: Exception) {
                     Log.e(TAG, "Error updating local budget: ${e.message}")
                 }
@@ -385,7 +344,7 @@ class SyncRepository @Inject constructor(
             SyncResult.Success(pulledCount)
         } catch (e: Exception) {
             Log.e(TAG, "Budgets sync failed", e)
-            SyncResult.Error(e.message ?: "Unknown error during budget sync")
+            SyncResult.Error(e.message ?: "Unknown error")
         }
     }
 
@@ -442,7 +401,6 @@ class SyncRepository @Inject constructor(
         }
     }
 }
-
 sealed class SyncResult {
     data class Success(val syncedCount: Int) : SyncResult()
     data class Error(val message: String) : SyncResult()

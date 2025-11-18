@@ -8,6 +8,7 @@ data class BudgetEntity(
     val monthlyBudget: Double,
     val currentSpending: Double = 0.0,
     val monthYear: String, // Format: "YYYY-MM"
+    val isDeleted: Boolean = false,
     val lastModified: Long? = System.currentTimeMillis()
 ) {
     val remainingBudget: Double

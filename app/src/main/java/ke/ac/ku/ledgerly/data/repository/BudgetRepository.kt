@@ -28,7 +28,7 @@ class BudgetRepository @Inject constructor(
 
     suspend fun deleteBudget(category: String) {
         val currentMonth = Utils.getCurrentMonthYear()
-        dao.deleteBudget(category, currentMonth)
+        dao.softDeleteBudget(category, currentMonth)
     }
 
     suspend fun refreshBudgetSpending() {
@@ -36,8 +36,7 @@ class BudgetRepository @Inject constructor(
         val budgets = dao.getBudgetsForMonth(currentMonth)
 
         budgets.forEach { budget ->
-            val currentSpending =
-                dao.getCurrentSpendingForCategory(budget.category, currentMonth)
+            val currentSpending = dao.getCurrentSpendingForCategory(budget.category, currentMonth)
             if (budget.currentSpending != currentSpending) {
                 val updatedBudget = budget.copy(currentSpending = currentSpending)
                 dao.updateBudget(updatedBudget)

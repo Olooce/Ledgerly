@@ -1,7 +1,6 @@
 package ke.ac.ku.ledgerly.data.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -21,22 +20,24 @@ interface RecurringTransactionDao {
     @Update
     suspend fun updateRecurringTransaction(recurringTransaction: RecurringTransactionEntity)
 
-    @Delete
-    suspend fun deleteRecurringTransaction(recurringTransaction: RecurringTransactionEntity)
+    @Query("UPDATE recurring_transactions SET isDeleted = 1, lastModified = :timestamp WHERE id = :id")
+    suspend fun softDeleteRecurringTransaction(id: Long?, timestamp: Long = System.currentTimeMillis())
 
-    @Query("SELECT * FROM recurring_transactions WHERE isActive = 1 ORDER BY startDate DESC")
+    @Query("SELECT * FROM recurring_transactions WHERE isActive = 1 AND isDeleted = 0 ORDER BY startDate DESC")
     suspend fun getActiveRecurringTransactions(): List<RecurringTransactionEntity>
 
-    @Query("SELECT * FROM recurring_transactions ORDER BY startDate DESC")
+    @Query("SELECT * FROM recurring_transactions WHERE isDeleted = 0 ORDER BY startDate DESC")
     fun getAllRecurringTransactions(): Flow<List<RecurringTransactionEntity>>
 
-    @Query("SELECT * FROM recurring_transactions WHERE id = :id")
+    @Query("SELECT * FROM recurring_transactions WHERE id = :id AND isDeleted = 0")
     suspend fun getRecurringTransactionById(id: Long): RecurringTransactionEntity?
 
     @Query("UPDATE recurring_transactions SET isActive = :isActive WHERE id = :id")
     suspend fun updateRecurringTransactionStatus(id: Long, isActive: Boolean)
 
-    @Query("SELECT * FROM recurring_transactions ORDER BY startDate DESC")
+    @Query("SELECT * FROM recurring_transactions WHERE isDeleted = 0 ORDER BY startDate DESC")
     suspend fun getAllRecurringTransactionsSync(): List<RecurringTransactionEntity>
 
+    @Query("SELECT * FROM recurring_transactions ORDER BY startDate DESC")
+    suspend fun getAllRecurringTransactionsIncludingDeleted(): List<RecurringTransactionEntity>
 }
