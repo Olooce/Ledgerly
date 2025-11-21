@@ -19,7 +19,11 @@ data class FirestoreTransaction(
     val isDeleted: Boolean = false
 ) {
     companion object {
-        fun fromEntity(entity: TransactionEntity, userId: String, deviceId: String): FirestoreTransaction {
+        fun fromEntity(
+            entity: TransactionEntity,
+            userId: String,
+            deviceId: String
+        ): FirestoreTransaction {
             return FirestoreTransaction(
                 id = entity.id.toString(),
                 userId = userId,
@@ -30,7 +34,10 @@ data class FirestoreTransaction(
                 notes = entity.notes,
                 paymentMethod = entity.paymentMethod,
                 tags = entity.tags,
-                lastModified = Timestamp((entity.lastModified ?: System.currentTimeMillis()) / 1000, 0),
+                lastModified = Timestamp(
+                    (entity.lastModified ?: System.currentTimeMillis()) / 1000,
+                    0
+                ),
                 deviceId = deviceId,
                 isDeleted = entity.isDeleted
             )
@@ -72,7 +79,11 @@ data class FirestoreRecurringTransaction(
     val isDeleted: Boolean = false
 ) {
     companion object {
-        fun fromEntity(entity: RecurringTransactionEntity, userId: String, deviceId: String): FirestoreRecurringTransaction {
+        fun fromEntity(
+            entity: RecurringTransactionEntity,
+            userId: String,
+            deviceId: String
+        ): FirestoreRecurringTransaction {
             return FirestoreRecurringTransaction(
                 id = entity.id.toString(),
                 userId = userId,
@@ -85,7 +96,10 @@ data class FirestoreRecurringTransaction(
                 startDate = Timestamp(entity.startDate / 1000, 0),
                 endDate = entity.endDate?.let { Timestamp(it / 1000, 0) },
                 isActive = entity.isActive,
-                lastModified = Timestamp((entity.lastModified ?: System.currentTimeMillis()) / 1000, 0),
+                lastModified = Timestamp(
+                    (entity.lastModified ?: System.currentTimeMillis()) / 1000,
+                    0
+                ),
                 deviceId = deviceId,
                 isDeleted = entity.isDeleted
             )
@@ -129,7 +143,10 @@ data class FirestoreBudget(
                 monthYear = entity.monthYear,
                 monthlyBudget = entity.monthlyBudget,
                 currentSpending = entity.currentSpending,
-                lastModified = Timestamp((entity.lastModified ?: System.currentTimeMillis()) / 1000, 0),
+                lastModified = Timestamp(
+                    (entity.lastModified ?: System.currentTimeMillis()) / 1000,
+                    0
+                ),
                 deviceId = deviceId,
                 isDeleted = entity.isDeleted
             )

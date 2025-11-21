@@ -1,10 +1,10 @@
 package ke.ac.ku.ledgerly.data.repository
 
 import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
-import ke.ac.ku.ledgerly.data.model.PageRequest
-import ke.ac.ku.ledgerly.data.model.PaginatedResult
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.model.MonthlyTotals
+import ke.ac.ku.ledgerly.data.model.PageRequest
+import ke.ac.ku.ledgerly.data.model.PaginatedResult
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import kotlinx.coroutines.flow.Flow
@@ -14,6 +14,7 @@ import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
+
 @Singleton
 class TransactionRepository @Inject constructor(
     private val transactionDao: TransactionDao,
@@ -108,6 +109,7 @@ class TransactionRepository @Inject constructor(
             statusFilter = statusFilter
         )
     }
+
     suspend fun getTransactionsPaginated(pageRequest: PageRequest): PaginatedResult<TransactionEntity> {
         val transactions = transactionDao.getTransactionsPaginated(
             limit = pageRequest.pageSize,
@@ -165,6 +167,7 @@ class TransactionRepository @Inject constructor(
                 val end = now
                 Pair(start, end)
             }
+
             "Yesterday" -> {
                 calendar.timeInMillis = now
                 calendar.add(Calendar.DAY_OF_YEAR, -1)
@@ -180,6 +183,7 @@ class TransactionRepository @Inject constructor(
                 val end = calendar.timeInMillis
                 Pair(start, end)
             }
+
             "Last 7 Days" -> {
                 calendar.timeInMillis = now
                 calendar.add(Calendar.DAY_OF_YEAR, -6)
@@ -191,6 +195,7 @@ class TransactionRepository @Inject constructor(
                 val end = now
                 Pair(start, end)
             }
+
             "Last 30 Days" -> {
                 calendar.timeInMillis = now
                 calendar.add(Calendar.DAY_OF_YEAR, -29)
@@ -202,6 +207,7 @@ class TransactionRepository @Inject constructor(
                 val end = now
                 Pair(start, end)
             }
+
             "Last 90 Days" -> {
                 calendar.timeInMillis = now
                 calendar.add(Calendar.DAY_OF_YEAR, -89)
@@ -213,6 +219,7 @@ class TransactionRepository @Inject constructor(
                 val end = now
                 Pair(start, end)
             }
+
             "Last Year" -> {
                 calendar.timeInMillis = now
                 calendar.add(Calendar.YEAR, -1)
@@ -225,6 +232,7 @@ class TransactionRepository @Inject constructor(
                 val end = now
                 Pair(start, end)
             }
+
             "This Month" -> {
                 calendar.timeInMillis = now
                 calendar.set(Calendar.DAY_OF_MONTH, 1)
@@ -236,6 +244,7 @@ class TransactionRepository @Inject constructor(
                 val end = now
                 Pair(start, end)
             }
+
             "All Time" -> null
             else -> null
         }

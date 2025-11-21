@@ -26,7 +26,11 @@ interface BudgetDao {
     suspend fun getBudgetForCategory(category: String, monthYear: String): BudgetEntity?
 
     @Query("UPDATE budgets SET isDeleted = 1, lastModified = :timestamp WHERE category = :category AND monthYear = :monthYear")
-    suspend fun softDeleteBudget(category: String, monthYear: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun softDeleteBudget(
+        category: String,
+        monthYear: String,
+        timestamp: Long = System.currentTimeMillis()
+    )
 
     @Query(
         """

@@ -25,7 +25,8 @@ class CleanupManager @Inject constructor(
 
     suspend fun cleanupOldDeletedItems() {
         try {
-            val thresholdTime = System.currentTimeMillis() - (CLEANUP_THRESHOLD_DAYS * 24 * 60 * 60 * 1000)
+            val thresholdTime =
+                System.currentTimeMillis() - (CLEANUP_THRESHOLD_DAYS * 24 * 60 * 60 * 1000)
 
             cleanupLocalDeletedItems(thresholdTime)
 
@@ -43,12 +44,18 @@ class CleanupManager @Inject constructor(
         val deletedTransactions = transactionDao.getAllTransactionsIncludingDeleted()
             .filter { it.isDeleted && (it.lastModified ?: 0L) < thresholdTime }
 
-        Log.d(TAG, "Permanently deleting ${deletedTransactions.size} old transactions from local DB")
+        Log.d(
+            TAG,
+            "Permanently deleting ${deletedTransactions.size} old transactions from local DB"
+        )
 
         val deletedRecurring = recurringTransactionDao.getAllRecurringTransactionsIncludingDeleted()
             .filter { it.isDeleted && (it.lastModified ?: 0L) < thresholdTime }
 
-        Log.d(TAG, "Permanently deleting ${deletedRecurring.size} old recurring transactions from local DB")
+        Log.d(
+            TAG,
+            "Permanently deleting ${deletedRecurring.size} old recurring transactions from local DB"
+        )
 
         val deletedBudgets = budgetDao.getAllBudgetsIncludingDeleted()
             .filter { it.isDeleted && (it.lastModified ?: 0L) < thresholdTime }

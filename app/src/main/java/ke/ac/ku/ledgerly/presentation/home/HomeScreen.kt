@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -63,9 +62,10 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
     LaunchedEffect(lazyListState) {
         snapshotFlow { lazyListState.layoutInfo }
             .collect { layoutInfo ->
-                val shouldLoadMore = layoutInfo.visibleItemsInfo.lastOrNull()?.index?.let { lastVisibleIndex ->
-                    lastVisibleIndex >= layoutInfo.totalItemsCount - 3
-                } ?: false
+                val shouldLoadMore =
+                    layoutInfo.visibleItemsInfo.lastOrNull()?.index?.let { lastVisibleIndex ->
+                        lastVisibleIndex >= layoutInfo.totalItemsCount - 3
+                    } ?: false
 
                 if (shouldLoadMore && homeState.paginationState.hasNext && !homeState.paginationState.isLoading) {
                     viewModel.loadTransactions()
@@ -74,11 +74,11 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
     }
 
     // Clear transactions when leaving screen
-    DisposableEffect(Unit) {
-        onDispose {
-            viewModel.clearTransactions()
-        }
-    }
+//    DisposableEffect(Unit) {
+//        onDispose {
+//            viewModel.clearTransactions()
+//        }
+//    }
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
@@ -163,7 +163,7 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
                         .size(26.dp)
-                        .clickable {  },
+                        .clickable { },
                     colorFilter = ColorFilter.tint(Color.White)
                 )
             }
@@ -228,8 +228,7 @@ fun CardItem(
     expense: String,
     currentMonth: String,
     isNegative: Boolean
-)
-{
+) {
     Box(
         modifier = modifier
             .padding(16.dp)

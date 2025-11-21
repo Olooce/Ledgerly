@@ -6,11 +6,8 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,7 +42,6 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -56,7 +52,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
@@ -103,9 +98,10 @@ fun TransactionsScreen(
     LaunchedEffect(lazyListState) {
         snapshotFlow { lazyListState.layoutInfo }
             .collect { layoutInfo ->
-                val shouldLoadMore = layoutInfo.visibleItemsInfo.lastOrNull()?.index?.let { lastVisibleIndex ->
-                    lastVisibleIndex >= layoutInfo.totalItemsCount - 5
-                } ?: false
+                val shouldLoadMore =
+                    layoutInfo.visibleItemsInfo.lastOrNull()?.index?.let { lastVisibleIndex ->
+                        lastVisibleIndex >= layoutInfo.totalItemsCount - 5
+                    } ?: false
 
                 if (shouldLoadMore && transactionsState.paginationState.hasNext && !transactionsState.paginationState.isLoading) {
                     transactionViewModel.loadTransactions()
@@ -114,11 +110,11 @@ fun TransactionsScreen(
     }
 
     // Clear transactions when leaving screen
-    DisposableEffect(Unit) {
-        onDispose {
-            transactionViewModel.clearTransactions()
-        }
-    }
+//    DisposableEffect(Unit) {
+//        onDispose {
+//            transactionViewModel.clearTransactions()
+//        }
+//    }
 
     var filtersExpanded by remember { mutableStateOf(false) }
     val dateRange = transactionsState.dateRange
@@ -704,7 +700,7 @@ fun RecurringTransactionsContent(
             searchQuery = searchQuery,
             statusFilter = statusFilter,
             onFilterTypeChange = onFilterTypeChange,
-            onDateRangeChange = {  },
+            onDateRangeChange = { },
             onAmountRangeChange = onAmountRangeChange,
             onCategoriesChange = onCategoriesChange,
             onSearchQueryChange = onSearchQueryChange,
@@ -896,9 +892,14 @@ fun ActiveFiltersChips(
     val activeFilters = buildList {
         if (filterType != "All") add(FilterChipData("Type: $filterType") { onFilterTypeChange("All") })
         if (dateRange != "All Time") add(FilterChipData("Date: $dateRange") { onDateRangeChange("All Time") })
-        if (amountRange != null) add(FilterChipData(
-            "Amount: ${FormatingUtils.formatCurrency(amountRange.start)} - ${FormatingUtils.formatCurrency(amountRange.endInclusive)}"
-        ) { onAmountRangeChange(null) })
+        if (amountRange != null) add(
+            FilterChipData(
+                "Amount: ${FormatingUtils.formatCurrency(amountRange.start)} - ${
+                    FormatingUtils.formatCurrency(
+                        amountRange.endInclusive
+                    )
+                }"
+            ) { onAmountRangeChange(null) })
         if (selectedCategories.isNotEmpty()) {
             selectedCategories.forEach { category ->
                 add(FilterChipData(category) {
@@ -906,7 +907,11 @@ fun ActiveFiltersChips(
                 })
             }
         }
-        if (searchQuery.isNotEmpty()) add(FilterChipData("Search: $searchQuery") { onSearchQueryChange("") })
+        if (searchQuery.isNotEmpty()) add(FilterChipData("Search: $searchQuery") {
+            onSearchQueryChange(
+                ""
+            )
+        })
         if (statusFilter != null && statusFilter != "All") {
             add(FilterChipData("Status: $statusFilter") { onStatusFilterChange?.invoke("All") })
         }
@@ -1075,7 +1080,11 @@ fun ExpandableFilterSection(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                alpha = 0.5f
+            )
+        ),
         elevation = CardDefaults.cardElevation(1.dp),
         shape = RoundedCornerShape(8.dp)
     ) {

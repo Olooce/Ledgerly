@@ -95,7 +95,8 @@ ORDER BY month
     @Query("SELECT * FROM transactions WHERE isDeleted = 0 ORDER BY date DESC LIMIT :limit OFFSET :offset")
     fun getTransactionsPaginatedFlow(limit: Int, offset: Int): Flow<List<TransactionEntity>>
 
-    @Query("""
+    @Query(
+        """
     SELECT * FROM transactions 
     WHERE isDeleted = 0 
     AND (:filterType = 'All' OR type = :filterType)
@@ -106,7 +107,8 @@ ORDER BY month
     AND (:dateRange = 'All Time' OR date BETWEEN :startDate AND :endDate)
     ORDER BY date DESC 
     LIMIT :limit OFFSET :offset
-""")
+"""
+    )
     suspend fun getFilteredTransactionsPaginated(
         filterType: String,
         searchQuery: String,
@@ -121,7 +123,8 @@ ORDER BY month
         offset: Int
     ): List<TransactionEntity>
 
-    @Query("""
+    @Query(
+        """
     SELECT COUNT(*) FROM transactions 
     WHERE isDeleted = 0 
     AND (:filterType = 'All' OR type = :filterType)
@@ -130,7 +133,8 @@ ORDER BY month
     AND (:maxAmount = -1 OR amount <= :maxAmount)
     AND (:categoriesCount = 0 OR category IN (:categories))
     AND (:dateRange = 'All Time' OR date BETWEEN :startDate AND :endDate)
-""")
+"""
+    )
     suspend fun getFilteredTransactionsCount(
         filterType: String,
         searchQuery: String,
@@ -143,13 +147,15 @@ ORDER BY month
         categories: List<String>
     ): Int
 
-    @Query("""
+    @Query(
+        """
 SELECT * FROM transactions 
 WHERE isDeleted = 0
 AND strftime('%Y-%m', datetime(date / 1000, 'unixepoch')) = :monthYear
 ORDER BY date DESC
 LIMIT :limit OFFSET :offset
-""")
+"""
+    )
     suspend fun getTransactionsForMonthPaginated(
         monthYear: String,
         limit: Int,
@@ -167,7 +173,6 @@ LIMIT :limit OFFSET :offset
     """
     )
     suspend fun getMonthlyTotals(monthYear: String): MonthlyTotals?
-
 
 
 }
