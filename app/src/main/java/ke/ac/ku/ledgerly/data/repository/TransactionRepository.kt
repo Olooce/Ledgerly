@@ -8,10 +8,9 @@ import ke.ac.ku.ledgerly.data.model.PaginatedResult
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import kotlinx.coroutines.flow.Flow
-import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -131,7 +130,7 @@ class TransactionRepository @Inject constructor(
     }
 
     suspend fun getCurrentMonthTransactionsPaginated(pageRequest: PageRequest): PaginatedResult<TransactionEntity> {
-        val monthYear = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(Date())
+        val monthYear = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM"))
 
         val transactions = transactionDao.getTransactionsForMonthPaginated(
             monthYear = monthYear,
@@ -147,7 +146,7 @@ class TransactionRepository @Inject constructor(
     }
 
     suspend fun getCurrentMonthTotals(): MonthlyTotals {
-        val monthYear = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(Date())
+        val monthYear = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM"))
         return transactionDao.getMonthlyTotals(monthYear) ?: MonthlyTotals(0.0, 0.0)
     }
 

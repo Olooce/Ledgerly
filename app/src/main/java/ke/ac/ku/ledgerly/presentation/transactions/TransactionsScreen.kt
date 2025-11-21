@@ -64,6 +64,7 @@ import androidx.navigation.NavController
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.base.HomeNavigationEvent
 import ke.ac.ku.ledgerly.data.constants.Categories
+import ke.ac.ku.ledgerly.data.constants.FilterConstants
 import ke.ac.ku.ledgerly.data.constants.NavRouts
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
@@ -89,7 +90,7 @@ fun TransactionsScreen(
     transactionViewModel: TransactionViewModel = hiltViewModel()
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("All Transactions", "Recurring")
+    val tabs = listOf(FilterConstants.TAB_ALL_TRANSACTIONS, FilterConstants.TAB_RECURRING)
 
     val transactionsState by transactionViewModel.transactionsState.collectAsState()
     val recurringTransactions by transactionViewModel.recurringTransactionsState.collectAsState()
@@ -483,7 +484,7 @@ fun AllTransactionsContent(
                                 color = primaryTextColor.copy(alpha = 0.8f)
                             )
                             DropDown(
-                                listOf("All", "Expense", "Income"),
+                                listOf(FilterConstants.FILTER_ALL, FilterConstants.FILTER_EXPENSE, FilterConstants.FILTER_INCOME),
                                 onItemSelected = onFilterTypeChange,
                             )
                         }
@@ -497,8 +498,14 @@ fun AllTransactionsContent(
                             )
                             DropDown(
                                 listOf(
-                                    "All Time", "Today", "Yesterday", "Last 7 Days",
-                                    "Last 30 Days", "Last 90 Days", "Last Year", "This Month"
+                                    FilterConstants.DATE_RANGE_ALL_TIME,
+                                    FilterConstants.DATE_RANGE_TODAY,
+                                    FilterConstants.DATE_RANGE_YESTERDAY,
+                                    FilterConstants.DATE_RANGE_LAST_7_DAYS,
+                                    FilterConstants.DATE_RANGE_LAST_30_DAYS,
+                                    FilterConstants.DATE_RANGE_LAST_90_DAYS,
+                                    FilterConstants.DATE_RANGE_LAST_YEAR,
+                                    FilterConstants.DATE_RANGE_THIS_MONTH
                                 ),
                                 onItemSelected = onDateRangeChange,
                             )
@@ -747,7 +754,7 @@ fun RecurringTransactionsContent(
                                 color = primaryTextColor.copy(alpha = 0.8f)
                             )
                             DropDown(
-                                listOf("All", "Expense", "Income"),
+                                listOf(FilterConstants.FILTER_ALL, FilterConstants.FILTER_EXPENSE, FilterConstants.FILTER_INCOME),
                                 onItemSelected = onFilterTypeChange,
                             )
                         }
@@ -760,7 +767,7 @@ fun RecurringTransactionsContent(
                                 color = primaryTextColor.copy(alpha = 0.8f)
                             )
                             DropDown(
-                                listOf("All", "Active", "Paused"),
+                                listOf(FilterConstants.STATUS_ALL, FilterConstants.STATUS_ACTIVE, FilterConstants.STATUS_PAUSED),
                                 onItemSelected = onStatusFilterChange,
                             )
                         }
