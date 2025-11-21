@@ -19,7 +19,7 @@ class CleanupManager @Inject constructor(
     private val authStateProvider: AuthStateProvider
 ) {
     companion object {
-        private const val TAG = "DeletedItemsCleanup"
+        private const val TAG = "CleanUpManager"
         private const val CLEANUP_THRESHOLD_DAYS = 30L
     }
 

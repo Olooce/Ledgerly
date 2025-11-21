@@ -17,18 +17,23 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -58,7 +63,6 @@ import ke.ac.ku.ledgerly.ui.widget.MultiFloatingActionButton
 import ke.ac.ku.ledgerly.ui.widget.SearchBar
 import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
 import ke.ac.ku.ledgerly.utils.FormatingUtils
-import ke.ac.ku.ledgerly.utils.TransactionFilterUtils
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -70,64 +74,67 @@ fun TransactionsScreen(
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("All Transactions", "Recurring")
 
-    val transactions by transactionViewModel.transactions.collectAsState(initial = emptyList())
-    val recurringTransactions by transactionViewModel.recurringTransactions.collectAsState(initial = emptyList())
+    val transactionsState by transactionViewModel.transactionsState.collectAsState()
+    val recurringTransactions by transactionViewModel.recurringTransactionsState.collectAsState()
 
-    var filterType by remember { mutableStateOf("All") }
-    var dateRange by remember { mutableStateOf("All Time") }
-    var searchQuery by remember { mutableStateOf("") }
+    val lazyListState = rememberLazyListState()
+    LaunchedEffect(lazyListState) {
+        snapshotFlow { lazyListState.layoutInfo }
+            .collect { layoutInfo ->
+                val shouldLoadMore = layoutInfo.visibleItemsInfo.lastOrNull()?.index?.let { lastVisibleIndex ->
+                    lastVisibleIndex >= layoutInfo.totalItemsCount - 5
+                } ?: false
+
+                if (shouldLoadMore && transactionsState.paginationState.hasNext && !transactionsState.paginationState.isLoading) {
+                    transactionViewModel.loadTransactions()
+                }
+            }
+    }
+
+    // Clear transactions when leaving screen
+    DisposableEffect(Unit) {
+        onDispose {
+            transactionViewModel.clearTransactions()
+        }
+    }
+
     var menuExpanded by remember { mutableStateOf(false) }
     var showSearchBar by remember { mutableStateOf(false) }
+    var dateRange by remember { mutableStateOf("All Time") } // Added missing dateRange
 
     val iconColor = Color.White
     val primaryTextColor = MaterialTheme.colorScheme.onBackground
     val secondaryTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-    MaterialTheme.colorScheme.surface
 
     var amountRange by remember { mutableStateOf<ClosedFloatingPointRange<Double>?>(null) }
     var selectedCategories by remember { mutableStateOf<List<String>>(emptyList()) }
-    var statusFilter by remember { mutableStateOf("All") } // Active, Paused, All
+    var statusFilter by remember { mutableStateOf("All") }
 
-    val filteredTransactions = remember(
-        transactions,
-        filterType,
-        dateRange,
-        searchQuery,
-        amountRange,
-        selectedCategories
-    ) {
-        TransactionFilterUtils.filterTransactions(
-            transactions = transactions,
-            filterType = filterType,
-            dateRange = dateRange,
-            searchQuery = searchQuery,
-            amountRange = amountRange,
-            categories = selectedCategories
-        )
-    }
+    val displayedTransactions = transactionsState.transactions
 
     val filteredRecurringTransactions = remember(
         recurringTransactions,
-        filterType,
-        searchQuery,
+        transactionsState.filterType,
+        transactionsState.searchQuery,
         amountRange,
         selectedCategories,
         statusFilter
     ) {
         var filtered = recurringTransactions
 
-        if (filterType != "All") {
+        if (transactionsState.filterType != "All") {
             filtered = filtered.filter {
-                it.type.equals(filterType, ignoreCase = true)
+                it.type.equals(transactionsState.filterType, ignoreCase = true)
             }
         }
 
-        if (searchQuery.isNotEmpty()) {
+        if (transactionsState.searchQuery.isNotEmpty()) {
             filtered = filtered.filter { recurring ->
-                recurring.category.contains(searchQuery, ignoreCase = true) ||
-                        recurring.notes.contains(searchQuery, ignoreCase = true)
+                recurring.category.contains(transactionsState.searchQuery, ignoreCase = true) ||
+                        recurring.notes.contains(transactionsState.searchQuery, ignoreCase = true)
             }
         }
+
         amountRange?.let { range ->
             filtered = filtered.filter {
                 it.amount in range.start..range.endInclusive
@@ -139,6 +146,7 @@ fun TransactionsScreen(
                 selectedCategories.contains(it.category)
             }
         }
+
         when (statusFilter) {
             "Active" -> filtered = filtered.filter { it.isActive }
             "Paused" -> filtered = filtered.filter { !it.isActive }
@@ -288,23 +296,30 @@ fun TransactionsScreen(
             ) {
                 when (selectedTab) {
                     0 -> AllTransactionsContent(
-                        transactions = filteredTransactions,
-                        filterType = filterType,
+                        transactions = displayedTransactions,
+                        paginationState = transactionsState.paginationState,
+                        filterType = transactionsState.filterType,
                         dateRange = dateRange,
-                        searchQuery = searchQuery,
+                        searchQuery = transactionsState.searchQuery,
                         amountRange = amountRange,
                         selectedCategories = selectedCategories,
                         menuExpanded = menuExpanded,
                         showSearchBar = showSearchBar,
-                        onFilterTypeChange = { filterType = it; menuExpanded = false },
-                        onDateRangeChange = { dateRange = it; menuExpanded = false },
-                        onSearchQueryChange = { searchQuery = it },
+                        lazyListState = lazyListState,
+                        onFilterTypeChange = {
+                            transactionViewModel.updateFilter(it)
+                            menuExpanded = false
+                        },
+                        onDateRangeChange = { dateRange = it },
+                        onSearchQueryChange = { transactionViewModel.updateSearchQuery(it) },
                         onAmountRangeChange = { amountRange = it },
                         onCategoriesChange = { selectedCategories = it },
+                        onLoadMore = { transactionViewModel.loadTransactions() },
+                        onRefresh = { transactionViewModel.loadInitialTransactions() },
                         onClearFilters = {
-                            filterType = "All"
+                            transactionViewModel.updateFilter("All")
+                            transactionViewModel.updateSearchQuery("")
                             dateRange = "All Time"
-                            searchQuery = ""
                             amountRange = null
                             selectedCategories = emptyList()
                             menuExpanded = false
@@ -314,16 +329,19 @@ fun TransactionsScreen(
 
                     1 -> RecurringTransactionsContent(
                         recurringTransactions = filteredRecurringTransactions,
-                        filterType = filterType,
+                        filterType = transactionsState.filterType,
                         statusFilter = statusFilter,
-                        searchQuery = searchQuery,
+                        searchQuery = transactionsState.searchQuery,
                         amountRange = amountRange,
                         selectedCategories = selectedCategories,
                         menuExpanded = menuExpanded,
                         showSearchBar = showSearchBar,
-                        onFilterTypeChange = { filterType = it; menuExpanded = false },
-                        onStatusFilterChange = { statusFilter = it; menuExpanded = false },
-                        onSearchQueryChange = { searchQuery = it },
+                        onFilterTypeChange = {
+                            transactionViewModel.updateFilter(it)
+                            menuExpanded = false
+                        },
+                        onStatusFilterChange = { statusFilter = it },
+                        onSearchQueryChange = { transactionViewModel.updateSearchQuery(it) },
                         onAmountRangeChange = { amountRange = it },
                         onCategoriesChange = { selectedCategories = it },
                         onToggleActive = { id, isActive ->
@@ -333,9 +351,9 @@ fun TransactionsScreen(
                             transactionViewModel.deleteRecurringTransaction(id)
                         },
                         onClearFilters = {
-                            filterType = "All"
+                            transactionViewModel.updateFilter("All")
+                            transactionViewModel.updateSearchQuery("")
                             statusFilter = "All"
-                            searchQuery = ""
                             amountRange = null
                             selectedCategories = emptyList()
                             menuExpanded = false
@@ -371,6 +389,7 @@ fun TransactionsScreen(
 @Composable
 fun AllTransactionsContent(
     transactions: List<TransactionEntity>,
+    paginationState: PaginationState,
     filterType: String,
     dateRange: String,
     searchQuery: String,
@@ -378,11 +397,14 @@ fun AllTransactionsContent(
     selectedCategories: List<String>,
     menuExpanded: Boolean,
     showSearchBar: Boolean,
+    lazyListState: LazyListState,
     onFilterTypeChange: (String) -> Unit,
     onDateRangeChange: (String) -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onAmountRangeChange: (ClosedFloatingPointRange<Double>?) -> Unit,
     onCategoriesChange: (List<String>) -> Unit,
+    onLoadMore: () -> Unit,
+    onRefresh: () -> Unit,
     onClearFilters: () -> Unit
 ) {
     val primaryTextColor = MaterialTheme.colorScheme.onBackground
@@ -497,6 +519,8 @@ fun AllTransactionsContent(
                 if (filterType != "All") add(filterType)
                 if (dateRange != "All Time") add(dateRange)
                 if (searchQuery.isNotEmpty()) add("Search")
+                if (amountRange != null) add("Amount Range")
+                if (selectedCategories.isNotEmpty()) add("${selectedCategories.size} Categories")
             }
 
             if (activeFilters.isNotEmpty()) {
@@ -519,7 +543,17 @@ fun AllTransactionsContent(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        if (transactions.isEmpty()) {
+        // Show loading state for initial load
+        if (transactions.isEmpty() && paginationState.isLoading && paginationState.currentPage == 0) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else if (transactions.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -536,7 +570,7 @@ fun AllTransactionsContent(
                         colorFilter = ColorFilter.tint(secondaryTextColor.copy(alpha = 0.5f))
                     )
                     TransactionTextView(
-                        text = if (filterType != "All" || dateRange != "All Time" || searchQuery.isNotEmpty()) {
+                        text = if (filterType != "All" || dateRange != "All Time" || searchQuery.isNotEmpty() || amountRange != null || selectedCategories.isNotEmpty()) {
                             "No transactions match your filters"
                         } else {
                             "No transactions yet"
@@ -548,6 +582,7 @@ fun AllTransactionsContent(
             }
         } else {
             LazyColumn(
+                state = lazyListState,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -563,6 +598,29 @@ fun AllTransactionsContent(
                             Color(0xFF2E7D32) else Color(0xFFC62828),
                         modifier = Modifier
                     )
+                }
+
+                // Loading indicator for pagination
+                if (paginationState.isLoading && paginationState.currentPage > 0) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                }
+
+                // Load more trigger when near the end
+                if (paginationState.hasNext && !paginationState.isLoading) {
+                    item {
+                        LaunchedEffect(Unit) {
+                            onLoadMore()
+                        }
+                    }
                 }
             }
         }
@@ -738,7 +796,7 @@ fun RecurringTransactionsContent(
                         colorFilter = ColorFilter.tint(secondaryTextColor.copy(alpha = 0.5f))
                     )
                     TransactionTextView(
-                        text = if (filterType != "All" || statusFilter != "All" || searchQuery.isNotEmpty()) {
+                        text = if (filterType != "All" || statusFilter != "All" || searchQuery.isNotEmpty() || amountRange != null || selectedCategories.isNotEmpty()) {
                             "No recurring transactions match your filters"
                         } else {
                             "No recurring transactions yet"

@@ -45,4 +45,10 @@ interface BudgetDao {
 
     @Query("SELECT * FROM budgets ORDER BY lastModified DESC")
     suspend fun getAllBudgetsIncludingDeleted(): List<BudgetEntity>
+
+    @Query("SELECT * FROM budgets WHERE isDeleted = 0 ORDER BY lastModified DESC LIMIT :limit OFFSET :offset")
+    suspend fun getBudgetsPaginated(limit: Int, offset: Int): List<BudgetEntity>
+
+    @Query("SELECT COUNT(*) FROM budgets WHERE isDeleted = 0")
+    suspend fun getBudgetsCount(): Int
 }

@@ -21,7 +21,10 @@ interface RecurringTransactionDao {
     suspend fun updateRecurringTransaction(recurringTransaction: RecurringTransactionEntity)
 
     @Query("UPDATE recurring_transactions SET isDeleted = 1, lastModified = :timestamp WHERE id = :id")
-    suspend fun softDeleteRecurringTransaction(id: Long?, timestamp: Long = System.currentTimeMillis())
+    suspend fun softDeleteRecurringTransaction(
+        id: Long?,
+        timestamp: Long = System.currentTimeMillis()
+    )
 
     @Query("SELECT * FROM recurring_transactions WHERE isActive = 1 AND isDeleted = 0 ORDER BY startDate DESC")
     suspend fun getActiveRecurringTransactions(): List<RecurringTransactionEntity>
@@ -40,4 +43,20 @@ interface RecurringTransactionDao {
 
     @Query("SELECT * FROM recurring_transactions ORDER BY startDate DESC")
     suspend fun getAllRecurringTransactionsIncludingDeleted(): List<RecurringTransactionEntity>
+
+    @Query("SELECT * FROM recurring_transactions WHERE isDeleted = 0 ORDER BY startDate DESC LIMIT :limit OFFSET :offset")
+    suspend fun getRecurringTransactionsPaginated(
+        limit: Int,
+        offset: Int
+    ): List<RecurringTransactionEntity>
+
+    @Query("SELECT COUNT(*) FROM recurring_transactions WHERE isDeleted = 0")
+    suspend fun getRecurringTransactionsCount(): Int
+
+    @Query("SELECT * FROM recurring_transactions WHERE isDeleted = 0 ORDER BY startDate DESC LIMIT :limit OFFSET :offset")
+    fun getRecurringTransactionsPaginatedFlow(
+        limit: Int,
+        offset: Int
+    ): Flow<List<RecurringTransactionEntity>>
+
 }

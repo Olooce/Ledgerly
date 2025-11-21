@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Update
 import ke.ac.ku.ledgerly.data.model.CategorySummary
 import ke.ac.ku.ledgerly.data.model.MonthlyComparison
+import ke.ac.ku.ledgerly.data.model.MonthlyTotals
 import ke.ac.ku.ledgerly.data.model.MonthlyTrend
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionSummary
@@ -83,4 +84,69 @@ ORDER BY month
 """
     )
     fun getMonthlySpendingTrends(): Flow<List<MonthlyTrend>>
+
+
+    @Query("SELECT * FROM transactions WHERE isDeleted = 0 ORDER BY date DESC LIMIT :limit OFFSET :offset")
+    suspend fun getTransactionsPaginated(limit: Int, offset: Int): List<TransactionEntity>
+
+    @Query("SELECT COUNT(*) FROM transactions WHERE isDeleted = 0")
+    suspend fun getTransactionsCount(): Int
+
+    @Query("SELECT * FROM transactions WHERE isDeleted = 0 ORDER BY date DESC LIMIT :limit OFFSET :offset")
+    fun getTransactionsPaginatedFlow(limit: Int, offset: Int): Flow<List<TransactionEntity>>
+
+    @Query(
+        """
+        SELECT * FROM transactions 
+        WHERE isDeleted = 0 
+        AND (:filterType = 'All' OR type = :filterType)
+        AND (:searchQuery = '' OR category LIKE '%' || :searchQuery || '%' OR notes LIKE '%' || :searchQuery || '%')
+        ORDER BY date DESC 
+        LIMIT :limit OFFSET :offset
+    """
+    )
+    suspend fun getFilteredTransactionsPaginated(
+        filterType: String,
+        searchQuery: String,
+        limit: Int,
+        offset: Int
+    ): List<TransactionEntity>
+
+    @Query(
+        """
+        SELECT COUNT(*) FROM transactions 
+        WHERE isDeleted = 0 
+        AND (:filterType = 'All' OR type = :filterType)
+        AND (:searchQuery = '' OR category LIKE '%' || :searchQuery || '%' OR notes LIKE '%' || :searchQuery || '%')
+    """
+    )
+    suspend fun getFilteredTransactionsCount(filterType: String, searchQuery: String): Int
+
+    @Query("""
+SELECT * FROM transactions 
+WHERE isDeleted = 0
+AND strftime('%Y-%m', datetime(date / 1000, 'unixepoch')) = :monthYear
+ORDER BY date DESC
+LIMIT :limit OFFSET :offset
+""")
+    suspend fun getTransactionsForMonthPaginated(
+        monthYear: String,
+        limit: Int,
+        offset: Int
+    ): List<TransactionEntity>
+
+    @Query(
+        """
+    SELECT 
+        SUM(CASE WHEN type = 'Income' THEN amount ELSE 0 END) AS totalIncome,
+        SUM(CASE WHEN type = 'Expense' THEN amount ELSE 0 END) AS totalExpense
+    FROM transactions
+    WHERE isDeleted = 0
+      AND strftime('%Y-%m', datetime(date / 1000, 'unixepoch')) = :monthYear
+    """
+    )
+    suspend fun getMonthlyTotals(monthYear: String): MonthlyTotals?
+
+
+
 }

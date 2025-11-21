@@ -98,6 +98,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.geometry)
+    implementation(libs.androidx.foundation)
     testImplementation(libs.junit)
 
     ksp(libs.androidx.hilt.compiler)
