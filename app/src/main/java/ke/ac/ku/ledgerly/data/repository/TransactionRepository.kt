@@ -1,7 +1,7 @@
 package ke.ac.ku.ledgerly.data.repository
 
-import PageRequest
-import PaginatedResult
+import ke.ac.ku.ledgerly.data.model.PageRequest
+import ke.ac.ku.ledgerly.data.model.PaginatedResult
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.model.MonthlyTotals
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
