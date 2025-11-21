@@ -23,6 +23,12 @@ data class MonthlyTrend(
     val total_amount: Double
 )
 
+data class MonthlyTotals(
+    val totalIncome: Double?,
+    val totalExpense: Double?
+)
+
+
 data class ExchangeRateResponse(
     val result: String,
     val base_code: String,

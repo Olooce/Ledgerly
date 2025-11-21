@@ -98,6 +98,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.geometry)
+    implementation(libs.androidx.foundation)
     testImplementation(libs.junit)
 
     ksp(libs.androidx.hilt.compiler)
@@ -110,7 +111,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.dagger.hilt.compose)
-    implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)

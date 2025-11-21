@@ -16,14 +16,17 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,9 +52,34 @@ import ke.ac.ku.ledgerly.ui.widget.MultiFloatingActionButton
 import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
 import ke.ac.ku.ledgerly.utils.Utils
 
-
 @Composable
 fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltViewModel()) {
+    val homeState by viewModel.homeState.collectAsState()
+    val userName by viewModel.userName.collectAsState(initial = "User")
+
+    val lazyListState = rememberLazyListState()
+
+    // Auto-load more when near the end
+    LaunchedEffect(lazyListState) {
+        snapshotFlow { lazyListState.layoutInfo }
+            .collect { layoutInfo ->
+                val shouldLoadMore = layoutInfo.visibleItemsInfo.lastOrNull()?.index?.let { lastVisibleIndex ->
+                    lastVisibleIndex >= layoutInfo.totalItemsCount - 3
+                } ?: false
+
+                if (shouldLoadMore && homeState.paginationState.hasNext && !homeState.paginationState.isLoading) {
+                    viewModel.loadTransactions()
+                }
+            }
+    }
+
+    // Clear transactions when leaving screen
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.clearTransactions()
+        }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
             when (event) {
@@ -68,24 +96,21 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
     }
 
     val greeting = remember { Utils.getTimeBasedGreeting() }
-    val userName by viewModel.userName.collectAsState(initial = "User")
-
-    // Collect transactions from ViewModel
-    val transactions by viewModel.transactions.collectAsState(initial = emptyList())
-    val expense = viewModel.getTotalExpense(transactions)
-    val income = viewModel.getTotalIncome(transactions)
-    val balance = viewModel.getBalance(transactions)
 
     Surface(modifier = Modifier.fillMaxSize()) {
         ConstraintLayout(modifier = Modifier.fillMaxSize()) {
             val (nameRow, list, card, topBar, add) = createRefs()
+
             Image(
-                painter = painterResource(id = R.drawable.ic_topbar), contentDescription = null,
+                painter = painterResource(id = R.drawable.ic_topbar),
+                contentDescription = null,
                 modifier = Modifier.constrainAs(topBar) {
                     top.linkTo(parent.top)
                     start.linkTo(parent.start)
                     end.linkTo(parent.end)
-                })
+                }
+            )
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -105,9 +130,7 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                             .size(48.dp)
                             .clip(CircleShape)
                             .background(Color.White.copy(alpha = 0.1f))
-                            .clickable {
-
-                            },
+                            .clickable { },
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
@@ -140,11 +163,10 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
                         .size(26.dp)
-                        .clickable {},
+                        .clickable {  },
                     colorFilter = ColorFilter.tint(Color.White)
                 )
             }
-
 
             CardItem(
                 modifier = Modifier.constrainAs(card) {
@@ -152,7 +174,11 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                     start.linkTo(parent.start)
                     end.linkTo(parent.end)
                 },
-                balance = balance, income = income, expense = expense
+                balance = homeState.balance,
+                income = homeState.totalIncome,
+                expense = homeState.totalExpense,
+                currentMonth = homeState.currentMonth,
+                isNegative = homeState.isBalanceNegative
             )
 
             TransactionList(
@@ -165,10 +191,10 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                         bottom.linkTo(parent.bottom)
                         height = Dimension.fillToConstraints
                     },
-                list = transactions,
+                list = homeState.transactions,
                 onSeeAllClicked = {
                     viewModel.onEvent(HomeUiEvent.OnSeeAllClicked)
-                }
+                },
             )
 
             Box(
@@ -199,13 +225,16 @@ fun CardItem(
     modifier: Modifier,
     balance: String,
     income: String,
-    expense: String
-) {
+    expense: String,
+    currentMonth: String,
+    isNegative: Boolean
+)
+{
     Box(
         modifier = modifier
             .padding(16.dp)
             .fillMaxWidth()
-            .height(200.dp)
+            .height(220.dp)
     ) {
         Box(
             modifier = Modifier
@@ -243,13 +272,20 @@ fun CardItem(
                 )
         )
 
-        // Content
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(20.dp)
         ) {
-            // Balance Section
+            TransactionTextView(
+                text = currentMonth,
+                style = Typography.bodyMedium,
+                color = Color.White.copy(alpha = 0.8f),
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -266,9 +302,10 @@ fun CardItem(
                 TransactionTextView(
                     text = balance,
                     style = Typography.headlineLarge,
-                    color = Color.White
+                    color = if (isNegative) Color(0xFFFF4B4B) else Color(0xFF10B981)
                 )
             }
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

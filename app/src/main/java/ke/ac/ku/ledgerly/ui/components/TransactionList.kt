@@ -1,6 +1,7 @@
 package ke.ac.ku.ledgerly.ui.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
@@ -62,9 +64,15 @@ fun TransactionList(
         }
     } else {
         LazyColumn(modifier = modifier.padding(horizontal = 16.dp)) {
-            item {
-                Column {
-                    Box(modifier = modifier.fillMaxWidth()) {
+            stickyHeader {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(top = 16.dp, bottom = 12.dp)
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Box(modifier = Modifier.fillMaxWidth()) {
                         TransactionTextView(
                             text = title,
                             style = Typography.titleMedium,
@@ -75,15 +83,14 @@ fun TransactionList(
                                 style = Typography.bodySmall,
                                 modifier = Modifier
                                     .align(Alignment.CenterEnd)
-                                    .clickable {
-                                        onSeeAllClicked.invoke()
-                                    }
+                                    .clickable { onSeeAllClicked() }
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.size(12.dp))
                 }
             }
+
+
             items(
                 items = list,
                 key = { item -> item.id ?: 0 }) { item ->
