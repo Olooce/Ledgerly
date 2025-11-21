@@ -42,6 +42,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -111,11 +112,11 @@ fun TransactionsScreen(
     }
 
     // Clear transactions when leaving screen
-//    DisposableEffect(Unit) {
-//        onDispose {
-//            transactionViewModel.clearTransactions()
-//        }
-//    }
+    DisposableEffect(Unit) {
+        onDispose {
+            transactionViewModel.clearTransactions()
+        }
+    }
 
     var filtersExpanded by remember { mutableStateOf(false) }
     val dateRange = transactionsState.dateRange

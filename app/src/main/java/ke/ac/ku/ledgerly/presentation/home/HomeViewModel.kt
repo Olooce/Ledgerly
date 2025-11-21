@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ke.ac.ku.ledgerly.base.HomeNavigationEvent
 import ke.ac.ku.ledgerly.base.NavigationEvent
-import ke.ac.ku.ledgerly.data.model.MonthlyTotals
 import ke.ac.ku.ledgerly.data.model.PageRequest
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.data.repository.TransactionRepository
@@ -27,7 +26,7 @@ import javax.inject.Inject
 import kotlin.math.abs
 
 data class HomePaginationState(
-    val currentPage: Int = 0,
+    val currentPage: Int = 1,
     val pageSize: Int = 10,
     val isLoading: Boolean = false,
     val hasNext: Boolean = true,
@@ -97,25 +96,28 @@ class HomeViewModel @Inject constructor(
     fun loadSummary() {
         viewModelScope.launch {
             val totals = runCatching { transactionRepository.getCurrentMonthTotals() }
-                .getOrNull() ?: MonthlyTotals(0.0, 0.0)
+                .onSuccess { totals ->
+                    val income = totals.totalIncome ?: 0.0
+                    val expense = totals.totalExpense ?: 0.0
+                    val balanceValue = income - expense
 
-            val income = totals.totalIncome ?: 0.0
-            val expense = totals.totalExpense ?: 0.0
-            val balanceValue = income - expense
-
-            _homeState.update {
-                it.copy(
-                    totalIncome = FormatingUtils.formatCurrency(income),
-                    totalExpense = FormatingUtils.formatCurrency(expense),
-                    balance = FormatingUtils.formatCurrency(abs(balanceValue)),
-                    isBalanceNegative = balanceValue < 0,
-                    error = null
-                )
-            }
+                    _homeState.update {
+                        it.copy(
+                            totalIncome = FormatingUtils.formatCurrency(income),
+                            totalExpense = FormatingUtils.formatCurrency(expense),
+                            balance = FormatingUtils.formatCurrency(abs(balanceValue)),
+                            isBalanceNegative = balanceValue < 0,
+                            error = null
+                        )
+                    }
+                }
+                .onFailure { e ->
+                    _homeState.update {
+                        it.copy(error = e.message)
+                    }
+                }
         }
     }
-
-
 
 
     fun loadTransactions(reset: Boolean = false) {
