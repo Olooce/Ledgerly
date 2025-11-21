@@ -29,4 +29,4 @@ class Ledgerly : Application(), Configuration.Provider {
         workManagerSetup.setupRecurringTransactionWork()
         workManagerSetup.scheduleCleanup()
     }
-    }
+}

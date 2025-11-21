@@ -1,11 +1,11 @@
 package ke.ac.ku.ledgerly.presentation.home
 
-import ke.ac.ku.ledgerly.data.model.PageRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ke.ac.ku.ledgerly.base.HomeNavigationEvent
 import ke.ac.ku.ledgerly.base.NavigationEvent
+import ke.ac.ku.ledgerly.data.model.PageRequest
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.data.repository.TransactionRepository
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
@@ -95,25 +95,27 @@ class HomeViewModel @Inject constructor(
 
     fun loadSummary() {
         viewModelScope.launch {
-            try {
-                val totals = transactionRepository.getCurrentMonthTotals()
+            val totals = runCatching { transactionRepository.getCurrentMonthTotals() }
+                .onSuccess { totals ->
+                    val income = totals.totalIncome ?: 0.0
+                    val expense = totals.totalExpense ?: 0.0
+                    val balanceValue = income - expense
 
-                val income = totals.totalIncome ?: 0.0
-                val expense = totals.totalExpense ?: 0.0
-                val balanceValue = income - expense
-
-
-                _homeState.update {
-                    it.copy(
-                        totalIncome = FormatingUtils.formatCurrency(income),
-                        totalExpense = FormatingUtils.formatCurrency(expense),
-                        balance = FormatingUtils.formatCurrency(abs(balanceValue)),
-                        isBalanceNegative = balanceValue < 0
-                    )
+                    _homeState.update {
+                        it.copy(
+                            totalIncome = FormatingUtils.formatCurrency(income),
+                            totalExpense = FormatingUtils.formatCurrency(expense),
+                            balance = FormatingUtils.formatCurrency(abs(balanceValue)),
+                            isBalanceNegative = balanceValue < 0,
+                            error = null
+                        )
+                    }
                 }
-            } catch (e: Exception) {
-                _homeState.update { it.copy(error = e.message) }
-            }
+                .onFailure { e ->
+                    _homeState.update {
+                        it.copy(error = e.message)
+                    }
+                }
         }
     }
 

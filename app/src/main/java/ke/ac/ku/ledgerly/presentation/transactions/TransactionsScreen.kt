@@ -6,11 +6,8 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -56,7 +53,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
@@ -69,6 +65,7 @@ import androidx.navigation.NavController
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.base.HomeNavigationEvent
 import ke.ac.ku.ledgerly.data.constants.Categories
+import ke.ac.ku.ledgerly.data.constants.FilterConstants
 import ke.ac.ku.ledgerly.data.constants.NavRouts
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
@@ -94,7 +91,7 @@ fun TransactionsScreen(
     transactionViewModel: TransactionViewModel = hiltViewModel()
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("All Transactions", "Recurring")
+    val tabs = listOf(FilterConstants.TAB_ALL_TRANSACTIONS, FilterConstants.TAB_RECURRING)
 
     val transactionsState by transactionViewModel.transactionsState.collectAsState()
     val recurringTransactions by transactionViewModel.recurringTransactionsState.collectAsState()
@@ -103,9 +100,10 @@ fun TransactionsScreen(
     LaunchedEffect(lazyListState) {
         snapshotFlow { lazyListState.layoutInfo }
             .collect { layoutInfo ->
-                val shouldLoadMore = layoutInfo.visibleItemsInfo.lastOrNull()?.index?.let { lastVisibleIndex ->
-                    lastVisibleIndex >= layoutInfo.totalItemsCount - 5
-                } ?: false
+                val shouldLoadMore =
+                    layoutInfo.visibleItemsInfo.lastOrNull()?.index?.let { lastVisibleIndex ->
+                        lastVisibleIndex >= layoutInfo.totalItemsCount - 5
+                    } ?: false
 
                 if (shouldLoadMore && transactionsState.paginationState.hasNext && !transactionsState.paginationState.isLoading) {
                     transactionViewModel.loadTransactions()
@@ -487,7 +485,7 @@ fun AllTransactionsContent(
                                 color = primaryTextColor.copy(alpha = 0.8f)
                             )
                             DropDown(
-                                listOf("All", "Expense", "Income"),
+                                listOf(FilterConstants.FILTER_ALL, FilterConstants.FILTER_EXPENSE, FilterConstants.FILTER_INCOME),
                                 onItemSelected = onFilterTypeChange,
                             )
                         }
@@ -501,8 +499,14 @@ fun AllTransactionsContent(
                             )
                             DropDown(
                                 listOf(
-                                    "All Time", "Today", "Yesterday", "Last 7 Days",
-                                    "Last 30 Days", "Last 90 Days", "Last Year", "This Month"
+                                    FilterConstants.DATE_RANGE_ALL_TIME,
+                                    FilterConstants.DATE_RANGE_TODAY,
+                                    FilterConstants.DATE_RANGE_YESTERDAY,
+                                    FilterConstants.DATE_RANGE_LAST_7_DAYS,
+                                    FilterConstants.DATE_RANGE_LAST_30_DAYS,
+                                    FilterConstants.DATE_RANGE_LAST_90_DAYS,
+                                    FilterConstants.DATE_RANGE_LAST_YEAR,
+                                    FilterConstants.DATE_RANGE_THIS_MONTH
                                 ),
                                 onItemSelected = onDateRangeChange,
                             )
@@ -704,7 +708,7 @@ fun RecurringTransactionsContent(
             searchQuery = searchQuery,
             statusFilter = statusFilter,
             onFilterTypeChange = onFilterTypeChange,
-            onDateRangeChange = {  },
+            onDateRangeChange = { },
             onAmountRangeChange = onAmountRangeChange,
             onCategoriesChange = onCategoriesChange,
             onSearchQueryChange = onSearchQueryChange,
@@ -751,7 +755,7 @@ fun RecurringTransactionsContent(
                                 color = primaryTextColor.copy(alpha = 0.8f)
                             )
                             DropDown(
-                                listOf("All", "Expense", "Income"),
+                                listOf(FilterConstants.FILTER_ALL, FilterConstants.FILTER_EXPENSE, FilterConstants.FILTER_INCOME),
                                 onItemSelected = onFilterTypeChange,
                             )
                         }
@@ -764,7 +768,7 @@ fun RecurringTransactionsContent(
                                 color = primaryTextColor.copy(alpha = 0.8f)
                             )
                             DropDown(
-                                listOf("All", "Active", "Paused"),
+                                listOf(FilterConstants.STATUS_ALL, FilterConstants.STATUS_ACTIVE, FilterConstants.STATUS_PAUSED),
                                 onItemSelected = onStatusFilterChange,
                             )
                         }
@@ -896,9 +900,14 @@ fun ActiveFiltersChips(
     val activeFilters = buildList {
         if (filterType != "All") add(FilterChipData("Type: $filterType") { onFilterTypeChange("All") })
         if (dateRange != "All Time") add(FilterChipData("Date: $dateRange") { onDateRangeChange("All Time") })
-        if (amountRange != null) add(FilterChipData(
-            "Amount: ${FormatingUtils.formatCurrency(amountRange.start)} - ${FormatingUtils.formatCurrency(amountRange.endInclusive)}"
-        ) { onAmountRangeChange(null) })
+        if (amountRange != null) add(
+            FilterChipData(
+                "Amount: ${FormatingUtils.formatCurrency(amountRange.start)} - ${
+                    FormatingUtils.formatCurrency(
+                        amountRange.endInclusive
+                    )
+                }"
+            ) { onAmountRangeChange(null) })
         if (selectedCategories.isNotEmpty()) {
             selectedCategories.forEach { category ->
                 add(FilterChipData(category) {
@@ -906,7 +915,11 @@ fun ActiveFiltersChips(
                 })
             }
         }
-        if (searchQuery.isNotEmpty()) add(FilterChipData("Search: $searchQuery") { onSearchQueryChange("") })
+        if (searchQuery.isNotEmpty()) add(FilterChipData("Search: $searchQuery") {
+            onSearchQueryChange(
+                ""
+            )
+        })
         if (statusFilter != null && statusFilter != "All") {
             add(FilterChipData("Status: $statusFilter") { onStatusFilterChange?.invoke("All") })
         }
@@ -1075,7 +1088,11 @@ fun ExpandableFilterSection(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                alpha = 0.5f
+            )
+        ),
         elevation = CardDefaults.cardElevation(1.dp),
         shape = RoundedCornerShape(8.dp)
     ) {

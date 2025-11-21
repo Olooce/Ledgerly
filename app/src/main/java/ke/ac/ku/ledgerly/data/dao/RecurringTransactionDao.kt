@@ -59,7 +59,8 @@ interface RecurringTransactionDao {
         offset: Int
     ): Flow<List<RecurringTransactionEntity>>
 
-    @Query("""
+    @Query(
+        """
     SELECT * FROM recurring_transactions 
     WHERE isDeleted = 0 
     AND (:filterType = 'All' OR type = :filterType)
@@ -72,7 +73,8 @@ interface RecurringTransactionDao {
          (:statusFilter = 'Paused' AND isActive = 0))
     ORDER BY startDate DESC
     LIMIT :limit OFFSET :offset
-""")
+"""
+    )
     suspend fun getFilteredRecurringTransactionsPaginated(
         filterType: String,
         searchQuery: String,
@@ -85,7 +87,8 @@ interface RecurringTransactionDao {
         offset: Int
     ): List<RecurringTransactionEntity>
 
-    @Query("""
+    @Query(
+        """
     SELECT COUNT(*) FROM recurring_transactions 
     WHERE isDeleted = 0 
     AND (:filterType = 'All' OR type = :filterType)
@@ -96,7 +99,8 @@ interface RecurringTransactionDao {
     AND (:statusFilter = 'All' OR 
          (:statusFilter = 'Active' AND isActive = 1) OR 
          (:statusFilter = 'Paused' AND isActive = 0))
-""")
+"""
+    )
     suspend fun getFilteredRecurringTransactionsCount(
         filterType: String,
         searchQuery: String,
@@ -107,7 +111,8 @@ interface RecurringTransactionDao {
         statusFilter: String
     ): Int
 
-    @Query("""
+    @Query(
+        """
     SELECT * FROM recurring_transactions 
     WHERE isDeleted = 0 
     AND (:filterType = 'All' OR type = :filterType)
@@ -119,7 +124,8 @@ interface RecurringTransactionDao {
          (:statusFilter = 'Active' AND isActive = 1) OR 
          (:statusFilter = 'Paused' AND isActive = 0))
     ORDER BY startDate DESC
-""")
+"""
+    )
     fun getFilteredRecurringTransactionsFlow(
         filterType: String,
         searchQuery: String,
