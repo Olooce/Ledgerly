@@ -1,6 +1,6 @@
 package ke.ac.ku.ledgerly.presentation.home
 
-import PageRequest
+import ke.ac.ku.ledgerly.data.model.PageRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel

@@ -1,6 +1,6 @@
 package ke.ac.ku.ledgerly.presentation.transactions
 
-import PageRequest
+import ke.ac.ku.ledgerly.data.model.PageRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,6 +28,10 @@ data class TransactionsState(
     val paginationState: PaginationState = PaginationState(),
     val filterType: String = "All",
     val searchQuery: String = "",
+    val dateRange: String = "All Time",
+    val amountRange: ClosedFloatingPointRange<Double>? = null,
+    val selectedCategories: List<String> = emptyList(),
+    val statusFilter: String = "All",
     val error: String? = null
 )
 
@@ -72,7 +76,7 @@ class TransactionViewModel @Inject constructor(
             it.copy(
                 paginationState = it.paginationState.copy(
                     isLoading = true,
-                    isRefreshing = reset && pageToLoad == 1
+                    isRefreshing = reset && pageToLoad == 0
                 ),
                 error = null
             )
@@ -80,17 +84,14 @@ class TransactionViewModel @Inject constructor(
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val result = if (currentState.filterType == "All" && currentState.searchQuery.isEmpty()) {
-                    transactionRepository.getTransactionsPaginated(
-                        PageRequest(page = pageToLoad, pageSize = paginationState.pageSize)
-                    )
-                } else {
-                    transactionRepository.getFilteredTransactionsPaginated(
-                        filterType = currentState.filterType,
-                        searchQuery = currentState.searchQuery,
-                        PageRequest(page = pageToLoad, pageSize = paginationState.pageSize)
-                    )
-                }
+                val result = transactionRepository.getFilteredTransactionsPaginated(
+                    filterType = currentState.filterType,
+                    searchQuery = currentState.searchQuery,
+                    dateRange = currentState.dateRange,
+                    amountRange = currentState.amountRange,
+                    categories = currentState.selectedCategories,
+                    PageRequest(page = pageToLoad + 1, pageSize = paginationState.pageSize)
+                )
 
                 _transactionsState.update { state ->
                     val newTransactions = if (reset) {
@@ -105,7 +106,6 @@ class TransactionViewModel @Inject constructor(
                             currentPage = pageToLoad + 1,
                             isLoading = false,
                             isRefreshing = false,
-                            hasNext = result.hasNext
                         )
                     )
                 }
@@ -118,6 +118,47 @@ class TransactionViewModel @Inject constructor(
                         ),
                         error = e.message
                     )
+                }
+            }
+        }
+    }
+
+    fun updateAmountRange(amountRange: ClosedFloatingPointRange<Double>?) {
+        _transactionsState.update { it.copy(amountRange = amountRange) }
+        loadInitialTransactions()
+    }
+
+    fun updateDateRange(dateRange: String) {
+        _transactionsState.update { it.copy(dateRange = dateRange) }
+        loadInitialTransactions()
+    }
+
+    fun updateCategories(categories: List<String>) {
+        _transactionsState.update { it.copy(selectedCategories = categories) }
+        loadInitialTransactions()
+    }
+
+    fun updateStatusFilter(statusFilter: String) {
+        _transactionsState.update { it.copy(statusFilter = statusFilter) }
+        loadRecurringTransactions()
+    }
+
+    private fun loadRecurringTransactions() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val currentState = _transactionsState.value
+                transactionRepository.getFilteredRecurringTransactionsFlow(
+                    filterType = currentState.filterType,
+                    searchQuery = currentState.searchQuery,
+                    amountRange = currentState.amountRange,
+                    categories = currentState.selectedCategories,
+                    statusFilter = currentState.statusFilter
+                ).collect { transactions ->
+                    _recurringTransactions.value = transactions
+                }
+            } catch (e: Exception) {
+                _transactionsState.update {
+                    it.copy(error = e.message)
                 }
             }
         }
@@ -168,9 +209,4 @@ class TransactionViewModel @Inject constructor(
         }
     }
 
-    private fun loadRecurringTransactions() {
-        viewModelScope.launch {
-            _recurringTransactions.value = dao.getAllRecurringTransactionsSync()
-        }
-    }
 }

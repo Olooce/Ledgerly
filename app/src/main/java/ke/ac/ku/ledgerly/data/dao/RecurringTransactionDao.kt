@@ -59,4 +59,75 @@ interface RecurringTransactionDao {
         offset: Int
     ): Flow<List<RecurringTransactionEntity>>
 
+    @Query("""
+    SELECT * FROM recurring_transactions 
+    WHERE isDeleted = 0 
+    AND (:filterType = 'All' OR type = :filterType)
+    AND (:searchQuery = '' OR category LIKE '%' || :searchQuery || '%' OR notes LIKE '%' || :searchQuery || '%')
+    AND (:minAmount = -1 OR amount >= :minAmount)
+    AND (:maxAmount = -1 OR amount <= :maxAmount)
+    AND (:categoriesCount = 0 OR category IN (:categories))
+    AND (:statusFilter = 'All' OR 
+         (:statusFilter = 'Active' AND isActive = 1) OR 
+         (:statusFilter = 'Paused' AND isActive = 0))
+    ORDER BY startDate DESC
+    LIMIT :limit OFFSET :offset
+""")
+    suspend fun getFilteredRecurringTransactionsPaginated(
+        filterType: String,
+        searchQuery: String,
+        minAmount: Double,
+        maxAmount: Double,
+        categoriesCount: Int,
+        categories: List<String>,
+        statusFilter: String,
+        limit: Int,
+        offset: Int
+    ): List<RecurringTransactionEntity>
+
+    @Query("""
+    SELECT COUNT(*) FROM recurring_transactions 
+    WHERE isDeleted = 0 
+    AND (:filterType = 'All' OR type = :filterType)
+    AND (:searchQuery = '' OR category LIKE '%' || :searchQuery || '%' OR notes LIKE '%' || :searchQuery || '%')
+    AND (:minAmount = -1 OR amount >= :minAmount)
+    AND (:maxAmount = -1 OR amount <= :maxAmount)
+    AND (:categoriesCount = 0 OR category IN (:categories))
+    AND (:statusFilter = 'All' OR 
+         (:statusFilter = 'Active' AND isActive = 1) OR 
+         (:statusFilter = 'Paused' AND isActive = 0))
+""")
+    suspend fun getFilteredRecurringTransactionsCount(
+        filterType: String,
+        searchQuery: String,
+        minAmount: Double,
+        maxAmount: Double,
+        categoriesCount: Int,
+        categories: List<String>,
+        statusFilter: String
+    ): Int
+
+    @Query("""
+    SELECT * FROM recurring_transactions 
+    WHERE isDeleted = 0 
+    AND (:filterType = 'All' OR type = :filterType)
+    AND (:searchQuery = '' OR category LIKE '%' || :searchQuery || '%' OR notes LIKE '%' || :searchQuery || '%')
+    AND (:minAmount = -1 OR amount >= :minAmount)
+    AND (:maxAmount = -1 OR amount <= :maxAmount)
+    AND (:categoriesCount = 0 OR category IN (:categories))
+    AND (:statusFilter = 'All' OR 
+         (:statusFilter = 'Active' AND isActive = 1) OR 
+         (:statusFilter = 'Paused' AND isActive = 0))
+    ORDER BY startDate DESC
+""")
+    fun getFilteredRecurringTransactionsFlow(
+        filterType: String,
+        searchQuery: String,
+        minAmount: Double,
+        maxAmount: Double,
+        categoriesCount: Int,
+        categories: List<String>,
+        statusFilter: String
+    ): Flow<List<RecurringTransactionEntity>>
+
 }

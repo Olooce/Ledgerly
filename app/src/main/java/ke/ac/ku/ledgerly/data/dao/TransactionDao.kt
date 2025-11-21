@@ -95,32 +95,53 @@ ORDER BY month
     @Query("SELECT * FROM transactions WHERE isDeleted = 0 ORDER BY date DESC LIMIT :limit OFFSET :offset")
     fun getTransactionsPaginatedFlow(limit: Int, offset: Int): Flow<List<TransactionEntity>>
 
-    @Query(
-        """
-        SELECT * FROM transactions 
-        WHERE isDeleted = 0 
-        AND (:filterType = 'All' OR type = :filterType)
-        AND (:searchQuery = '' OR category LIKE '%' || :searchQuery || '%' OR notes LIKE '%' || :searchQuery || '%')
-        ORDER BY date DESC 
-        LIMIT :limit OFFSET :offset
-    """
-    )
+    @Query("""
+    SELECT * FROM transactions 
+    WHERE isDeleted = 0 
+    AND (:filterType = 'All' OR type = :filterType)
+    AND (:searchQuery = '' OR category LIKE '%' || :searchQuery || '%' OR notes LIKE '%' || :searchQuery || '%')
+    AND (:minAmount = -1 OR amount >= :minAmount)
+    AND (:maxAmount = -1 OR amount <= :maxAmount)
+    AND (:categoriesCount = 0 OR category IN (:categories))
+    AND (:dateRange = 'All Time' OR date BETWEEN :startDate AND :endDate)
+    ORDER BY date DESC 
+    LIMIT :limit OFFSET :offset
+""")
     suspend fun getFilteredTransactionsPaginated(
         filterType: String,
         searchQuery: String,
+        dateRange: String,
+        startDate: Long,
+        endDate: Long,
+        minAmount: Double,
+        maxAmount: Double,
+        categoriesCount: Int,
+        categories: List<String>,
         limit: Int,
         offset: Int
     ): List<TransactionEntity>
 
-    @Query(
-        """
-        SELECT COUNT(*) FROM transactions 
-        WHERE isDeleted = 0 
-        AND (:filterType = 'All' OR type = :filterType)
-        AND (:searchQuery = '' OR category LIKE '%' || :searchQuery || '%' OR notes LIKE '%' || :searchQuery || '%')
-    """
-    )
-    suspend fun getFilteredTransactionsCount(filterType: String, searchQuery: String): Int
+    @Query("""
+    SELECT COUNT(*) FROM transactions 
+    WHERE isDeleted = 0 
+    AND (:filterType = 'All' OR type = :filterType)
+    AND (:searchQuery = '' OR category LIKE '%' || :searchQuery || '%' OR notes LIKE '%' || :searchQuery || '%')
+    AND (:minAmount = -1 OR amount >= :minAmount)
+    AND (:maxAmount = -1 OR amount <= :maxAmount)
+    AND (:categoriesCount = 0 OR category IN (:categories))
+    AND (:dateRange = 'All Time' OR date BETWEEN :startDate AND :endDate)
+""")
+    suspend fun getFilteredTransactionsCount(
+        filterType: String,
+        searchQuery: String,
+        dateRange: String,
+        startDate: Long,
+        endDate: Long,
+        minAmount: Double,
+        maxAmount: Double,
+        categoriesCount: Int,
+        categories: List<String>
+    ): Int
 
     @Query("""
 SELECT * FROM transactions 

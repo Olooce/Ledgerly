@@ -1,3 +1,5 @@
+package ke.ac.ku.ledgerly.data.model
+
 data class PaginatedResult<T>(
     val data: List<T>,
     val currentPage: Int,
