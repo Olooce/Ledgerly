@@ -249,6 +249,7 @@ LIMIT :limit OFFSET :offset
     SELECT date, SUM(amount) as total_amount, type
     FROM transactions
     WHERE type = 'Income' 
+    AND isDeleted = 0
     AND date BETWEEN :startDate AND :endDate
     GROUP BY date
     ORDER BY date ASC
