@@ -47,17 +47,17 @@ class CategoryManagementViewModel @Inject constructor(
     private fun loadCategories() {
         viewModelScope.launch {
             _isLoading.value = true
-            try {
-                categoryRepository.getAllCategoriesFlow().collectLatest { categories ->
+            categoryRepository.getAllCategoriesFlow()
+                .catch { e ->
+                    _errorMessage.value = "Failed to load categories: ${e.message}"
+                    _isLoading.value = false
+                }
+                .collectLatest { categories ->
                     _allCategories.value = categories
                     _defaultCategories.value = categories.filter { it.isDefault }
                     _customCategories.value = categories.filter { !it.isDefault }
                     _isLoading.value = false
                 }
-            } catch (e: Exception) {
-                _errorMessage.value = "Failed to load categories: ${e.message}"
-                _isLoading.value = false
-            }
         }
     }
 
@@ -106,7 +106,11 @@ class CategoryManagementViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val category = categoryRepository.getCategoryById(categoryId) ?: return@launch
+                val category = categoryRepository.getCategoryById(categoryId)
+                if (category == null) {
+                    _errorMessage.value = "Category not found"
+                    return@launch
+                }
                 val updatedCategory = category.copy(
                     name = name,
                     icon = icon,
