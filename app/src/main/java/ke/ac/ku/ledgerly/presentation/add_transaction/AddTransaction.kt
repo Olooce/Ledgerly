@@ -204,8 +204,6 @@ fun DataForm(
     val frequency = remember { mutableStateOf(RecurrenceFrequency.MONTHLY) }
     val endDate = remember { mutableLongStateOf(0L) }
     val endDateDialogVisibility = remember { mutableStateOf(false) }
-    val viewModel: AddTransactionViewModel = hiltViewModel()
-
 
     val colors = MaterialTheme.colorScheme
 
