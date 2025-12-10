@@ -485,7 +485,11 @@ fun AllTransactionsContent(
                                 color = primaryTextColor.copy(alpha = 0.8f)
                             )
                             DropDown(
-                                listOf(FilterConstants.FILTER_ALL, FilterConstants.FILTER_EXPENSE, FilterConstants.FILTER_INCOME),
+                                listOf(
+                                    FilterConstants.FILTER_ALL,
+                                    FilterConstants.FILTER_EXPENSE,
+                                    FilterConstants.FILTER_INCOME
+                                ),
                                 onItemSelected = onFilterTypeChange,
                             )
                         }
@@ -755,7 +759,11 @@ fun RecurringTransactionsContent(
                                 color = primaryTextColor.copy(alpha = 0.8f)
                             )
                             DropDown(
-                                listOf(FilterConstants.FILTER_ALL, FilterConstants.FILTER_EXPENSE, FilterConstants.FILTER_INCOME),
+                                listOf(
+                                    FilterConstants.FILTER_ALL,
+                                    FilterConstants.FILTER_EXPENSE,
+                                    FilterConstants.FILTER_INCOME
+                                ),
                                 onItemSelected = onFilterTypeChange,
                             )
                         }
@@ -768,7 +776,11 @@ fun RecurringTransactionsContent(
                                 color = primaryTextColor.copy(alpha = 0.8f)
                             )
                             DropDown(
-                                listOf(FilterConstants.STATUS_ALL, FilterConstants.STATUS_ACTIVE, FilterConstants.STATUS_PAUSED),
+                                listOf(
+                                    FilterConstants.STATUS_ALL,
+                                    FilterConstants.STATUS_ACTIVE,
+                                    FilterConstants.STATUS_PAUSED
+                                ),
                                 onItemSelected = onStatusFilterChange,
                             )
                         }

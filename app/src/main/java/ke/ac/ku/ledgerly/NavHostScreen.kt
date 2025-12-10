@@ -47,6 +47,7 @@ import ke.ac.ku.ledgerly.presentation.auth.AuthScreen
 import ke.ac.ku.ledgerly.presentation.auth.AuthViewModel
 import ke.ac.ku.ledgerly.presentation.budget.AddBudgetScreen
 import ke.ac.ku.ledgerly.presentation.budget.BudgetScreen
+import ke.ac.ku.ledgerly.presentation.categories.CategoryManagementScreen
 import ke.ac.ku.ledgerly.presentation.home.HomeScreen
 import ke.ac.ku.ledgerly.presentation.onboarding.OnboardingScreen
 import ke.ac.ku.ledgerly.presentation.settings.SettingsScreen
@@ -209,6 +210,11 @@ fun NavHostScreen(
                     composable(NavRouts.settings) {
                         bottomBarVisible = false
                         SettingsScreen(navController, themeViewModel, settingsViewModel)
+                    }
+
+                    composable(NavRouts.categoryManagement) {
+                        bottomBarVisible = false
+                        CategoryManagementScreen(navController)
                     }
                 }
             }

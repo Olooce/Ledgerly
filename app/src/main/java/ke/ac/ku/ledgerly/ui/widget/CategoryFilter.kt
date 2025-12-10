@@ -23,11 +23,12 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import ke.ac.ku.ledgerly.R
+import ke.ac.ku.ledgerly.data.model.CategoryEntity
 import ke.ac.ku.ledgerly.ui.theme.Typography
 
 @Composable
 fun CategoryFilter(
-    availableCategories: List<String>,
+    availableCategories: List<CategoryEntity>,
     selectedCategories: List<String>,
     onCategoriesChange: (List<String>) -> Unit,
     modifier: Modifier = Modifier
@@ -73,21 +74,21 @@ fun CategoryFilter(
                 DropdownMenuItem(
                     text = {
                         TransactionTextView(
-                            text = category,
+                            text = category.name,
                             style = Typography.bodyMedium,
                             color = primaryTextColor
                         )
                     },
                     onClick = {
-                        val newSelection = if (selectedCategories.contains(category)) {
-                            selectedCategories - category
+                        val newSelection = if (selectedCategories.contains(category.id)) {
+                            selectedCategories - category.id
                         } else {
-                            selectedCategories + category
+                            selectedCategories + category.id
                         }
                         onCategoriesChange(newSelection)
                     },
                     trailingIcon = {
-                        if (selectedCategories.contains(category)) {
+                        if (selectedCategories.contains(category.id)) {
                             Image(
                                 painter = painterResource(id = R.drawable.ic_check),
                                 contentDescription = "Selected",

@@ -74,7 +74,8 @@ class StatsViewModel @Inject constructor(
                 dao.getMonthlySpendingTrends().map { trends ->
                     trends
                         .filter { trend ->
-                            val trendDate = parseMonthYearToMillis(trend.month ?: "") ?: return@filter false
+                            val trendDate =
+                                parseMonthYearToMillis(trend.month ?: "") ?: return@filter false
                             trendDate in startDate..endDate
                         }
                         .groupBy { it.category }

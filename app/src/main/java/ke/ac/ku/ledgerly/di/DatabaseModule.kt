@@ -8,6 +8,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import ke.ac.ku.ledgerly.data.LedgerlyDatabase
 import ke.ac.ku.ledgerly.data.dao.BudgetDao
+import ke.ac.ku.ledgerly.data.dao.CategoryDao
 import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import javax.inject.Singleton
@@ -33,4 +34,8 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideBudgetDao(db: LedgerlyDatabase): BudgetDao = db.budgetDao()
+
+    @Provides
+    @Singleton
+    fun provideCategoryDao(db: LedgerlyDatabase): CategoryDao = db.categoryDao()
 }
