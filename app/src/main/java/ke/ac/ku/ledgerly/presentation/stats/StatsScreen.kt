@@ -23,6 +23,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -71,6 +73,11 @@ import ke.ac.ku.ledgerly.data.model.MonthlyComparison
 import ke.ac.ku.ledgerly.ui.components.TransactionList
 import ke.ac.ku.ledgerly.ui.theme.White
 import ke.ac.ku.ledgerly.utils.FormatingUtils
+import java.util.Locale
+
+enum class TimePeriod {
+    WEEK, MONTH, YEAR
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
@@ -79,6 +86,7 @@ fun StatsScreen(
     viewModel: StatsViewModel = hiltViewModel()
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedPeriod by remember { mutableStateOf(TimePeriod.MONTH) }
     val tabs = listOf("Comparison", "Trends", "Categories")
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -142,6 +150,13 @@ fun StatsScreen(
                             )
                         }
                     }
+
+                    // Period Filter
+                    PeriodFilterRow(
+                        selectedPeriod = selectedPeriod,
+                        onPeriodSelected = { selectedPeriod = it }
+                    )
+
                     AnimatedContent(
                         targetState = selectedTab,
                         transitionSpec = {
@@ -151,9 +166,9 @@ fun StatsScreen(
                         modifier = Modifier.fillMaxSize()
                     ) { index ->
                         when (index) {
-                            0 -> ComparisonTab(viewModel)
-                            1 -> TrendsTab(viewModel, navController)
-                            2 -> CategoriesTab(viewModel)
+                            0 -> ComparisonTab(viewModel, selectedPeriod)
+                            1 -> TrendsTab(viewModel, navController, selectedPeriod)
+                            2 -> CategoriesTab(viewModel, selectedPeriod)
                         }
                     }
                 }
@@ -162,11 +177,36 @@ fun StatsScreen(
     }
 }
 
+@Composable
+private fun PeriodFilterRow(
+    selectedPeriod: TimePeriod,
+    onPeriodSelected: (TimePeriod) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+    ) {
+        TimePeriod.entries.forEach { period ->
+            FilterChip(
+                selected = selectedPeriod == period,
+                onClick = { onPeriodSelected(period) },
+                label = { Text(period.name.lowercase().replaceFirstChar { it.uppercase() }) }
+            )
+        }
+    }
+}
+
 
 @Composable
-private fun TrendsTab(viewModel: StatsViewModel, navController: NavController) {
-    val dataState by viewModel.entries.collectAsState(emptyList())
-    val topExpenses by viewModel.topEntries.collectAsState(emptyList())
+private fun TrendsTab(
+    viewModel: StatsViewModel,
+    navController: NavController,
+    selectedPeriod: TimePeriod
+) {
+    val dataState by viewModel.getEntriesForPeriod(selectedPeriod).collectAsState(emptyList())
+    val topExpenses by viewModel.getTopEntriesForPeriod(selectedPeriod).collectAsState(emptyList())
 
     LazyColumn(
         modifier = Modifier
@@ -215,8 +255,9 @@ private fun TrendsTab(viewModel: StatsViewModel, navController: NavController) {
 }
 
 @Composable
-private fun CategoriesTab(viewModel: StatsViewModel) {
-    val categoryData by viewModel.categorySpending.collectAsState(emptyList())
+private fun CategoriesTab(viewModel: StatsViewModel, selectedPeriod: TimePeriod) {
+    val categoryData by viewModel.getCategorySpendingForPeriod(selectedPeriod)
+        .collectAsState(emptyList())
 
     LazyColumn(
         modifier = Modifier
@@ -237,15 +278,15 @@ private fun CategoriesTab(viewModel: StatsViewModel) {
             if (categoryData.isNotEmpty()) {
                 PieChartView(categorySummaries = categoryData)
             } else {
-                EmptyState("No category data for this month")
+                EmptyState("No category data for this period")
             }
         }
     }
 }
 
 @Composable
-private fun ComparisonTab(viewModel: StatsViewModel) {
-    val monthlyData by viewModel.monthlyComparison.collectAsState(emptyList())
+private fun ComparisonTab(viewModel: StatsViewModel, selectedPeriod: TimePeriod) {
+    val monthlyData by viewModel.getComparisonForPeriod(selectedPeriod).collectAsState(emptyList())
 
     LazyColumn(
         modifier = Modifier
@@ -257,20 +298,22 @@ private fun ComparisonTab(viewModel: StatsViewModel) {
         item {
             val filtered = monthlyData.filter { it.month != null }
             if (filtered.isNotEmpty()) {
-                val latest = filtered.last()
+                val totalIncome = filtered.sumOf { it.income }
+                val totalExpense = filtered.sumOf { it.expense }
+
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     SummaryCard(
                         title = "Income",
-                        value = FormatingUtils.formatCurrency(latest.income),
+                        value = FormatingUtils.formatCurrency(totalIncome),
                         modifier = Modifier.weight(1f),
                         color = Color(0xFF2E7D32),
                     )
                     SummaryCard(
                         title = "Expenses",
-                        value = FormatingUtils.formatCurrency(latest.expense),
+                        value = FormatingUtils.formatCurrency(totalExpense),
                         modifier = Modifier.weight(1f),
                         color = Color(0xFFC62828)
                     )
@@ -278,14 +321,14 @@ private fun ComparisonTab(viewModel: StatsViewModel) {
             }
         }
 
-        // Monthly Comparison Section
+        // Comparison Section
         item {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    "Monthly Comparison",
+                    "${selectedPeriod.name.lowercase().capitalize(Locale.ROOT)} Comparison",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -293,10 +336,11 @@ private fun ComparisonTab(viewModel: StatsViewModel) {
                 if (monthlyData.isNotEmpty()) {
                     BarChartView(
                         monthlyData = monthlyData,
-                        viewModel = viewModel
+                        viewModel = viewModel,
+                        selectedPeriod = selectedPeriod
                     )
                 } else {
-                    EmptyState("No monthly comparison data")
+                    EmptyState("No comparison data")
                 }
             }
         }
@@ -345,19 +389,22 @@ private fun EmptyState(message: String) {
             .height(200.dp),
         contentAlignment = Alignment.Center
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.ic_empty_state),
-            contentDescription = "No Data",
-            modifier = Modifier
-                .size(120.dp)
-                .padding(bottom = 16.dp),
-            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
-        )
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_empty_state),
+                contentDescription = "No Data",
+                modifier = Modifier.size(120.dp),
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
+            )
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 
@@ -427,7 +474,6 @@ private fun LineChartView(entries: List<Entry>) {
     }
 }
 
-
 @Composable
 private fun PieChartView(categorySummaries: List<CategorySummary>) {
     val context = LocalContext.current
@@ -469,7 +515,6 @@ private fun PieChartView(categorySummaries: List<CategorySummary>) {
             setEntryLabelTextSize(13f)
             setBackgroundColor(android.graphics.Color.TRANSPARENT)
             isDrawHoleEnabled = false
-//            holeRadius = 45f
             setTransparentCircleAlpha(0)
             centerText = "Categories"
             setCenterTextColor(valTextColor)
@@ -483,7 +528,8 @@ private fun PieChartView(categorySummaries: List<CategorySummary>) {
 @Composable
 private fun BarChartView(
     monthlyData: List<MonthlyComparison>,
-    viewModel: StatsViewModel
+    viewModel: StatsViewModel,
+    selectedPeriod: TimePeriod
 ) {
     val context = LocalContext.current
     val valTextColor = MaterialTheme.colorScheme.onSurface.toArgb()
@@ -503,7 +549,7 @@ private fun BarChartView(
 
         barData?.let {
             chart.apply {
-                val labels = viewModel.getMonthLabels(monthlyData)
+                val labels = viewModel.getLabelsForPeriod(monthlyData, selectedPeriod)
 
                 xAxis.apply {
                     valueFormatter = IndexAxisValueFormatter(labels)
@@ -543,7 +589,6 @@ private fun BarChartView(
         }
     }
 }
-
 
 private fun getColors(context: Context, count: Int): List<Int> {
     val all = getThemeColors(context).shuffled()
