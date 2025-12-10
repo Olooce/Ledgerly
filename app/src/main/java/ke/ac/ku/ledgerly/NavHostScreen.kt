@@ -1,7 +1,18 @@
 package ke.ac.ku.ledgerly
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -13,9 +24,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
@@ -26,8 +36,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -107,14 +118,28 @@ fun NavHostScreen(
                 containerColor = Color.Transparent,
                 topBar = {},
                 bottomBar = {
-                    AnimatedVisibility(visible = bottomBarVisible) {
+                    AnimatedVisibility(
+                        visible = bottomBarVisible,
+                        enter = slideInVertically(
+                            initialOffsetY = { it },
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness = Spring.StiffnessLow
+                            )
+                        ) + fadeIn(),
+                        exit = slideOutVertically(
+                            targetOffsetY = { it },
+                            animationSpec = tween(300)
+                        ) + fadeOut()
+                    ) {
                         NavigationBottomBar(
                             navController = navController,
                             items = listOf(
-                                NavItem(NavRouts.home, R.drawable.ic_home),
                                 NavItem(NavRouts.allTransactions, R.drawable.ic_transaction),
                                 NavItem(NavRouts.budget, R.drawable.ic_budget),
-                                NavItem(NavRouts.stats, R.drawable.ic_stats)
+                                NavItem(NavRouts.home, R.drawable.ic_home),
+                                NavItem(NavRouts.stats, R.drawable.ic_stats),
+                                NavItem(NavRouts.settings, R.drawable.ic_settings)
                             )
                         )
                     }
@@ -254,55 +279,127 @@ fun NavigationBottomBar(
     navController: NavController,
     items: List<NavItem>
 ) {
+    if (items.size != 5) return
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val isDarkTheme = androidx.compose.foundation.isSystemInDarkTheme()
 
+    val leftItems = items.subList(0, 2)
+    val centerItem = items[2]
+    val rightItems = items.subList(3, 5)
+
+    val isDarkTheme = androidx.compose.foundation.isSystemInDarkTheme()
     val backgroundColor = if (isDarkTheme)
-        MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
     else
-        MaterialTheme.colorScheme.background.copy(alpha = 0.95f)
+        MaterialTheme.colorScheme.background.copy(alpha = 0.98f)
 
     val contentColor = if (isDarkTheme)
         MaterialTheme.colorScheme.onSurface
     else
         MaterialTheme.colorScheme.onBackground
 
-    androidx.compose.material3.NavigationBar(
-        containerColor = backgroundColor,
-        tonalElevation = 6.dp,
+    val barHeight = 64.dp
+    val outerPadding = 24.dp
+
+    Surface(
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp),
+        color = backgroundColor,
+        tonalElevation = 3.dp,
+        shadowElevation = 8.dp,
         modifier = Modifier
-            .padding(horizontal = 32.dp, vertical = 12.dp)
-            .height(56.dp)
-            .clip(androidx.compose.foundation.shape.RoundedCornerShape(20.dp))
+            .fillMaxWidth()
+            .padding(horizontal = outerPadding, vertical = 16.dp)
+            .height(barHeight)
             .zIndex(10f)
     ) {
-        items.forEach { item ->
-            val selected = currentRoute == item.route
-            NavigationBarItem(
-                selected = selected,
+        androidx.compose.foundation.layout.Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceEvenly
+        ) {
+            leftItems.forEach { item ->
+                NavBarIcon(
+                    item = item,
+                    isSelected = currentRoute == item.route,
+                    contentColor = contentColor,
+                    onClick = {
+                        navController.navigate(item.route) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
+            }
+
+            val isSelectedCenter = currentRoute == centerItem.route
+            NavBarIcon(
+                item = centerItem,
+                isSelected = isSelectedCenter,
+                contentColor = contentColor,
                 onClick = {
-                    navController.navigate(item.route) {
+                    navController.navigate(centerItem.route) {
                         popUpTo(navController.graph.startDestinationId) { saveState = true }
                         launchSingleTop = true
                         restoreState = true
                     }
-                },
-                icon = {
-                    Icon(
-                        painter = painterResource(id = item.icon),
-                        contentDescription = item.route,
-                        modifier = Modifier.size(if (selected) 28.dp else 24.dp),
-                        tint = if (selected) Zinc else contentColor.copy(alpha = 0.6f)
-                    )
-                },
-                alwaysShowLabel = false,
-                colors = NavigationBarItemDefaults.colors(
-                    indicatorColor = Color.Transparent,
-                    selectedIconColor = Zinc,
-                    unselectedIconColor = contentColor.copy(alpha = 0.6f)
-                )
+                }
             )
+
+            rightItems.forEach { item ->
+                NavBarIcon(
+                    item = item,
+                    isSelected = currentRoute == item.route,
+                    contentColor = contentColor,
+                    onClick = {
+                        navController.navigate(item.route) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun NavBarIcon(
+    item: NavItem,
+    isSelected: Boolean,
+    contentColor: Color,
+    onClick: () -> Unit
+) {
+    val scale by animateFloatAsState(
+        targetValue = if (isSelected) 1.15f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "icon_scale"
+    )
+
+    val iconSize by animateDpAsState(
+        targetValue = if (isSelected) 26.dp else 24.dp,
+        animationSpec = tween(200, easing = FastOutSlowInEasing),
+        label = "icon_size"
+    )
+
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier
+            .size(48.dp)
+            .scale(scale)
+    ) {
+        Icon(
+            painter = painterResource(id = item.icon),
+            contentDescription = item.route,
+            modifier = Modifier.size(iconSize),
+            tint = if (isSelected) Zinc else contentColor.copy(alpha = 0.6f)
+        )
     }
 }
