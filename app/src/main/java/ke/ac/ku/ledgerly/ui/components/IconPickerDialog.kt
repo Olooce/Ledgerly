@@ -1,6 +1,5 @@
 package ke.ac.ku.ledgerly.ui.components
 
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,13 +19,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import ke.ac.ku.ledgerly.R
 
@@ -101,36 +98,7 @@ private fun IconOption(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    val context = LocalContext.current
-
-    // Build a Painter from a decoded Bitmap (non-composable, so try/catch allowed).
-    val painter = remember(icon.resourceId) {
-        val bitmap = runCatching {
-            BitmapFactory.decodeResource(context.resources, icon.resourceId)
-        }.getOrNull()
-
-        if (bitmap != null) {
-            BitmapPainter(bitmap.asImageBitmap())
-        } else {
-            // fallback default bitmap
-            val fallback = runCatching {
-                BitmapFactory.decodeResource(context.resources, R.drawable.ic_default_category)
-            }.getOrNull()
-
-            if (fallback != null) {
-                BitmapPainter(fallback.asImageBitmap())
-            } else {
-                // Ultimate fallback - use a minimal 1x1 transparent bitmap
-                val emptyBitmap = android.graphics.Bitmap.createBitmap(
-                    1,
-                    1,
-                    android.graphics.Bitmap.Config.ARGB_8888
-                )
-                emptyBitmap.eraseColor(android.graphics.Color.TRANSPARENT)
-                BitmapPainter(emptyBitmap.asImageBitmap())
-            }
-        }
-    }
+    val painter = painterResource(id = icon.resourceId)
 
     Box(
         modifier = Modifier
