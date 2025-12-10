@@ -84,6 +84,7 @@ ORDER BY month
 """
     )
     fun getMonthlySpendingTrends(): Flow<List<MonthlyTrend>>
+
     @Query(
         """
 SELECT category, SUM(amount) as total_amount 
@@ -242,4 +243,16 @@ LIMIT :limit OFFSET :offset
     """
     )
     suspend fun getMonthlyTotals(monthYear: String): MonthlyTotals?
+
+    @Query(
+        """
+    SELECT date, SUM(amount) as total_amount, type
+    FROM transactions
+    WHERE type = 'Income' 
+    AND date BETWEEN :startDate AND :endDate
+    GROUP BY date
+    ORDER BY date ASC
+"""
+    )
+    fun getIncomeByDateForPeriod(startDate: Long, endDate: Long): Flow<List<TransactionSummary>>
 }

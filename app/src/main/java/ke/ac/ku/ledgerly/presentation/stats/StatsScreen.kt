@@ -77,7 +77,6 @@ import ke.ac.ku.ledgerly.utils.FormatingUtils
 import java.util.Locale
 
 
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun StatsScreen(
@@ -205,6 +204,7 @@ private fun TrendsTab(
     selectedPeriod: TimePeriod
 ) {
     val dataState by viewModel.getEntriesForPeriod(selectedPeriod).collectAsState(emptyList())
+    val incomeData by viewModel.getIncomeForPeriod(selectedPeriod).collectAsState(emptyList())
     val topExpenses by viewModel.getTopEntriesForPeriod(selectedPeriod).collectAsState(emptyList())
 
     LazyColumn(
@@ -219,13 +219,16 @@ private fun TrendsTab(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    "Spending Over Time",
+                    "Income & Expenses Over Time",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                if (dataState.isNotEmpty()) {
-                    LineChartView(entries = viewModel.getEntriesForChart(dataState))
+                if (dataState.isNotEmpty() || incomeData.isNotEmpty()) {
+                    LineChartView(
+                        expenseEntries = viewModel.getEntriesForChart(dataState),
+                        incomeEntries = viewModel.getEntriesForChart(incomeData)
+                    )
                 } else {
                     EmptyState("No transaction data available")
                 }
@@ -408,11 +411,15 @@ private fun EmptyState(message: String) {
 }
 
 @Composable
-private fun LineChartView(entries: List<Entry>) {
+private fun LineChartView(
+    expenseEntries: List<Entry>,
+    incomeEntries: List<Entry>
+) {
     val context = LocalContext.current
     val valTextColor = MaterialTheme.colorScheme.onSurface.toArgb()
     val valGridColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f).toArgb()
-    val primaryColor = MaterialTheme.colorScheme.inversePrimary.toArgb()
+    val expenseColor = Color(0xFFF44336).toArgb() // Red
+    val incomeColor = Color(0xFF4CAF50).toArgb()  // Green
 
     AndroidView(
         factory = {
@@ -425,15 +432,28 @@ private fun LineChartView(entries: List<Entry>) {
     ) { view ->
         val chart = view.findViewById<LineChart>(R.id.lineChart)
 
-        val dataSet = LineDataSet(entries, "Expenses").apply {
-            color = primaryColor
+        // Expense
+        val expenseDataSet = LineDataSet(expenseEntries, "Expenses").apply {
+            color = expenseColor
             lineWidth = 3f
             mode = LineDataSet.Mode.CUBIC_BEZIER
-            valueTextSize = 11f
-            valueTextColor = valTextColor
+            setDrawValues(false) // Hide value labels on points
             setDrawCircles(true)
             circleRadius = 4f
-            setCircleColor(primaryColor)
+            setCircleColor(expenseColor)
+            circleHoleRadius = 2f
+            setDrawCircleHole(true)
+        }
+
+        // Income
+        val incomeDataSet = LineDataSet(incomeEntries, "Income").apply {
+            color = incomeColor
+            lineWidth = 3f
+            mode = LineDataSet.Mode.CUBIC_BEZIER
+            setDrawValues(false)
+            setDrawCircles(true)
+            circleRadius = 4f
+            setCircleColor(incomeColor)
             circleHoleRadius = 2f
             setDrawCircleHole(true)
         }
@@ -457,16 +477,24 @@ private fun LineChartView(entries: List<Entry>) {
                 setDrawGridLines(true)
                 setDrawAxisLine(false)
                 textSize = 10f
+                valueFormatter = object : ValueFormatter() {
+                    override fun getFormattedValue(value: Float): String {
+                        return FormatingUtils.formatCurrency(value.toDouble())
+                    }
+                }
             }
             axisRight.isEnabled = false
-            legend.textColor = valTextColor
+            legend.apply {
+                textColor = valTextColor
+                textSize = 11f
+            }
             description.isEnabled = false
             setBackgroundColor(android.graphics.Color.TRANSPARENT)
             setDrawBorders(false)
             extraBottomOffset = 10f
             extraTopOffset = 10f
 
-            data = LineData(dataSet)
+            data = LineData(expenseDataSet, incomeDataSet)
             animateY(1200, Easing.EaseInOutQuad)
             invalidate()
         }
@@ -570,6 +598,7 @@ private fun BarChartView(
                 legend.textColor = valTextColor
                 description.isEnabled = false
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                barData.setDrawValues(false)
                 data = barData
 
                 val groupSpace = 0.3f

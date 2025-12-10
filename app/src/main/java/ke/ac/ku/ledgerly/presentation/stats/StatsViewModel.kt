@@ -10,6 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ke.ac.ku.ledgerly.base.BaseViewModel
 import ke.ac.ku.ledgerly.base.UiEvent
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
+import ke.ac.ku.ledgerly.data.enums.TimePeriod
 import ke.ac.ku.ledgerly.data.model.CategorySummary
 import ke.ac.ku.ledgerly.data.model.MonthlyComparison
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
@@ -201,6 +202,11 @@ class StatsViewModel @Inject constructor(
         } catch (e: Exception) {
             0L
         }
+    }
+
+    fun getIncomeForPeriod(period: TimePeriod): Flow<List<TransactionSummary>> {
+        val (startDate, endDate) = getDateRangeForPeriod(period)
+        return dao.getIncomeByDateForPeriod(startDate, endDate)
     }
 
     override fun onEvent(event: UiEvent) {
