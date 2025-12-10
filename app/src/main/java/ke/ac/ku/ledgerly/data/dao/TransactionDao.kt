@@ -85,6 +85,76 @@ ORDER BY month
     )
     fun getMonthlySpendingTrends(): Flow<List<MonthlyTrend>>
 
+    @Query(
+        """
+SELECT category, SUM(amount) as total_amount 
+FROM transactions 
+WHERE type = 'Expense' 
+AND isDeleted = 0
+AND date BETWEEN :startDate AND :endDate
+GROUP BY category
+HAVING total_amount > 0
+ORDER BY total_amount DESC
+"""
+    )
+    fun getExpenseByCategoryForPeriod(startDate: Long, endDate: Long): Flow<List<CategorySummary>>
+
+    @Query(
+        """
+SELECT type, date, SUM(amount) AS total_amount 
+FROM transactions 
+WHERE type = 'Expense' 
+AND isDeleted = 0
+AND date BETWEEN :startDate AND :endDate
+GROUP BY type, date 
+ORDER BY date
+"""
+    )
+    fun getExpensesByDateForPeriod(startDate: Long, endDate: Long): Flow<List<TransactionSummary>>
+
+    @Query(
+        """
+SELECT * FROM transactions 
+WHERE type = 'Expense' 
+AND isDeleted = 0
+AND date BETWEEN :startDate AND :endDate
+ORDER BY amount DESC 
+LIMIT :limit
+"""
+    )
+    fun getTopExpensesForPeriod(
+        startDate: Long,
+        endDate: Long,
+        limit: Int = 5
+    ): Flow<List<TransactionEntity>>
+
+    @Query(
+        """
+SELECT strftime('%Y-%m-%d', datetime(date / 1000, 'unixepoch')) AS month,
+       SUM(CASE WHEN type = 'Income' THEN amount ELSE 0 END) AS income,
+       SUM(CASE WHEN type = 'Expense' THEN amount ELSE 0 END) AS expense
+FROM transactions
+WHERE isDeleted = 0
+AND date BETWEEN :startDate AND :endDate
+GROUP BY strftime('%Y-%m-%d', datetime(date / 1000, 'unixepoch'))
+ORDER BY month
+"""
+    )
+    fun getDailyComparisonForPeriod(startDate: Long, endDate: Long): Flow<List<MonthlyComparison>>
+
+    @Query(
+        """
+SELECT strftime('%Y-%m', datetime(date / 1000, 'unixepoch')) AS month,
+       SUM(CASE WHEN type = 'Income' THEN amount ELSE 0 END) AS income,
+       SUM(CASE WHEN type = 'Expense' THEN amount ELSE 0 END) AS expense
+FROM transactions
+WHERE isDeleted = 0
+AND date BETWEEN :startDate AND :endDate
+GROUP BY strftime('%Y-%m', datetime(date / 1000, 'unixepoch'))
+ORDER BY month
+"""
+    )
+    fun getMonthlyComparisonForPeriod(startDate: Long, endDate: Long): Flow<List<MonthlyComparison>>
 
     @Query("SELECT * FROM transactions WHERE isDeleted = 0 ORDER BY date DESC LIMIT :limit OFFSET :offset")
     suspend fun getTransactionsPaginated(limit: Int, offset: Int): List<TransactionEntity>
@@ -174,5 +244,16 @@ LIMIT :limit OFFSET :offset
     )
     suspend fun getMonthlyTotals(monthYear: String): MonthlyTotals?
 
-
+    @Query(
+        """
+    SELECT date, SUM(amount) as total_amount, type
+    FROM transactions
+    WHERE type = 'Income' 
+    AND isDeleted = 0
+    AND date BETWEEN :startDate AND :endDate
+    GROUP BY date
+    ORDER BY date ASC
+"""
+    )
+    fun getIncomeByDateForPeriod(startDate: Long, endDate: Long): Flow<List<TransactionSummary>>
 }

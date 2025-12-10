@@ -10,20 +10,105 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ke.ac.ku.ledgerly.base.BaseViewModel
 import ke.ac.ku.ledgerly.base.UiEvent
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
+import ke.ac.ku.ledgerly.data.enums.TimePeriod
+import ke.ac.ku.ledgerly.data.model.CategorySummary
 import ke.ac.ku.ledgerly.data.model.MonthlyComparison
+import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionSummary
 import ke.ac.ku.ledgerly.utils.FormatingUtils
-import ke.ac.ku.ledgerly.utils.Utils
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
-class StatsViewModel @Inject constructor(val dao: TransactionDao) : BaseViewModel() {
-    val entries = dao.getAllExpenseByDate()
-    val topEntries = dao.getTopExpenses()
+class StatsViewModel @Inject constructor(
+    val dao: TransactionDao
+) : BaseViewModel() {
 
-    val categorySpending = dao.getExpenseByCategoryForMonth(Utils.getCurrentMonthYear())
-    val monthlyComparison = dao.getMonthlyIncomeVsExpense()
-    val spendingTrends = dao.getMonthlySpendingTrends()
+    private fun getDateRangeForPeriod(period: TimePeriod): Pair<Long, Long> {
+        val calendar = Calendar.getInstance()
+        val endDate = calendar.timeInMillis
+
+        return when (period) {
+            TimePeriod.WEEK -> {
+                calendar.add(Calendar.DAY_OF_YEAR, -7)
+                calendar.timeInMillis to endDate
+            }
+
+            TimePeriod.MONTH -> {
+                calendar.add(Calendar.MONTH, -1)
+                calendar.timeInMillis to endDate
+            }
+
+            TimePeriod.YEAR -> {
+                calendar.add(Calendar.YEAR, -1)
+                calendar.timeInMillis to endDate
+            }
+        }
+    }
+
+    fun getEntriesForPeriod(period: TimePeriod): Flow<List<TransactionSummary>> {
+        val (startDate, endDate) = getDateRangeForPeriod(period)
+        return dao.getExpensesByDateForPeriod(startDate, endDate)
+    }
+
+    fun getTopEntriesForPeriod(period: TimePeriod, limit: Int = 5): Flow<List<TransactionEntity>> {
+        val (startDate, endDate) = getDateRangeForPeriod(period)
+        return dao.getTopExpensesForPeriod(startDate, endDate, limit)
+    }
+
+    fun getCategorySpendingForPeriod(period: TimePeriod): Flow<List<CategorySummary>> {
+        val (startDate, endDate) = getDateRangeForPeriod(period)
+
+        return when (period) {
+            TimePeriod.MONTH -> {
+                val monthYear = getMonthYearFromMillis(endDate)
+                dao.getExpenseByCategoryForMonth(monthYear)
+            }
+
+            else -> {
+                dao.getMonthlySpendingTrends().map { trends ->
+                    trends
+                        .filter { trend ->
+                            val trendDate = parseMonthYearToMillis(trend.month ?: "") ?: return@filter false
+                            trendDate in startDate..endDate
+                        }
+                        .groupBy { it.category }
+                        .map { (category, list) ->
+                            CategorySummary(
+                                category = category,
+                                total_amount = list.sumOf { it.total_amount }
+                            )
+                        }
+                        .filter { it.total_amount > 0 }
+                }
+            }
+        }
+    }
+
+    fun getComparisonForPeriod(period: TimePeriod): Flow<List<MonthlyComparison>> {
+        val (startDate, endDate) = getDateRangeForPeriod(period)
+
+        return when (period) {
+            TimePeriod.WEEK -> {
+                dao.getDailyComparisonForPeriod(startDate, endDate)
+            }
+
+            TimePeriod.MONTH -> {
+                dao.getMonthlyComparisonForPeriod(startDate, endDate).map { list ->
+                    if (list.isEmpty()) list else list.takeLast(1)
+                }
+            }
+
+            TimePeriod.YEAR -> {
+                dao.getMonthlyComparisonForPeriod(startDate, endDate)
+            }
+        }
+    }
 
     fun getEntriesForChart(entries: List<TransactionSummary>): List<Entry> {
         return entries
@@ -33,7 +118,6 @@ class StatsViewModel @Inject constructor(val dao: TransactionDao) : BaseViewMode
                 Entry(millis.toFloat(), it.total_amount.toFloat())
             }
     }
-
 
     fun getFilteredMonthlyData(monthlyData: List<MonthlyComparison>): List<MonthlyComparison> {
         return monthlyData.filter { it.month != null }
@@ -66,13 +150,69 @@ class StatsViewModel @Inject constructor(val dao: TransactionDao) : BaseViewMode
         return BarData(incomeSet, expenseSet).apply {
             barWidth = 0.3f
             setValueFormatter(LargeValueFormatter())
+            setDrawValues(false)
         }
     }
 
-    fun getMonthLabels(monthlyData: List<MonthlyComparison>): List<String> {
-        return getFilteredMonthlyData(monthlyData).map {
-            FormatingUtils.formatMonthString(it.month!!)
+    fun getLabelsForPeriod(
+        monthlyData: List<MonthlyComparison>,
+        period: TimePeriod
+    ): List<String> {
+        val filteredData = getFilteredMonthlyData(monthlyData)
+
+        return when (period) {
+            TimePeriod.WEEK -> {
+                filteredData.mapIndexed { index, _ -> "Day ${index + 1}" }
+            }
+
+            TimePeriod.MONTH -> {
+                filteredData.map {
+                    FormatingUtils.formatMonthString(it.month!!)
+                }
+            }
+
+            TimePeriod.YEAR -> {
+                filteredData.map {
+                    val parts = it.month?.split("-")
+                    if (parts != null && parts.size == 2) {
+                        val monthNum = parts[1].toIntOrNull() ?: 1
+                        val calendar = Calendar.getInstance()
+                        calendar.set(Calendar.MONTH, monthNum - 1)
+                        SimpleDateFormat("MMM", Locale.getDefault()).format(calendar.time)
+                    } else {
+                        FormatingUtils.formatMonthString(it.month!!)
+                    }
+                }
+            }
         }
+    }
+
+    private fun parseMonthYearToMillis(monthYear: String): Long? {
+        return try {
+            val parts = monthYear.split("-")
+            if (parts.size == 2) {
+                val year = parts[0].toInt()
+                val month = parts[1].toInt()
+                val calendar = Calendar.getInstance()
+                calendar.set(year, month - 1, 1, 0, 0, 0)
+                calendar.set(Calendar.MILLISECOND, 0)
+                calendar.timeInMillis
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun getMonthYearFromMillis(millis: Long): String {
+        val sdf = SimpleDateFormat("yyyy-MM", Locale.getDefault())
+        return sdf.format(Date(millis))
+    }
+
+    fun getIncomeForPeriod(period: TimePeriod): Flow<List<TransactionSummary>> {
+        val (startDate, endDate) = getDateRangeForPeriod(period)
+        return dao.getIncomeByDateForPeriod(startDate, endDate)
     }
 
     override fun onEvent(event: UiEvent) {

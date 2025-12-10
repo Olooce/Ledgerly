@@ -30,6 +30,3 @@ You can view the original assignment instructions here:
 - Firebase
 - Gradle
 
-> **Note:**
-> For simplicity, Ledgerly performs search and filtering operations entirely **in memory** rather than querying the database directly.
-> This approach works well for small datasets during development and testing but may be replaced with database-backed queries in future versions.
