@@ -106,7 +106,11 @@ class CategoryManagementViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val category = categoryRepository.getCategoryById(categoryId) ?: return@launch
+                val category = categoryRepository.getCategoryById(categoryId)
+                if (category == null) {
+                    _errorMessage.value = "Category not found"
+                    return@launch
+                }
                 val updatedCategory = category.copy(
                     name = name,
                     icon = icon,
