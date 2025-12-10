@@ -68,6 +68,7 @@ import com.github.mikephil.charting.data.PieEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.formatter.ValueFormatter
 import ke.ac.ku.ledgerly.R
+import ke.ac.ku.ledgerly.data.enums.TimePeriod
 import ke.ac.ku.ledgerly.data.model.CategorySummary
 import ke.ac.ku.ledgerly.data.model.MonthlyComparison
 import ke.ac.ku.ledgerly.ui.components.TransactionList
@@ -75,9 +76,7 @@ import ke.ac.ku.ledgerly.ui.theme.White
 import ke.ac.ku.ledgerly.utils.FormatingUtils
 import java.util.Locale
 
-enum class TimePeriod {
-    WEEK, MONTH, YEAR
-}
+
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
