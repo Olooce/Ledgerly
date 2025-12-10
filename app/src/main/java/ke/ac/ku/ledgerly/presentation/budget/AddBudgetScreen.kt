@@ -4,6 +4,7 @@ package ke.ac.ku.ledgerly.presentation.budget
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,8 +25,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,11 +47,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import ke.ac.ku.ledgerly.R
-import ke.ac.ku.ledgerly.data.constants.Categories
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
+import ke.ac.ku.ledgerly.data.repository.CategoryRepository
 import ke.ac.ku.ledgerly.ui.theme.LightGrey
 import ke.ac.ku.ledgerly.ui.theme.Typography
-import ke.ac.ku.ledgerly.ui.widget.DropDown
 import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
 import ke.ac.ku.ledgerly.utils.Utils
 
@@ -131,7 +134,8 @@ fun AddBudgetScreen(
                 onAddBudget = {
                     viewModel.setBudget(it)
                     navController.popBackStack()
-                }
+                },
+                categoryRepository = viewModel.categoryRepository
             )
         }
     }
@@ -140,10 +144,18 @@ fun AddBudgetScreen(
 @Composable
 fun AddBudgetForm(
     modifier: Modifier,
-    onAddBudget: (BudgetEntity) -> Unit
+    onAddBudget: (BudgetEntity) -> Unit,
+    categoryRepository: CategoryRepository
 ) {
     val category = remember { mutableStateOf("") }
     val monthlyBudget = remember { mutableStateOf("") }
+
+    // Load expense categories
+    val categories by categoryRepository.getCategoriesByTypeFlow("Expense")
+        .collectAsState(initial = emptyList())
+    val sortedCategories = remember(categories) {
+        categories.sortedBy { it.name }
+    }
 
     Column(
         modifier = modifier
@@ -156,9 +168,49 @@ fun AddBudgetForm(
             .verticalScroll(rememberScrollState())
     ) {
         TitleComponent("Category")
-        DropDown(
-            Categories.Expenses
-        ) { selected -> category.value = selected }
+
+        var expandedCategory by remember { mutableStateOf(false) }
+        val selectedCategoryName = remember(category.value, sortedCategories) {
+            sortedCategories.find { it.id == category.value }?.name ?: ""
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expandedCategory = true }
+                .background(MaterialTheme.colorScheme.surface)
+                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp))
+                .padding(12.dp)
+        ) {
+            TransactionTextView(
+                text = if (selectedCategoryName.isEmpty()) "Select category" else selectedCategoryName,
+                color = if (selectedCategoryName.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+            )
+        }
+
+        DropdownMenu(
+            expanded = expandedCategory,
+            onDismissRequest = { expandedCategory = false },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            if (sortedCategories.isEmpty()) {
+                DropdownMenuItem(
+                    text = { TransactionTextView(text = "No categories available") },
+                    onClick = { expandedCategory = false },
+                    enabled = false
+                )
+            } else {
+                sortedCategories.forEach { categoryEntity ->
+                    DropdownMenuItem(
+                        text = { TransactionTextView(text = categoryEntity.name) },
+                        onClick = {
+                            category.value = categoryEntity.id
+                            expandedCategory = false
+                        }
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.size(24.dp))
 

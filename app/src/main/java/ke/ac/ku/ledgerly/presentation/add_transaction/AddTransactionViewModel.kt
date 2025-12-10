@@ -9,12 +9,18 @@ import ke.ac.ku.ledgerly.base.NavigationEvent
 import ke.ac.ku.ledgerly.base.UiEvent
 import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
+import ke.ac.ku.ledgerly.data.model.CategoryEntity
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.data.repository.BudgetRepository
+import ke.ac.ku.ledgerly.data.repository.CategoryRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -23,11 +29,27 @@ import javax.inject.Inject
 class AddTransactionViewModel @Inject constructor(
     val dao: TransactionDao,
     val recurringDao: RecurringTransactionDao,
-    private val budgetRepository: BudgetRepository
+    private val budgetRepository: BudgetRepository,
+    private val categoryRepository: CategoryRepository
 ) : BaseViewModel() {
 
     private val _transactionAdded = MutableSharedFlow<Unit>()
     val transactionAdded = _transactionAdded.asSharedFlow()
+
+    private val _categories = MutableStateFlow<List<CategoryEntity>>(emptyList())
+    val categories: StateFlow<List<CategoryEntity>> = _categories.asStateFlow()
+
+    init {
+        loadCategories()
+    }
+
+    private fun loadCategories() {
+        viewModelScope.launch {
+            categoryRepository.getAllCategoriesFlow().collectLatest { categories ->
+                _categories.value = categories
+            }
+        }
+    }
 
     suspend fun addTransaction(transactionEntity: TransactionEntity): Boolean {
         return try {

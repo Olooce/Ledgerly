@@ -12,4 +12,5 @@ object NavRouts {
     const val budget = "budget"
     const val addBudget = "add_budget"
     const val settings = "/settings"
+    const val categoryManagement = "/categories"
 }
