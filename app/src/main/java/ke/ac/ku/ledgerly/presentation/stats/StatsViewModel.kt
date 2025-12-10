@@ -16,11 +16,11 @@ import ke.ac.ku.ledgerly.data.model.MonthlyComparison
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionSummary
 import ke.ac.ku.ledgerly.utils.FormatingUtils
-import ke.ac.ku.ledgerly.utils.Utils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
@@ -29,7 +29,6 @@ class StatsViewModel @Inject constructor(
     val dao: TransactionDao
 ) : BaseViewModel() {
 
-    // Get date range for the selected period
     private fun getDateRangeForPeriod(period: TimePeriod): Pair<Long, Long> {
         val calendar = Calendar.getInstance()
         val endDate = calendar.timeInMillis
@@ -67,14 +66,15 @@ class StatsViewModel @Inject constructor(
 
         return when (period) {
             TimePeriod.MONTH -> {
-                dao.getExpenseByCategoryForMonth(Utils.getCurrentMonthYear())
+                val monthYear = getMonthYearFromMillis(endDate)
+                dao.getExpenseByCategoryForMonth(monthYear)
             }
 
             else -> {
                 dao.getMonthlySpendingTrends().map { trends ->
                     trends
                         .filter { trend ->
-                            val trendDate = parseMonthYearToMillis(trend.month ?: "")
+                            val trendDate = parseMonthYearToMillis(trend.month ?: "") ?: return@filter false
                             trendDate in startDate..endDate
                         }
                         .groupBy { it.category }
@@ -150,6 +150,7 @@ class StatsViewModel @Inject constructor(
         return BarData(incomeSet, expenseSet).apply {
             barWidth = 0.3f
             setValueFormatter(LargeValueFormatter())
+            setDrawValues(false)
         }
     }
 
@@ -186,7 +187,7 @@ class StatsViewModel @Inject constructor(
         }
     }
 
-    private fun parseMonthYearToMillis(monthYear: String): Long {
+    private fun parseMonthYearToMillis(monthYear: String): Long? {
         return try {
             val parts = monthYear.split("-")
             if (parts.size == 2) {
@@ -197,11 +198,16 @@ class StatsViewModel @Inject constructor(
                 calendar.set(Calendar.MILLISECOND, 0)
                 calendar.timeInMillis
             } else {
-                0L
+                null
             }
         } catch (e: Exception) {
-            0L
+            null
         }
+    }
+
+    private fun getMonthYearFromMillis(millis: Long): String {
+        val sdf = SimpleDateFormat("yyyy-MM", Locale.getDefault())
+        return sdf.format(Date(millis))
     }
 
     fun getIncomeForPeriod(period: TimePeriod): Flow<List<TransactionSummary>> {
