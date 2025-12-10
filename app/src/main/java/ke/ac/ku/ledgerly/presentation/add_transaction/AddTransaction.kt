@@ -179,7 +179,8 @@ fun AddTransaction(
                         viewModel.onEvent(AddTransactionUiEvent.OnAddTransactionClicked(transaction))
                     }
                 },
-                isIncome
+                isIncome,
+                viewModel
             )
         }
     }
@@ -190,7 +191,8 @@ fun AddTransaction(
 fun DataForm(
     modifier: Modifier,
     onAddTransactionClick: (model: TransactionEntity, recurring: RecurringTransactionEntity?) -> Unit,
-    isIncome: Boolean
+    isIncome: Boolean,
+    viewModel: AddTransactionViewModel
 ) {
     val category = remember { mutableStateOf("") }
     val amount = remember { mutableStateOf("") }
