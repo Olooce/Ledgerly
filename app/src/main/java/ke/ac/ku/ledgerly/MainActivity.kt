@@ -11,14 +11,18 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.auth.api.identity.SignInClient
 import dagger.hilt.android.AndroidEntryPoint
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
+import ke.ac.ku.ledgerly.data.service.CategoryInitializationService
 import ke.ac.ku.ledgerly.domain.SessionTimeoutManager
 import ke.ac.ku.ledgerly.presentation.auth.AuthViewModel
 import ke.ac.ku.ledgerly.presentation.settings.SettingsViewModel
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyTheme
 import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -36,8 +40,17 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var sessionTimeoutManager: SessionTimeoutManager
 
+
+    @Inject
+    lateinit var categoryInitializationService: CategoryInitializationService
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            categoryInitializationService.initializeDefaultCategories()
+        }
+
         setContent {
             val isDarkMode by themeViewModel.isDarkMode.collectAsState()
             LedgerlyTheme(darkTheme = isDarkMode ?: false) {
