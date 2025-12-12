@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -73,6 +72,10 @@ fun SettingsScreen(
     val syncInterval by settingsViewModel.syncInterval.collectAsState()
     val isSyncing by settingsViewModel.isSyncing.collectAsState()
     val errorMessage by settingsViewModel.errorMessage.collectAsState()
+    val isBiometricAvailable by settingsViewModel.isBiometricAvailable.collectAsState()
+    val isBiometricEnabled by settingsViewModel.isBiometricEnabled.collectAsState()
+    val isSessionTimeoutEnabled by settingsViewModel.isSessionTimeoutEnabled.collectAsState()
+    val sessionTimeoutMinutes by settingsViewModel.sessionTimeoutMinutes.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -168,6 +171,65 @@ fun SettingsScreen(
                     checked = isNotificationEnabled,
                     onCheckedChange = { settingsViewModel.toggleNotifications(it) }
                 )
+            }
+
+            // Security Section
+            if (isBiometricAvailable) {
+                SettingsSection(title = "Security") {
+                    SettingRow(
+                        title = "Biometric Unlock",
+                        description = "Use fingerprint or face to unlock your session",
+                        checked = isBiometricEnabled,
+                        onCheckedChange = { settingsViewModel.toggleBiometricUnlock(it) }
+                    )
+                }
+            }
+
+            // Session Timeout Section
+            SettingsSection(title = "Session Security") {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    SettingRow(
+                        title = "Session Timeout",
+                        description = "Automatically sign out after period of inactivity",
+                        checked = isSessionTimeoutEnabled,
+                        onCheckedChange = { settingsViewModel.toggleSessionTimeout(it) }
+                    )
+
+                    if (isSessionTimeoutEnabled) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant
+                        )
+
+                        // Session Timeout Duration
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = "Timeout Duration",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            Text(
+                                text = "Sign out after $sessionTimeoutMinutes ${if (sessionTimeoutMinutes == 1L) "minute" else "minutes"} of inactivity",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
+                            )
+
+                            Slider(
+                                value = sessionTimeoutMinutes.toFloat(),
+                                onValueChange = { settingsViewModel.updateSessionTimeoutMinutes(it.toLong()) },
+                                valueRange = 5f..60f,
+                                steps = 10,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
             }
 
             // Data & Sync Section
@@ -296,37 +358,19 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
+            // Manage Categories Section
+            SettingsSection(title = "Categories") {
+                NavigationSettingRow(
+                    title = "Manage Categories",
+                    description = "Add, edit, or delete transaction categories",
+                    icon = R.drawable.ic_default_category,
+                    onClick = {
                         navController.navigate(NavRouts.categoryManagement)
                     }
-                    .padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_default_category),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Categories",
-                    style = MaterialTheme.typography.bodyLarge
                 )
             }
 
-            // Version Info
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "Version 1.0.0",
                 style = MaterialTheme.typography.bodySmall,
@@ -401,6 +445,62 @@ private fun SettingRow(
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange
+        )
+    }
+}
+
+@Composable
+private fun NavigationSettingRow(
+    title: String,
+    description: String,
+    icon: Int,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = icon),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Column {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        Icon(
+            painter = painterResource(id = R.drawable.ic_arrow_right),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp)
         )
     }
 }

@@ -2,6 +2,7 @@ package ke.ac.ku.ledgerly.data.constants
 
 object NavRouts {
     const val auth = "auth"
+    const val biometricOptIn = "biometric_opt_in"
     const val onboarding = "onboarding"
     const val home = "/home"
     const val profile = "profile"

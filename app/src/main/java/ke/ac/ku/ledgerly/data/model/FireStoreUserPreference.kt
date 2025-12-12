@@ -25,6 +25,10 @@ data class FirestoreUserPreferences(
     val syncChargingOnly: Boolean = false,
     @PropertyName("syncInterval")
     val syncInterval: Long = 6L,
+    @PropertyName("sessionTimeoutEnabled")
+    val sessionTimeoutEnabled: Boolean = false,
+    @PropertyName("sessionTimeoutMinutes")
+    val sessionTimeoutMinutes: Long = 15L,
     @PropertyName("lastUpdated")
     val lastUpdated: Long = System.currentTimeMillis()
 ) {

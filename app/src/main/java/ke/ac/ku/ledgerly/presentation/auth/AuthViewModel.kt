@@ -2,18 +2,20 @@ package ke.ac.ku.ledgerly.presentation.auth
 
 import android.util.Log
 import android.util.Patterns
+import androidx.activity.result.IntentSenderRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.identity.SignInClient
-import com.google.firebase.auth.GoogleAuthProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ke.ac.ku.ledgerly.base.AuthEvent
 import ke.ac.ku.ledgerly.data.model.AuthState
 import ke.ac.ku.ledgerly.data.repository.AuthRepository
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
 import ke.ac.ku.ledgerly.domain.SyncManager
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -22,14 +24,22 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val repository: AuthRepository,
+    val repository: AuthRepository,
     private val oneTapClient: SignInClient,
     private val syncManager: SyncManager,
     private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
+    private val _oneTapIntent = MutableSharedFlow<IntentSenderRequest>()
+    val oneTapIntent = _oneTapIntent.asSharedFlow()
 
     private val _state = MutableStateFlow(AuthState())
     val state: StateFlow<AuthState> = _state.asStateFlow()
+
+    val currentUserEmail: String?
+        get() = repository.getCurrentUser()?.email
+
+    val currentUserName: String?
+        get() = repository.getCurrentUser()?.displayName
 
     init {
         checkAuthenticationStatus()
@@ -40,6 +50,8 @@ class AuthViewModel @Inject constructor(
             it.copy(
                 isAuthenticated = repository.getCurrentUser() != null,
                 isBiometricAvailable = repository.isBiometricAvailable(),
+                isBiometricEnabled = repository.isBiometricUnlockEnabled(),
+                linkedGoogleAccount = repository.getLinkedGoogleAccount(),
                 isLoading = false
             )
         }
@@ -49,10 +61,15 @@ class AuthViewModel @Inject constructor(
         when (event) {
             is AuthEvent.EmailSignIn -> signInWithEmail(event.email, event.password)
             is AuthEvent.EmailSignUp -> signUpWithEmail(event.email, event.password)
-            is AuthEvent.GoogleSignIn -> signInWithGoogle()
+            is AuthEvent.SignInWithGoogle -> signInWithGoogle()
+            is AuthEvent.GoogleSignInWithCredential -> handleGoogleSignInResult(event.idToken)
+            is AuthEvent.LinkGoogleAccount -> linkGoogleAccount(event.idToken)
             is AuthEvent.BiometricSignIn -> handleBiometricSignIn()
+            is AuthEvent.BiometricUnlockAttempt -> handleBiometricUnlockAttempt(event.password)
+            is AuthEvent.EnableBiometricUnlock -> toggleBiometricUnlock(event.enable)
             is AuthEvent.SignOut -> signOut()
             is AuthEvent.DismissError -> dismissError()
+            is AuthEvent.DismissInfoMessage -> dismissInfoMessage()
         }
     }
 
@@ -64,7 +81,7 @@ class AuthViewModel @Inject constructor(
 
             repository.signInWithEmail(email, password)
                 .onSuccess { user ->
-                    performInitialSyncAndAuthenticate()
+                    performInitialSyncAndAuthenticate(showBiometricOptIn = true)
                 }
                 .onFailure { e ->
                     _state.update {
@@ -85,16 +102,7 @@ class AuthViewModel @Inject constructor(
 
             repository.signUpWithEmail(email, password)
                 .onSuccess { user ->
-                    _state.update {
-                        it.copy(
-                            isAuthenticated = true,
-                            error = null,
-                            isLoading = false
-                        )
-                    }
-                    viewModelScope.launch {
-                        syncManager.syncAllData()
-                    }
+                    performInitialSyncAndAuthenticate(showBiometricOptIn = true)
                 }
                 .onFailure { e ->
                     _state.update {
@@ -115,11 +123,11 @@ class AuthViewModel @Inject constructor(
                 .onSuccess { signInRequest ->
                     try {
                         val result = oneTapClient.beginSignIn(signInRequest).await()
-                        _state.update {
-                            it.copy(
-                                isLoading = false
-                            )
-                        }
+                        val intentReq = IntentSenderRequest.Builder(result.pendingIntent.intentSender).build()
+
+                        _oneTapIntent.emit(intentReq)
+
+                        _state.update { it.copy(isLoading = false) }
                     } catch (e: Exception) {
                         _state.update {
                             it.copy(
@@ -129,7 +137,7 @@ class AuthViewModel @Inject constructor(
                         }
                     }
                 }
-                .onFailure { e ->
+                .onFailure {
                     _state.update {
                         it.copy(
                             error = "Google sign in failed. Please try again.",
@@ -140,19 +148,54 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun handleGoogleSignInResult(idToken: String) {
-        viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
 
-            val credential = GoogleAuthProvider.getCredential(idToken, null)
-            repository.signInWithGoogleCredential(credential)
+    private fun handleGoogleSignInResult(idToken: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, error = null) }
+
+            repository.signInWithGoogleCredential(idToken)
                 .onSuccess { user ->
-                    performInitialSyncAndAuthenticate()
+                    // Extract email from ID token and store as linked account
+                    val googleEmail = repository.getCurrentUser()?.providerData
+                        ?.find { it.providerId == "google.com" }?.email
+                    googleEmail?.let { repository.setLinkedGoogleAccount(it) }
+
+                    performInitialSyncAndAuthenticate(showBiometricOptIn = true)
                 }
                 .onFailure { e ->
                     _state.update {
                         it.copy(
-                            error = "Google sign in failed. Please try again.",
+                            error = mapAuthErrorToMessage(e),
+                            isLoading = false
+                        )
+                    }
+                }
+        }
+    }
+
+    private fun linkGoogleAccount(idToken: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, error = null) }
+
+            repository.linkGoogleAccount(idToken)
+                .onSuccess {
+                    // Extract and store linked Google account email
+                    val googleEmail = repository.getCurrentUser()?.providerData
+                        ?.find { it.providerId == "google.com" }?.email
+                    googleEmail?.let { repository.setLinkedGoogleAccount(it) }
+
+                    _state.update {
+                        it.copy(
+                            linkedGoogleAccount = googleEmail,
+                            error = null,
+                            isLoading = false
+                        )
+                    }
+                }
+                .onFailure { e ->
+                    _state.update {
+                        it.copy(
+                            error = "Failed to link Google account: ${mapAuthErrorToMessage(e)}",
                             isLoading = false
                         )
                     }
@@ -161,23 +204,69 @@ class AuthViewModel @Inject constructor(
     }
 
     private fun handleBiometricSignIn() {
+               viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, error = null) }
+
+            val currentUser = repository.getCurrentUser()
+            if (currentUser == null) {
+                _state.update {
+                    it.copy(
+                        error = "No user account found. Please sign in first to enable biometric.",
+                        isLoading = false
+                    )
+                }
+                return@launch
+            }
+
+            performInitialSyncAndAuthenticate(showBiometricOptIn = false)
+        }
     }
 
-    fun onBiometricSuccess() {
+    private fun handleBiometricUnlockAttempt(password: String?) {
         viewModelScope.launch {
-            performInitialSyncAndAuthenticate()
+            _state.update { it.copy(isLoading = true, error = null) }
+            // If password provided, use it as fallback
+            if (password.isNullOrBlank()) {
+                _state.update { it.copy(error = "Password is required", isLoading = false) }
+                return@launch
+            }
+            val currentUser = repository.getCurrentUser()
+            val email = currentUser?.email
+            if (currentUser == null || email.isNullOrBlank()) {
+                _state.update { it.copy(error = "No user account found. Please sign in again.", isLoading = false) }
+                return@launch
+            }
+            try {
+                currentUser.reauthenticate(
+                    com.google.firebase.auth.EmailAuthProvider.getCredential(email, password)
+                ).await()
+                handleBiometricSignIn()
+            } catch (e: Exception) {
+                _state.update { it.copy(error = "Password verification failed", isLoading = false) }
+            }
         }
     }
 
-    fun onBiometricError(errorMessage: String) {
-        _state.update {
-            it.copy(error("Biometric authentication failed: $errorMessage"))
+
+    private fun toggleBiometricUnlock(enable: Boolean) {
+        if (enable) {
+            repository.enableBiometricUnlock()
+        } else {
+            repository.disableBiometricUnlock()
         }
+        _state.update { it.copy(isBiometricEnabled = enable) }
     }
 
-    private fun performInitialSyncAndAuthenticate() {
+    private fun performInitialSyncAndAuthenticate(showBiometricOptIn: Boolean = false) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
+
+            // Show info message for first-time users
+            _state.update {
+                it.copy(
+                    infoMessage = "Welcome! Syncing your data from the cloud..."
+                )
+            }
 
             userPreferencesRepository.loadFromFirestore()
                 .onSuccess {
@@ -186,6 +275,7 @@ class AuthViewModel @Inject constructor(
                     }
                 }
                 .onFailure { e ->
+                    Log.w("AuthViewModel", "Failed to load preferences, continuing sync", e)
                     viewModelScope.launch {
                         syncManager.syncAllData()
                     }
@@ -195,10 +285,20 @@ class AuthViewModel @Inject constructor(
                 it.copy(
                     isAuthenticated = true,
                     error = null,
-                    isLoading = false
+                    isLoading = false,
+                    infoMessage = null,
+                    showBiometricOptIn = showBiometricOptIn &&
+                            repository.isBiometricAvailable() &&
+                            !repository.isBiometricUnlockEnabled(),
+                    isBiometricEnabled = repository.isBiometricUnlockEnabled(),
+                    linkedGoogleAccount = repository.getLinkedGoogleAccount()
                 )
             }
         }
+    }
+
+    fun dismissBiometricOptIn() {
+        _state.update { it.copy(showBiometricOptIn = false) }
     }
 
     private fun signOut() {
@@ -229,10 +329,7 @@ class AuthViewModel @Inject constructor(
                     }
                 },
                 onError = { error ->
-
-                    // TODO: Should I really logout?
                     Log.e("AuthViewModel", "Sync failed before logout: $error")
-
                     viewModelScope.launch {
                         repository.signOut()
                             .onSuccess {
@@ -258,9 +355,12 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-
     private fun dismissError() {
         _state.update { it.copy(error = null) }
+    }
+
+    private fun dismissInfoMessage() {
+        _state.update { it.copy(infoMessage = null) }
     }
 
     private fun validateEmailAndPassword(email: String, password: String): Boolean {

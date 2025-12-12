@@ -99,6 +99,8 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.geometry)
     implementation(libs.androidx.foundation)
+    implementation(libs.androidx.lifecycle.process)
+    implementation(libs.androidx.compose.ui)
     testImplementation(libs.junit)
 
     ksp(libs.androidx.hilt.compiler)
@@ -132,6 +134,9 @@ dependencies {
 
     // Biometric
     implementation(libs.biometric)
+
+    // Security - Encrypted SharedPreferences
+    implementation(libs.androidx.security.crypto)
 
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
