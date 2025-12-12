@@ -204,16 +204,11 @@ class AuthViewModel @Inject constructor(
     }
 
     private fun handleBiometricSignIn() {
-        // Biometric auth only succeeds if device biometric is enrolled
-        // The security is provided by the device's biometric system
-
-        viewModelScope.launch {
+               viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
 
-            // Check if user is currently logged in
             val currentUser = repository.getCurrentUser()
             if (currentUser == null) {
-                // No active Firebase session - biometric can't be used without credentials
                 _state.update {
                     it.copy(
                         error = "No user account found. Please sign in first to enable biometric.",
@@ -223,7 +218,6 @@ class AuthViewModel @Inject constructor(
                 return@launch
             }
 
-            // User is authenticated, proceed with sync
             performInitialSyncAndAuthenticate(showBiometricOptIn = false)
         }
     }
@@ -231,29 +225,28 @@ class AuthViewModel @Inject constructor(
     private fun handleBiometricUnlockAttempt(password: String?) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
-
             // If password provided, use it as fallback
-            if (!password.isNullOrBlank()) {
-                val currentUser = repository.getCurrentUser()
-                if (currentUser != null) {
-                    // Re-authenticate with password
-                    currentUser.reauthenticate(
-                        com.google.firebase.auth.EmailAuthProvider
-                            .getCredential(currentUser.email ?: "", password)
-                    ).addOnSuccessListener {
-                        handleBiometricSignIn()
-                    }.addOnFailureListener { e ->
-                        _state.update {
-                            it.copy(
-                                error = "Password verification failed",
-                                isLoading = false
-                            )
-                        }
-                    }
-                }
+            if (password.isNullOrBlank()) {
+                _state.update { it.copy(error = "Password is required", isLoading = false) }
+                return@launch
+            }
+            val currentUser = repository.getCurrentUser()
+            val email = currentUser?.email
+            if (currentUser == null || email.isNullOrBlank()) {
+                _state.update { it.copy(error = "No user account found. Please sign in again.", isLoading = false) }
+                return@launch
+            }
+            try {
+                currentUser.reauthenticate(
+                    com.google.firebase.auth.EmailAuthProvider.getCredential(email, password)
+                ).await()
+                handleBiometricSignIn()
+            } catch (e: Exception) {
+                _state.update { it.copy(error = "Password verification failed", isLoading = false) }
             }
         }
     }
+
 
     private fun toggleBiometricUnlock(enable: Boolean) {
         if (enable) {

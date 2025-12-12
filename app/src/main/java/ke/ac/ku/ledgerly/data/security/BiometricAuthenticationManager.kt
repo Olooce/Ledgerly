@@ -43,7 +43,9 @@ class BiometricAuthenticationManager(private val context: Context) {
             executor,
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+
                     super.onAuthenticationError(errorCode, errString)
+                    if (!continuation.isActive) return
                     if (errorCode == BiometricPrompt.ERROR_NEGATIVE_BUTTON) {
                         // User chose fallback password entry
                         continuation.resume(BiometricAuthResult.Fallback)
@@ -59,16 +61,17 @@ class BiometricAuthenticationManager(private val context: Context) {
 
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
-                    continuation.resume(BiometricAuthResult.Success)
+                    if (continuation.isActive) continuation.resume(BiometricAuthResult.Success)
                 }
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
-                    continuation.resume(BiometricAuthResult.Failed)
+                    if (continuation.isActive) continuation.resume(BiometricAuthResult.Failed)
                 }
             }
         )
 
+        continuation.invokeOnCancellation { biometricPrompt.cancelAuthentication() }
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
             .setTitle(title)
             .setSubtitle(subtitle)
