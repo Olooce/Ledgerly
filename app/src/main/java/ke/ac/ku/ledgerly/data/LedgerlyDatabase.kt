@@ -60,7 +60,6 @@ abstract class LedgerlyDatabase : RoomDatabase() {
                         MIGRATION_6_7,
                         MIGRATION_7_8
                     )
-
 //                    .fallbackToDestructiveMigration(true) //  Delete and recreate the database: For Dev
                     .build()
 

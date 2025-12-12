@@ -406,6 +406,7 @@ class SyncRepository @Inject constructor(
             val recurringResult = syncRecurringTransactions(deviceId)
             val preferencesResult = syncUserPreferences()
 
+
             val result = FullSyncResult(
                 transactions = transactionResult,
                 budgets = budgetResult,
