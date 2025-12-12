@@ -94,11 +94,13 @@ fun ReauthenticationScreen(
         }
     }
 
-    LaunchedEffect(authViewModel.state.collectAsState().value.error) {
-        authViewModel.state.value.error?.let { error ->
-            errorMessage = error
-            authViewModel.onEvent(AuthEvent.DismissError)
-        }
+    val authState by authViewModel.state.collectAsState()
+
+    LaunchedEffect(authState.error) {
+           authState.error?.let { error ->
+                errorMessage = error
+                 authViewModel.onEvent(AuthEvent.DismissError)
+             }
     }
 
     Box(

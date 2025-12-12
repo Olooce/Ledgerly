@@ -64,7 +64,7 @@ fun BiometricOptInScreen(
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     val authState by viewModel.state.collectAsState()
-    var isBiometricEnabled by remember { mutableStateOf(false) }
+    var isBiometricEnabled by remember { mutableStateOf(authState.isBiometricEnabled) }
 
     Box(
         modifier = Modifier

@@ -145,11 +145,18 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun toggleBiometricUnlock(enabled: Boolean) {
-        _isBiometricEnabled.value = enabled
-        if (enabled) {
-            authRepository.enableBiometricUnlock()
-        } else {
-            authRepository.disableBiometricUnlock()
+        viewModelScope.launch {
+            _isBiometricEnabled.value = enabled
+            try {
+                if (enabled) {
+                    authRepository.enableBiometricUnlock()
+                } else {
+                    authRepository.disableBiometricUnlock()
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to update biometric setting"
+                _isBiometricEnabled.value = !enabled
+            }
         }
     }
 

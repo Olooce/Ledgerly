@@ -2,6 +2,7 @@ package ke.ac.ku.ledgerly.presentation.auth
 
 import android.util.Log
 import android.util.Patterns
+import androidx.activity.result.IntentSenderRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.identity.SignInClient
@@ -11,8 +12,10 @@ import ke.ac.ku.ledgerly.data.model.AuthState
 import ke.ac.ku.ledgerly.data.repository.AuthRepository
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
 import ke.ac.ku.ledgerly.domain.SyncManager
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -26,6 +29,8 @@ class AuthViewModel @Inject constructor(
     private val syncManager: SyncManager,
     private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
+    private val _oneTapIntent = MutableSharedFlow<IntentSenderRequest>()
+    val oneTapIntent = _oneTapIntent.asSharedFlow()
 
     private val _state = MutableStateFlow(AuthState())
     val state: StateFlow<AuthState> = _state.asStateFlow()
@@ -56,7 +61,7 @@ class AuthViewModel @Inject constructor(
         when (event) {
             is AuthEvent.EmailSignIn -> signInWithEmail(event.email, event.password)
             is AuthEvent.EmailSignUp -> signUpWithEmail(event.email, event.password)
-            is AuthEvent.GoogleSignIn -> signInWithGoogle()
+            is AuthEvent.SignInWithGoogle -> signInWithGoogle()
             is AuthEvent.GoogleSignInWithCredential -> handleGoogleSignInResult(event.idToken)
             is AuthEvent.LinkGoogleAccount -> linkGoogleAccount(event.idToken)
             is AuthEvent.BiometricSignIn -> handleBiometricSignIn()
@@ -118,11 +123,11 @@ class AuthViewModel @Inject constructor(
                 .onSuccess { signInRequest ->
                     try {
                         val result = oneTapClient.beginSignIn(signInRequest).await()
-                        _state.update {
-                            it.copy(
-                                isLoading = false
-                            )
-                        }
+                        val intentReq = IntentSenderRequest.Builder(result.pendingIntent.intentSender).build()
+
+                        _oneTapIntent.emit(intentReq)
+
+                        _state.update { it.copy(isLoading = false) }
                     } catch (e: Exception) {
                         _state.update {
                             it.copy(
@@ -132,7 +137,7 @@ class AuthViewModel @Inject constructor(
                         }
                     }
                 }
-                .onFailure { e ->
+                .onFailure {
                     _state.update {
                         it.copy(
                             error = "Google sign in failed. Please try again.",
@@ -142,6 +147,7 @@ class AuthViewModel @Inject constructor(
                 }
         }
     }
+
 
     private fun handleGoogleSignInResult(idToken: String) {
         viewModelScope.launch {

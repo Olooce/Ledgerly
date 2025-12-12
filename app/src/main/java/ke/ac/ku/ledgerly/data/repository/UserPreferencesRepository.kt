@@ -76,7 +76,7 @@ class UserPreferencesRepository @Inject constructor(
         context.dataStore.data.map { it[PreferencesKeys.SESSION_TIMEOUT_MINUTES] ?: 15L }
     val lastActivityTime: Flow<Long> =
         context.dataStore.data.map {
-            it[PreferencesKeys.LAST_ACTIVITY_TIME] ?: System.currentTimeMillis()
+            it[PreferencesKeys.LAST_ACTIVITY_TIME] ?: 0L
         }
 
     suspend fun saveUserName(name: String, syncNow: Boolean = true) =
@@ -301,8 +301,7 @@ class UserPreferencesRepository @Inject constructor(
             syncInterval = preferences[PreferencesKeys.SYNC_INTERVAL] ?: 6L,
             sessionTimeoutEnabled = preferences[PreferencesKeys.SESSION_TIMEOUT_ENABLED] ?: false,
             sessionTimeoutMinutes = preferences[PreferencesKeys.SESSION_TIMEOUT_MINUTES] ?: 15L,
-            lastActivityTime = preferences[PreferencesKeys.LAST_ACTIVITY_TIME]
-                ?: System.currentTimeMillis(),
+            lastActivityTime = preferences[PreferencesKeys.LAST_ACTIVITY_TIME] ?: 0L,
             lastUpdated = preferences[PreferencesKeys.LAST_UPDATED] ?: 0L
         )
     }

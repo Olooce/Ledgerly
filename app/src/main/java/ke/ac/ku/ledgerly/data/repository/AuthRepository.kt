@@ -8,6 +8,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ke.ac.ku.ledgerly.BuildConfig
+import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.WorkManagerSetup
 import ke.ac.ku.ledgerly.data.LedgerlyDatabase
 import ke.ac.ku.ledgerly.data.security.BiometricAuthenticationManager
@@ -52,12 +53,13 @@ class AuthRepository @Inject constructor(
             .setGoogleIdTokenRequestOptions(
                 BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
                     .setSupported(true)
-                    .setServerClientId(BuildConfig.GOOGLE_WEB_CLIENT_ID)
-                    .setFilterByAuthorizedAccounts(false) // Allow new accounts
+                    .setServerClientId(context.getString(R.string.default_web_client_id))
+                    .setFilterByAuthorizedAccounts(false)
                     .build()
             )
             .setAutoSelectEnabled(false)
             .build()
+
         Result.success(signInRequest)
     } catch (e: Exception) {
         Result.failure(e)
@@ -71,20 +73,21 @@ class AuthRepository @Inject constructor(
         Result.failure(e)
     }
 
-    suspend fun linkGoogleAccount(idToken: String): Result<Unit> = try {
-        val credential = GoogleAuthProvider.getCredential(idToken, null)
-        val currentUser = auth.currentUser ?: throw Exception("No current user")
-        currentUser.linkWithCredential(credential).await()
+    suspend fun linkGoogleAccount(idToken: String): Result<Unit> {
+        return try {
+            if (idToken.isBlank()) return Result.failure(IllegalArgumentException("Blank idToken"))
+            val credential = GoogleAuthProvider.getCredential(idToken, null)
+            val currentUser = auth.currentUser ?: throw Exception("No current user")
+            currentUser.linkWithCredential(credential).await()
 
-        // Store the linked Google account email
-        val googleEmail = credential.provider?.let { provider ->
-            auth.currentUser?.providerData?.find { it.providerId == "google.com" }?.email
+            val googleEmail =
+                auth.currentUser?.providerData?.firstOrNull { it.providerId == "google.com" }?.email
+            googleEmail?.let { keystoreManager.setLinkedGoogleAccount(it) }
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        googleEmail?.let { keystoreManager.setLinkedGoogleAccount(it) }
-
-        Result.success(Unit)
-    } catch (e: Exception) {
-        Result.failure(e)
     }
 
     fun isBiometricAvailable(): Boolean {
