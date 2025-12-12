@@ -1,19 +1,24 @@
 package ke.ac.ku.ledgerly.presentation.auth
 
 import android.app.Activity
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.biometric.BiometricPrompt
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseOutCubic
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,15 +27,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -45,13 +47,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -63,9 +65,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -77,21 +79,23 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
-import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.SignInClient
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.base.AuthEvent
-import ke.ac.ku.ledgerly.ui.theme.LedgerlyAccent
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
-private val LedgerlyGreen = Color(0xFF11423F)
-private val LedgerlyGreenLight = Color(0xFF094540)
-private val LedgerlyAccent = Color(0xFFE6F0EC)
-private val LedgerlyBlue = Color(0xFF4A90E2)
-private val LedgerlyBlueLight = Color(0xFFD6E4F0)
+private val PrimaryGradient1 = Color(0xFF155E75)
+private val PrimaryGradient2 = Color(0xFF0F766E)
+private val AccentColor = Color(0xFF06B6D4)
+private val SurfaceLight = Color(0xFFFFFFFF)
+private val TextPrimary = Color(0xFF1E293B)
+private val TextSecondary = Color(0xFF64748B)
+private val InputBackground = Color(0xFFF8FAFC)
+private val BorderColor = Color(0xFFE2E8F0)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,7 +117,6 @@ fun AuthScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Animation trigger
     LaunchedEffect(Unit) {
         delay(100)
         showContent = true
@@ -122,10 +125,18 @@ fun AuthScreen(
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val oneTapClient = Identity.getSignInClient(context)
-            val credential = oneTapClient.getSignInCredentialFromIntent(result.data)
-            credential.googleIdToken?.let { viewModel.handleGoogleSignInResult(it) }
+        try {
+            if (result.resultCode == Activity.RESULT_OK) {
+                val oneTapClient = Identity.getSignInClient(context)
+                val credential = oneTapClient.getSignInCredentialFromIntent(result.data)
+                credential.googleIdToken?.let { idToken ->
+                    viewModel.onEvent(AuthEvent.GoogleSignInWithCredential(idToken))
+                }
+            }
+        } catch (e: Exception) {
+            scope.launch {
+                snackbarHostState.showSnackbar("Google Sign-In failed: ${e.message}")
+            }
         }
     }
 
@@ -135,7 +146,6 @@ fun AuthScreen(
         }
     }
 
-    // Handle errors with Snackbar
     LaunchedEffect(state.error) {
         state.error?.let { error ->
             snackbarHostState.showSnackbar(
@@ -146,53 +156,38 @@ fun AuthScreen(
         }
     }
 
+    LaunchedEffect(state.infoMessage) {
+        state.infoMessage?.let { message ->
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Long
+            )
+            viewModel.onEvent(AuthEvent.DismissInfoMessage)
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        LedgerlyGreen,
-                        LedgerlyGreenLight,
-                    )
+                brush = Brush.linearGradient(
+                    colors = listOf(PrimaryGradient1, PrimaryGradient2),
+                    start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                    end = androidx.compose.ui.geometry.Offset(1000f, 1000f)
                 )
             )
     ) {
-        // Background decorative elements
-        AnimatedVisibility(
-            visible = showContent,
-            enter = fadeIn(animationSpec = tween(800))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                LedgerlyBlue.copy(alpha = 0.1f),
-                                Color.Transparent
-                            ),
-                            radius = 1000f
-                        )
-                    )
-            )
-        }
-
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Spacer(modifier = Modifier.height(40.dp))
-
-            // Logo and tagline section
             AnimatedVisibility(
                 visible = showContent,
                 enter = slideInVertically(
-                    initialOffsetY = { -100 },
+                    initialOffsetY = { -60 },
                     animationSpec = tween(600, easing = EaseOutCubic)
                 ) + fadeIn(animationSpec = tween(600))
             ) {
@@ -200,136 +195,91 @@ fun AuthScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(bottom = 32.dp)
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_ledgerly),
-                        contentDescription = "Ledgerly Logo",
-                        modifier = Modifier.size(72.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(66.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_ledgerly),
+                            contentDescription = "Ledgerly Logo",
+                            modifier = Modifier.size(52.dp)
+                        )
+                    }
 
-
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
                         text = "Ledgerly",
-                        style = MaterialTheme.typography.displaySmall,
-                        color = Color.White,
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = SurfaceLight,
                         fontWeight = FontWeight.Bold
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
                     Text(
                         text = "Know Your Money",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = LedgerlyAccent.copy(alpha = 0.9f),
-                        fontWeight = FontWeight.Normal
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AccentColor.copy(alpha = 0.9f),
+                        fontWeight = FontWeight.Light
                     )
                 }
             }
 
-            // Main auth card
             AnimatedVisibility(
                 visible = showContent,
                 enter = slideInVertically(
-                    initialOffsetY = { 100 },
-                    animationSpec = tween(600, delayMillis = 200, easing = EaseOutCubic)
-                ) + fadeIn(animationSpec = tween(600, delayMillis = 200))
+                    initialOffsetY = { 80 },
+                    animationSpec = tween(600, delayMillis = 150, easing = EaseOutCubic)
+                ) + fadeIn(animationSpec = tween(600, delayMillis = 150))
             ) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color.White
+                        containerColor = SurfaceLight.copy(alpha = 0.98f)
                     ),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 8.dp
-                    )
+                    elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(28.dp),
+                            .padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+
                         Text(
                             text = if (isSignUp) "Create Account" else "Welcome Back",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = LedgerlyGreen,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = TextPrimary,
                             fontWeight = FontWeight.Bold
                         )
 
-                        Text(
-                            text = if (isSignUp)
-                                "Start managing your finances today"
-                            else
-                                "Sign in to continue",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Gray,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
+                        Spacer(modifier = Modifier.height(20.dp))
 
-                        Spacer(modifier = Modifier.height(32.dp))
-
-                        // Email field
-                        OutlinedTextField(
+                        TextField(
                             value = email,
                             onValueChange = { email = it },
-                            label = { Text("Email") },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Outlined.Email,
-                                    contentDescription = "Email"
-                                )
-                            },
-                            singleLine = true,
+                            placeholder = "Email",
+                            icon = Icons.Outlined.Email,
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Email,
                                 imeAction = ImeAction.Next
                             ),
                             keyboardActions = KeyboardActions(
                                 onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = LedgerlyGreen,
-                                focusedLabelColor = LedgerlyGreen,
-                                cursorColor = LedgerlyGreen
-                            ),
-                            modifier = Modifier.fillMaxWidth()
+                            )
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                        // Password field
-                        OutlinedTextField(
+                        TextField(
                             value = password,
                             onValueChange = { password = it },
-                            label = { Text("Password") },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Outlined.Lock,
-                                    contentDescription = "Password"
-                                )
-                            },
-                            trailingIcon = {
-                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                    Icon(
-                                        imageVector = if (passwordVisible)
-                                            Icons.Outlined.Visibility
-                                        else
-                                            Icons.Outlined.VisibilityOff,
-                                        contentDescription = if (passwordVisible)
-                                            "Hide password"
-                                        else
-                                            "Show password"
-                                    )
-                                }
-                            },
-                            visualTransformation = if (passwordVisible)
-                                VisualTransformation.None
-                            else
-                                PasswordVisualTransformation(),
-                            singleLine = true,
+                            placeholder = "Password",
+                            icon = Icons.Outlined.Lock,
+                            isPassword = true,
+                            passwordVisible = passwordVisible,
+                            onPasswordVisibilityToggle = { passwordVisible = !passwordVisible },
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Password,
                                 imeAction = ImeAction.Done
@@ -344,14 +294,7 @@ fun AuthScreen(
                                     }
                                     viewModel.onEvent(event)
                                 }
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = LedgerlyGreen,
-                                focusedLabelColor = LedgerlyGreen,
-                                cursorColor = LedgerlyGreen
-                            ),
-                            modifier = Modifier.fillMaxWidth()
+                            )
                         )
 
                         if (!isSignUp) {
@@ -360,19 +303,22 @@ fun AuthScreen(
                                 modifier = Modifier.align(Alignment.End)
                             ) {
                                 Text(
-                                    text = "Forgot password?",
-                                    color = LedgerlyBlue,
-                                    style = MaterialTheme.typography.bodySmall
+                                    text = "Forgot?",
+                                    color = AccentColor,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Medium
                                 )
                             }
                         } else {
                             Spacer(modifier = Modifier.height(8.dp))
                         }
 
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                        // Primary action button
+                        // Primary button
                         Button(
+                            text = if (isSignUp) "Create Account" else "Sign In",
+                            isLoading = state.isLoading,
                             onClick = {
                                 focusManager.clearFocus()
                                 val event = if (isSignUp) {
@@ -381,146 +327,142 @@ fun AuthScreen(
                                     AuthEvent.EmailSignIn(email, password)
                                 }
                                 viewModel.onEvent(event)
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = LedgerlyGreen
-                            ),
-                            enabled = !state.isLoading
-                        ) {
-                            if (state.isLoading) {
-                                CircularProgressIndicator(
-                                    color = Color.White,
-                                    modifier = Modifier.size(24.dp),
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Text(
-                                    text = if (isSignUp) "Create Account" else "Sign In",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold
-                                )
                             }
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Divider
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            HorizontalDivider(modifier = Modifier.weight(1f), color = BorderColor)
+                            Text(
+                                text = "or",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextSecondary,
+                                modifier = Modifier.padding(horizontal = 12.dp)
+                            )
+                            HorizontalDivider(modifier = Modifier.weight(1f), color = BorderColor)
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Toggle sign up/sign in
+                        // Social buttons
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            SocialButton(
+                                icon = Icons.Outlined.AccountCircle,
+                                onClick = {
+                                    scope.launch {
+                                        try {
+                                            val signInRequest = oneTapClient.beginSignIn(
+                                                com.google.android.gms.auth.api.identity.BeginSignInRequest.builder()
+                                                    .setGoogleIdTokenRequestOptions(
+                                                        com.google.android.gms.auth.api.identity.BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
+                                                            .setSupported(true)
+                                                            .setServerClientId(context.getString(R.string.default_web_client_id))
+                                                            .setFilterByAuthorizedAccounts(false)
+                                                            .build()
+                                                    )
+                                                    .setAutoSelectEnabled(false)
+                                                    .build()
+                                            ).await()
+                                            launcher.launch(
+                                                IntentSenderRequest.Builder(signInRequest.pendingIntent.intentSender)
+                                                    .build()
+                                            )
+                                        } catch (e: Exception) {
+                                            Log.e("GoogleSignIn", "One Tap error", e)
+                                            scope.launch {
+                                                val errorMessage = when {
+                                                    e.message?.contains(
+                                                        "No valid server client ID",
+                                                        ignoreCase = true
+                                                    ) == true ->
+                                                        "Google Sign-In not configured"
+
+                                                    e.message?.contains(
+                                                        "28433",
+                                                        ignoreCase = true
+                                                    ) == true ||
+                                                            e.message?.contains(
+                                                                "Cannot find a matching credential",
+                                                                ignoreCase = true
+                                                            ) == true ->
+                                                        "No Google accounts available on this device"
+
+                                                    e.message?.contains(
+                                                        "network",
+                                                        ignoreCase = true
+                                                    ) == true ||
+                                                            e.message?.contains(
+                                                                "connectivity",
+                                                                ignoreCase = true
+                                                            ) == true ->
+                                                        "Network error - check your internet connection"
+
+                                                    e.toString().contains("ApiException: 16") ->
+                                                        "No Google accounts available on this device"
+
+                                                    else -> "Google Sign-In error: ${e.message ?: "Unknown error"}"
+                                                }
+                                                snackbarHostState.showSnackbar(errorMessage)
+                                            }
+                                        }
+                                    }
+                                },
+                                enabled = !state.isLoading,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Toggle sign up/in
                         Row(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = if (isSignUp)
-                                    "Already have an account?"
-                                else
-                                    "Don't have an account?",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.Gray
+                                text = if (isSignUp) "Have an account?" else "No account?",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextSecondary
                             )
-                            TextButton(onClick = { isSignUp = !isSignUp }) {
+                            TextButton(
+                                onClick = { isSignUp = !isSignUp },
+                                contentPadding = PaddingValues(horizontal = 8.dp)
+                            ) {
                                 Text(
                                     text = if (isSignUp) "Sign In" else "Sign Up",
-                                    color = LedgerlyGreen,
-                                    fontWeight = FontWeight.SemiBold
+                                    color = AccentColor,
+                                    fontWeight = FontWeight.SemiBold,
+                                    style = MaterialTheme.typography.bodySmall
                                 )
                             }
-                        }
-
-                        // Divider
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            HorizontalDivider(modifier = Modifier.weight(1f))
-                            Text(
-                                text = "OR",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray,
-                                modifier = Modifier.padding(horizontal = 16.dp)
-                            )
-                            HorizontalDivider(modifier = Modifier.weight(1f))
-                        }
-
-                        // Social auth buttons
-                        AuthButton(
-                            text = "Continue with Google",
-                            icon = Icons.Outlined.AccountCircle,
-                            onClick = { viewModel.onEvent(AuthEvent.GoogleSignIn) },
-                            backgroundColor = Color.White,
-                            contentColor = Color.DarkGray,
-                            enabled = !state.isLoading
-                        )
-
-                        if (state.isBiometricAvailable) {
-                            Spacer(modifier = Modifier.height(12.dp))
-                            AuthButton(
-                                text = "Use Biometric",
-                                icon = Icons.Outlined.Fingerprint,
-                                onClick = {
-                                    val activity = context as FragmentActivity
-                                    val executor = ContextCompat.getMainExecutor(activity)
-                                    val biometricPrompt = BiometricPrompt(
-                                        activity,
-                                        executor,
-                                        object : BiometricPrompt.AuthenticationCallback() {
-                                            override fun onAuthenticationSucceeded(
-                                                result: BiometricPrompt.AuthenticationResult
-                                            ) {
-                                                super.onAuthenticationSucceeded(result)
-                                                viewModel.onBiometricSuccess()
-                                            }
-
-                                            override fun onAuthenticationError(
-                                                errorCode: Int,
-                                                errString: CharSequence
-                                            ) {
-                                                super.onAuthenticationError(errorCode, errString)
-                                                viewModel.onBiometricError(errString.toString())
-                                            }
-                                        }
-                                    )
-
-                                    val promptInfo = BiometricPrompt.PromptInfo.Builder()
-                                        .setTitle("Biometric Authentication")
-                                        .setSubtitle("Sign in using your biometric credential")
-                                        .setNegativeButtonText("Cancel")
-                                        .build()
-
-                                    biometricPrompt.authenticate(promptInfo)
-                                },
-                                backgroundColor = LedgerlyBlueLight,
-                                contentColor = LedgerlyBlue,
-                                enabled = !state.isLoading
-                            )
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Privacy text
             AnimatedVisibility(
                 visible = showContent,
-                enter = fadeIn(animationSpec = tween(800, delayMillis = 400))
+                enter = fadeIn(animationSpec = tween(800, delayMillis = 300))
             ) {
                 Text(
-                    text = "By continuing, you agree to our Terms of Service\nand Privacy Policy",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = LedgerlyAccent.copy(alpha = 0.8f),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 32.dp)
+                    text = "Terms of Service • Privacy Policy",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = SurfaceLight.copy(alpha = 0.6f),
+                    textAlign = TextAlign.Center
                 )
             }
         }
 
-        // Snackbar host
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier
@@ -531,40 +473,160 @@ fun AuthScreen(
 }
 
 @Composable
-private fun AuthButton(
-    text: String,
+private fun TextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
     icon: ImageVector,
-    onClick: () -> Unit,
-    backgroundColor: Color,
-    contentColor: Color,
-    enabled: Boolean = true
+    isPassword: Boolean = false,
+    passwordVisible: Boolean = false,
+    onPasswordVisibilityToggle: (() -> Unit)? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default
 ) {
-    OutlinedButton(
+    var focused by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .background(
+                color = if (focused) InputBackground else InputBackground.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(12.dp)
+            )
+            .border(
+                width = 1.dp,
+                color = if (focused) AccentColor else BorderColor.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(12.dp)
+            )
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (focused) AccentColor else TextSecondary,
+                modifier = Modifier.size(18.dp)
+            )
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            TextField(
+                value = value,
+                onValueChange = onValueChange,
+                modifier = Modifier
+                    .weight(1f)
+                    .onFocusChanged { focused = it.isFocused },
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = TextPrimary),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    cursorColor = AccentColor
+                ),
+                placeholder = {
+                    Text(
+                        text = placeholder,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary.copy(alpha = 0.5f)
+                    )
+                },
+                singleLine = true,
+                visualTransformation = if (isPassword && !passwordVisible)
+                    PasswordVisualTransformation()
+                else
+                    VisualTransformation.None,
+                keyboardOptions = keyboardOptions,
+                keyboardActions = keyboardActions
+            )
+
+            if (isPassword && onPasswordVisibilityToggle != null) {
+                IconButton(
+                    onClick = onPasswordVisibilityToggle,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = if (passwordVisible)
+                            Icons.Outlined.Visibility
+                        else
+                            Icons.Outlined.VisibilityOff,
+                        contentDescription = null,
+                        tint = if (focused) AccentColor else TextSecondary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Button(
+    text: String,
+    isLoading: Boolean = false,
+    onClick: () -> Unit
+) {
+    Button(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .height(52.dp),
+            .height(48.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = AccentColor,
+            disabledContainerColor = AccentColor.copy(alpha = 0.6f)
+        ),
+        enabled = !isLoading,
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 3.dp,
+            pressedElevation = 6.dp
+        )
+    ) {
+        AnimatedContent(targetState = isLoading, label = "buttonContent") { loading ->
+            if (loading) {
+                CircularProgressIndicator(
+                    color = SurfaceLight,
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SocialButton(
+    icon: ImageVector,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier.height(48.dp),
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = backgroundColor,
-            contentColor = contentColor
+            containerColor = InputBackground,
+            contentColor = TextPrimary
         ),
-        border = ButtonDefaults.outlinedButtonBorder.copy(
-            width = 1.dp,
-            brush = SolidColor(Color.LightGray)
-        ),
+        border = BorderStroke(1.dp, BorderColor),
         enabled = enabled
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
             modifier = Modifier.size(20.dp)
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Medium
         )
     }
 }

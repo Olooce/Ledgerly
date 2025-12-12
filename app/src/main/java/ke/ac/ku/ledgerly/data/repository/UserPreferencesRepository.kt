@@ -42,6 +42,9 @@ class UserPreferencesRepository @Inject constructor(
         val SYNC_CHARGING_ONLY = booleanPreferencesKey("sync_charging_only")
         val SYNC_INTERVAL = longPreferencesKey("sync_interval")
         val LAST_UPDATED = longPreferencesKey("last_updated")
+        val SESSION_TIMEOUT_ENABLED = booleanPreferencesKey("session_timeout_enabled")
+        val SESSION_TIMEOUT_MINUTES = longPreferencesKey("session_timeout_minutes")
+        val LAST_ACTIVITY_TIME = longPreferencesKey("last_activity_time")
     }
 
     companion object {
@@ -67,6 +70,14 @@ class UserPreferencesRepository @Inject constructor(
         context.dataStore.data.map { it[PreferencesKeys.SYNC_CHARGING_ONLY] ?: false }
     val syncInterval: Flow<Long> =
         context.dataStore.data.map { it[PreferencesKeys.SYNC_INTERVAL] ?: 6L }
+    val sessionTimeoutEnabled: Flow<Boolean> =
+        context.dataStore.data.map { it[PreferencesKeys.SESSION_TIMEOUT_ENABLED] ?: false }
+    val sessionTimeoutMinutes: Flow<Long> =
+        context.dataStore.data.map { it[PreferencesKeys.SESSION_TIMEOUT_MINUTES] ?: 15L }
+    val lastActivityTime: Flow<Long> =
+        context.dataStore.data.map {
+            it[PreferencesKeys.LAST_ACTIVITY_TIME] ?: System.currentTimeMillis()
+        }
 
     suspend fun saveUserName(name: String, syncNow: Boolean = true) =
         savePreference(PreferencesKeys.USER_NAME, name, syncNow)
@@ -109,6 +120,15 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun saveSyncInterval(hours: Long, syncNow: Boolean = true) =
         savePreference(PreferencesKeys.SYNC_INTERVAL, hours, syncNow)
 
+    suspend fun saveSessionTimeoutEnabled(enabled: Boolean, syncNow: Boolean = true) =
+        savePreference(PreferencesKeys.SESSION_TIMEOUT_ENABLED, enabled, syncNow)
+
+    suspend fun saveSessionTimeoutMinutes(minutes: Long, syncNow: Boolean = true) =
+        savePreference(PreferencesKeys.SESSION_TIMEOUT_MINUTES, minutes, syncNow)
+
+    suspend fun updateLastActivityTime(syncNow: Boolean = false) =
+        savePreference(PreferencesKeys.LAST_ACTIVITY_TIME, System.currentTimeMillis(), syncNow)
+
     suspend fun completeOnboarding(syncNow: Boolean = true) =
         savePreference(PreferencesKeys.ONBOARDING_COMPLETED, true, syncNow)
 
@@ -148,6 +168,8 @@ class UserPreferencesRepository @Inject constructor(
         syncWifiOnly: Boolean? = null,
         syncChargingOnly: Boolean? = null,
         syncInterval: Long? = null,
+        sessionTimeoutEnabled: Boolean? = null,
+        sessionTimeoutMinutes: Long? = null,
         lastUpdated: Long = System.currentTimeMillis(),
         syncNow: Boolean = true
     ): Result<Unit> {
@@ -163,6 +185,8 @@ class UserPreferencesRepository @Inject constructor(
                 syncWifiOnly?.let { prefs[PreferencesKeys.SYNC_WIFI_ONLY] = it }
                 syncChargingOnly?.let { prefs[PreferencesKeys.SYNC_CHARGING_ONLY] = it }
                 syncInterval?.let { prefs[PreferencesKeys.SYNC_INTERVAL] = it }
+                sessionTimeoutEnabled?.let { prefs[PreferencesKeys.SESSION_TIMEOUT_ENABLED] = it }
+                sessionTimeoutMinutes?.let { prefs[PreferencesKeys.SESSION_TIMEOUT_MINUTES] = it }
                 prefs[PreferencesKeys.LAST_UPDATED] = lastUpdated
             }
             if (syncNow) {
@@ -216,6 +240,8 @@ class UserPreferencesRepository @Inject constructor(
                     syncWifiOnly = remotePrefs.syncWifiOnly,
                     syncChargingOnly = remotePrefs.syncChargingOnly,
                     syncInterval = remotePrefs.syncInterval,
+                    sessionTimeoutEnabled = remotePrefs.sessionTimeoutEnabled,
+                    sessionTimeoutMinutes = remotePrefs.sessionTimeoutMinutes,
                     lastUpdated = remotePrefs.lastUpdated,
                     syncNow = false
                 )
@@ -246,6 +272,8 @@ class UserPreferencesRepository @Inject constructor(
                 syncWifiOnly = localPrefs.syncWifiOnly,
                 syncChargingOnly = localPrefs.syncChargingOnly,
                 syncInterval = localPrefs.syncInterval,
+                sessionTimeoutEnabled = localPrefs.sessionTimeoutEnabled,
+                sessionTimeoutMinutes = localPrefs.sessionTimeoutMinutes,
                 lastUpdated = localPrefs.lastUpdated
             )
             firestore.collection("user_preferences")
@@ -271,6 +299,10 @@ class UserPreferencesRepository @Inject constructor(
             syncWifiOnly = preferences[PreferencesKeys.SYNC_WIFI_ONLY] ?: true,
             syncChargingOnly = preferences[PreferencesKeys.SYNC_CHARGING_ONLY] ?: false,
             syncInterval = preferences[PreferencesKeys.SYNC_INTERVAL] ?: 6L,
+            sessionTimeoutEnabled = preferences[PreferencesKeys.SESSION_TIMEOUT_ENABLED] ?: false,
+            sessionTimeoutMinutes = preferences[PreferencesKeys.SESSION_TIMEOUT_MINUTES] ?: 15L,
+            lastActivityTime = preferences[PreferencesKeys.LAST_ACTIVITY_TIME]
+                ?: System.currentTimeMillis(),
             lastUpdated = preferences[PreferencesKeys.LAST_UPDATED] ?: 0L
         )
     }
@@ -291,5 +323,8 @@ data class UserPreferences(
     val syncWifiOnly: Boolean,
     val syncChargingOnly: Boolean,
     val syncInterval: Long,
+    val sessionTimeoutEnabled: Boolean,
+    val sessionTimeoutMinutes: Long,
+    val lastActivityTime: Long,
     val lastUpdated: Long = 0L
 )

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ke.ac.ku.ledgerly.WorkManagerSetup
+import ke.ac.ku.ledgerly.data.repository.AuthRepository
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
 import ke.ac.ku.ledgerly.domain.SyncManager
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +17,8 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     val syncManager: SyncManager,
     private val userPreferencesRepository: UserPreferencesRepository,
-    private val workManagerSetup: WorkManagerSetup
+    private val workManagerSetup: WorkManagerSetup,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _isSyncEnabled = MutableStateFlow(false)
@@ -40,8 +42,30 @@ class SettingsViewModel @Inject constructor(
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
 
+    private val _isBiometricAvailable = MutableStateFlow(false)
+    val isBiometricAvailable: StateFlow<Boolean> = _isBiometricAvailable.asStateFlow()
+
+    private val _isBiometricEnabled = MutableStateFlow(false)
+    val isBiometricEnabled: StateFlow<Boolean> = _isBiometricEnabled.asStateFlow()
+
+    private val _isSessionTimeoutEnabled = MutableStateFlow(false)
+    val isSessionTimeoutEnabled: StateFlow<Boolean> = _isSessionTimeoutEnabled.asStateFlow()
+
+    private val _sessionTimeoutMinutes = MutableStateFlow(15L)
+    val sessionTimeoutMinutes: StateFlow<Long> = _sessionTimeoutMinutes.asStateFlow()
+
     init {
         loadPreferences()
+        checkBiometricAvailability()
+        checkBiometricEnabled()
+    }
+
+    private fun checkBiometricAvailability() {
+        _isBiometricAvailable.value = authRepository.isBiometricAvailable()
+    }
+
+    private fun checkBiometricEnabled() {
+        _isBiometricEnabled.value = authRepository.isBiometricUnlockEnabled()
     }
 
     private fun loadPreferences() {
@@ -68,6 +92,16 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             userPreferencesRepository.syncInterval.collect {
                 _syncInterval.value = it
+            }
+        }
+        viewModelScope.launch {
+            userPreferencesRepository.sessionTimeoutEnabled.collect {
+                _isSessionTimeoutEnabled.value = it
+            }
+        }
+        viewModelScope.launch {
+            userPreferencesRepository.sessionTimeoutMinutes.collect {
+                _sessionTimeoutMinutes.value = it
             }
         }
     }
@@ -106,6 +140,36 @@ class SettingsViewModel @Inject constructor(
             if (result.isFailure) {
                 _errorMessage.value = "Failed to update notification setting"
                 _isNotificationEnabled.value = !enabled
+            }
+        }
+    }
+
+    fun toggleBiometricUnlock(enabled: Boolean) {
+        _isBiometricEnabled.value = enabled
+        if (enabled) {
+            authRepository.enableBiometricUnlock()
+        } else {
+            authRepository.disableBiometricUnlock()
+        }
+    }
+
+    fun toggleSessionTimeout(enabled: Boolean) {
+        viewModelScope.launch {
+            _isSessionTimeoutEnabled.value = enabled
+            val result = userPreferencesRepository.saveSessionTimeoutEnabled(enabled)
+            if (result.isFailure) {
+                _errorMessage.value = "Failed to update session timeout setting"
+                _isSessionTimeoutEnabled.value = !enabled
+            }
+        }
+    }
+
+    fun updateSessionTimeoutMinutes(minutes: Long) {
+        viewModelScope.launch {
+            _sessionTimeoutMinutes.value = minutes
+            val result = userPreferencesRepository.saveSessionTimeoutMinutes(minutes)
+            if (result.isFailure) {
+                _errorMessage.value = "Failed to update session timeout duration"
             }
         }
     }

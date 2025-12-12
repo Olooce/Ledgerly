@@ -1,5 +1,6 @@
 package ke.ac.ku.ledgerly
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
@@ -12,10 +13,12 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,7 +29,6 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,9 +42,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
@@ -53,9 +57,13 @@ import com.google.android.gms.auth.api.identity.SignInClient
 import ke.ac.ku.ledgerly.base.AuthEvent
 import ke.ac.ku.ledgerly.data.constants.NavRouts
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
+import ke.ac.ku.ledgerly.data.security.BiometricAuthenticationManager
+import ke.ac.ku.ledgerly.domain.SessionTimeoutManager
 import ke.ac.ku.ledgerly.presentation.add_transaction.AddTransaction
 import ke.ac.ku.ledgerly.presentation.auth.AuthScreen
 import ke.ac.ku.ledgerly.presentation.auth.AuthViewModel
+import ke.ac.ku.ledgerly.presentation.auth.BiometricOptInScreen
+import ke.ac.ku.ledgerly.presentation.auth.ReauthenticationScreen
 import ke.ac.ku.ledgerly.presentation.budget.AddBudgetScreen
 import ke.ac.ku.ledgerly.presentation.budget.BudgetScreen
 import ke.ac.ku.ledgerly.presentation.categories.CategoryManagementScreen
@@ -78,13 +86,33 @@ fun NavHostScreen(
     themeViewModel: ThemeViewModel,
     settingsViewModel: SettingsViewModel,
     authViewModel: AuthViewModel = hiltViewModel(),
-    userPreferencesRepository: UserPreferencesRepository
+    userPreferencesRepository: UserPreferencesRepository,
+    sessionTimeoutManager: SessionTimeoutManager? = null
 ) {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val activity = LocalActivity.current as? FragmentActivity
 
     val authState by authViewModel.state.collectAsState()
+
+    val biometricManager = remember { BiometricAuthenticationManager(context) }
+
+    var showReauthScreen by remember { mutableStateOf(false) }
+    var isReAuthLoading by remember { mutableStateOf(false) }
+
+    LaunchedEffect(sessionTimeoutManager) {
+        sessionTimeoutManager?.sessionTimeoutEvent?.collect {
+            showReauthScreen = true
+        }
+    }
+    LaunchedEffect(authState.isAuthenticated) {
+        if (!authState.isAuthenticated) {
+            showReauthScreen = false
+            isReAuthLoading = false
+        }
+    }
 
     val startDestination = if (!authState.isAuthenticated) NavRouts.auth else NavRouts.auth
 
@@ -99,27 +127,27 @@ fun NavHostScreen(
         NavRouts.stats
     )
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        gesturesEnabled = currentRoute != NavRouts.auth,
-        drawerContent = {
-            ModalDrawerSheet {
-                DrawerContent(
-                    navController = navController,
-                    themeViewModel = themeViewModel,
-                    onCloseDrawer = { scope.launch { drawerState.close() } },
-                    authViewModel = authViewModel
-                )
+    Box(modifier = Modifier.fillMaxSize()) {
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            gesturesEnabled = currentRoute != NavRouts.auth && !showReauthScreen,
+            drawerContent = {
+                ModalDrawerSheet {
+                    DrawerContent(
+                        navController = navController,
+                        themeViewModel = themeViewModel,
+                        onCloseDrawer = { scope.launch { drawerState.close() } },
+                        authViewModel = authViewModel
+                    )
+                }
             }
-        }
-    ) {
-        Box {
+        ) {
             Scaffold(
                 containerColor = Color.Transparent,
                 topBar = {},
                 bottomBar = {
                     AnimatedVisibility(
-                        visible = bottomBarVisible,
+                        visible = bottomBarVisible && !showReauthScreen,
                         enter = slideInVertically(
                             initialOffsetY = { it },
                             animationSpec = spring(
@@ -144,28 +172,36 @@ fun NavHostScreen(
                         )
                     }
                 }
-            ) { padding ->
+            ) { contentPadding ->
                 NavHost(
                     navController = navController,
                     startDestination = startDestination,
-                    modifier = Modifier.padding(padding)
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(contentPadding)
                 ) {
                     composable(NavRouts.auth) {
                         bottomBarVisible = false
 
                         LaunchedEffect(authState.isAuthenticated, authState.isLoading) {
                             if (authState.isAuthenticated && !authState.isLoading) {
-                                val isOnboardingComplete =
-                                    userPreferencesRepository.onboardingCompleted.first()
-
-                                val destination = if (isOnboardingComplete) {
-                                    NavRouts.home
+                                if (authState.showBiometricOptIn) {
+                                    navController.navigate(NavRouts.biometricOptIn) {
+                                        popUpTo(NavRouts.auth) { inclusive = true }
+                                    }
                                 } else {
-                                    NavRouts.onboarding
-                                }
+                                    val isOnboardingComplete =
+                                        userPreferencesRepository.onboardingCompleted.first()
 
-                                navController.navigate(destination) {
-                                    popUpTo(NavRouts.auth) { inclusive = true }
+                                    val destination = if (isOnboardingComplete) {
+                                        NavRouts.home
+                                    } else {
+                                        NavRouts.onboarding
+                                    }
+
+                                    navController.navigate(destination) {
+                                        popUpTo(NavRouts.auth) { inclusive = true }
+                                    }
                                 }
                             }
                         }
@@ -173,8 +209,28 @@ fun NavHostScreen(
                         AuthScreen(
                             oneTapClient = oneTapClient,
                             viewModel = authViewModel,
-                            onAuthSuccess = {
+                            onAuthSuccess = {}
+                        )
+                    }
 
+                    composable(NavRouts.biometricOptIn) {
+                        bottomBarVisible = false
+                        BiometricOptInScreen(
+                            onContinue = {
+                                scope.launch {
+                                    val isOnboardingComplete =
+                                        userPreferencesRepository.onboardingCompleted.first()
+
+                                    val destination = if (isOnboardingComplete) {
+                                        NavRouts.home
+                                    } else {
+                                        NavRouts.onboarding
+                                    }
+
+                                    navController.navigate(destination) {
+                                        popUpTo(NavRouts.biometricOptIn) { inclusive = true }
+                                    }
+                                }
                             }
                         )
                     }
@@ -187,7 +243,6 @@ fun NavHostScreen(
                                     popUpTo(NavRouts.onboarding) { inclusive = true }
                                 }
                             },
-
                             onExit = {
                                 authViewModel.onEvent(AuthEvent.SignOut)
                                 navController.navigate(NavRouts.auth) {
@@ -233,7 +288,7 @@ fun NavHostScreen(
                     }
 
                     composable(NavRouts.settings) {
-                        bottomBarVisible = false
+                        bottomBarVisible = true
                         SettingsScreen(navController, themeViewModel, settingsViewModel)
                     }
 
@@ -244,27 +299,88 @@ fun NavHostScreen(
                 }
             }
 
-            if (showMenuButton) {
-                CenterAlignedTopAppBar(
-                    title = {},
-                    actions = {
-                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_menu),
-                                contentDescription = "Menu"
-                            )
-                        }
-                    },
-                    modifier = Modifier.zIndex(10f),
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent,
-                        scrolledContainerColor = Color.Transparent,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-                        titleContentColor = MaterialTheme.colorScheme.onSurface,
-                        actionIconContentColor = MaterialTheme.colorScheme.onSurface
-                    )
-                )
+            if (showMenuButton && !showReauthScreen) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .systemBarsPadding()
+                        .padding(8.dp)
+                        .zIndex(20f)
+                ) {
+                    IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_menu),
+                            contentDescription = "Menu"
+                        )
+                    }
+                }
             }
+        }
+
+        // Reauthentication overlay
+        if (showReauthScreen) {
+            ReauthenticationScreen(
+                isVisible = showReauthScreen,
+                isBiometricAvailable = biometricManager.isBiometricAvailable(),
+                isLoading = isReAuthLoading,
+                userName = authViewModel.currentUserName,
+                onPasswordSubmit = { password ->
+                    isReAuthLoading = true
+                    scope.launch {
+                        try {
+                            val email = authViewModel.currentUserEmail ?: ""
+                            val result = authViewModel.repository.signInWithEmail(email, password)
+                            if (result.isSuccess) {
+                                sessionTimeoutManager?.recordUserActivity()
+                                showReauthScreen = false
+                                isReAuthLoading = false
+                            } else {
+                                isReAuthLoading = false
+                            }
+                        } catch (e: Exception) {
+                            isReAuthLoading = false
+                        }
+                    }
+                },
+                onBiometricAuth = {
+                    if (activity != null) {
+                        isReAuthLoading = true
+                        scope.launch {
+                            val result = biometricManager.authenticate(
+                                activity = activity,
+                                title = "Unlock Ledgerly",
+                                subtitle = "Verify your identity to continue",
+                                negativeButtonText = "Use Password"
+                            )
+
+                            when (result) {
+                                is BiometricAuthenticationManager.BiometricAuthResult.Success -> {
+                                    sessionTimeoutManager?.recordUserActivity()
+                                    showReauthScreen = false
+                                    isReAuthLoading = false
+                                }
+                                is BiometricAuthenticationManager.BiometricAuthResult.Error -> {
+                                    isReAuthLoading = false
+                                                               }
+                                is BiometricAuthenticationManager.BiometricAuthResult.Failed -> {
+                                    isReAuthLoading = false
+                                                               }
+                                is BiometricAuthenticationManager.BiometricAuthResult.Fallback -> {
+                                    isReAuthLoading = false
+                                }
+                            }
+                        }
+                    }
+                },
+                onSignOut = {
+                    authViewModel.onEvent(AuthEvent.SignOut)
+                    showReauthScreen = false
+                    isReAuthLoading = false
+                    navController.navigate(NavRouts.auth) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }
@@ -300,23 +416,20 @@ fun NavigationBottomBar(
         MaterialTheme.colorScheme.onBackground
 
     val barHeight = 64.dp
-    val outerPadding = 24.dp
 
     Surface(
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp),
         color = backgroundColor,
         tonalElevation = 3.dp,
         shadowElevation = 8.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = outerPadding, vertical = 16.dp)
             .height(barHeight)
             .zIndex(10f)
     ) {
         androidx.compose.foundation.layout.Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceEvenly
         ) {

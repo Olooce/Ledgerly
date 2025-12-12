@@ -4,6 +4,10 @@
 
     <!-- Required for biometric authentication -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    
+    <!-- Required for internet connectivity (Firebase, Google Sign-In) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:name=".Ledgerly"

@@ -135,6 +135,13 @@ fun StatsScreen(
                             end = 2.dp
                         )
                 ) {
+
+                    // Period Filter
+                    PeriodFilterRow(
+                        selectedPeriod = selectedPeriod,
+                        onPeriodSelected = { selectedPeriod = it }
+                    )
+
                     TabRow(
                         selectedTabIndex = selectedTab,
                         containerColor = Color.Transparent,
@@ -148,12 +155,6 @@ fun StatsScreen(
                             )
                         }
                     }
-
-                    // Period Filter
-                    PeriodFilterRow(
-                        selectedPeriod = selectedPeriod,
-                        onPeriodSelected = { selectedPeriod = it }
-                    )
 
                     AnimatedContent(
                         targetState = selectedTab,

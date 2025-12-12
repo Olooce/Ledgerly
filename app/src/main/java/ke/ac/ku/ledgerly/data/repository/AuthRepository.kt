@@ -2,15 +2,16 @@ package ke.ac.ku.ledgerly.data.repository
 
 import android.content.Context
 import android.util.Log
-import androidx.biometric.BiometricManager
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.SignInClient
-import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ke.ac.ku.ledgerly.BuildConfig
 import ke.ac.ku.ledgerly.WorkManagerSetup
 import ke.ac.ku.ledgerly.data.LedgerlyDatabase
+import ke.ac.ku.ledgerly.data.security.BiometricAuthenticationManager
+import ke.ac.ku.ledgerly.data.security.BiometricKeystoreManager
 import ke.ac.ku.ledgerly.domain.AuthStateProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +30,9 @@ class AuthRepository @Inject constructor(
     private val workManagerSetup: WorkManagerSetup,
     private val authStateProvider: AuthStateProvider
 ) {
+    private val keystoreManager = BiometricKeystoreManager(context)
+    private val biometricAuthManager = BiometricAuthenticationManager(context)
+
     suspend fun signInWithEmail(email: String, password: String): Result<Unit> = try {
         auth.signInWithEmailAndPassword(email, password).await()
         Result.success(Unit)
@@ -49,30 +53,65 @@ class AuthRepository @Inject constructor(
                 BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
                     .setSupported(true)
                     .setServerClientId(BuildConfig.GOOGLE_WEB_CLIENT_ID)
-                    .setFilterByAuthorizedAccounts(true)
+                    .setFilterByAuthorizedAccounts(false) // Allow new accounts
                     .build()
             )
+            .setAutoSelectEnabled(false)
             .build()
         Result.success(signInRequest)
     } catch (e: Exception) {
         Result.failure(e)
     }
 
-    suspend fun signInWithGoogleCredential(credential: AuthCredential): Result<Unit> = try {
+    suspend fun signInWithGoogleCredential(idToken: String): Result<Unit> = try {
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
         auth.signInWithCredential(credential).await()
         Result.success(Unit)
     } catch (e: Exception) {
         Result.failure(e)
     }
 
+    suspend fun linkGoogleAccount(idToken: String): Result<Unit> = try {
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
+        val currentUser = auth.currentUser ?: throw Exception("No current user")
+        currentUser.linkWithCredential(credential).await()
+
+        // Store the linked Google account email
+        val googleEmail = credential.provider?.let { provider ->
+            auth.currentUser?.providerData?.find { it.providerId == "google.com" }?.email
+        }
+        googleEmail?.let { keystoreManager.setLinkedGoogleAccount(it) }
+
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
     fun isBiometricAvailable(): Boolean {
-        val biometricManager = BiometricManager.from(context)
-        return biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
-                BiometricManager.BIOMETRIC_SUCCESS
+        return biometricAuthManager.isBiometricAvailable()
+    }
+
+    fun enableBiometricUnlock() {
+        keystoreManager.enableBiometricUnlock()
+    }
+
+    fun disableBiometricUnlock() {
+        keystoreManager.disableBiometricUnlock()
+    }
+
+    fun isBiometricUnlockEnabled(): Boolean {
+        return keystoreManager.isBiometricUnlockEnabled()
+    }
+
+    fun getLinkedGoogleAccount(): String? {
+        return keystoreManager.getLinkedGoogleAccount()
+    }
+
+    fun setLinkedGoogleAccount(email: String) {
+        keystoreManager.setLinkedGoogleAccount(email)
     }
 
     suspend fun signOut(): Result<Unit> = try {
-
         workManagerSetup.cancelAllWork()
         workManagerSetup.pruneWork()
 
@@ -80,9 +119,8 @@ class AuthRepository @Inject constructor(
             LedgerlyDatabase.Companion.getInstance(context).clearAllTables()
         }
 
-
         userPreferencesRepository.clearAll()
-
+        keystoreManager.clearAll()
 
         auth.signOut()
         oneTapClient.signOut().await()
