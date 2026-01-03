@@ -138,7 +138,13 @@ dependencies {
     // Security - Encrypted SharedPreferences
     implementation(libs.androidx.security.crypto)
 
+    // Retrofit & OkHttp
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp.logging.interceptor)
+
+    // Export Dependencies
+    implementation(libs.itext7.core)
+    implementation(libs.apache.poi)
+    implementation(libs.opencsv)
 }

@@ -11,7 +11,7 @@ junitVersion = "1.3.0"
 espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.9.4"
 activityCompose = "1.11.0"
-composeBom = "2025.11.00"
+composeBom = "2024.12.01"
 constraintlayout = "2.2.1"
 hilt-compose="1.3.0"
 dagger-hilt= "2.57.2"
@@ -43,6 +43,9 @@ foundationVersion = "1.10.0"
 securityCrypto = "1.1.0"
 lifecycleProcess = "2.10.0"
 ui = "1.10.0"
+itext7 = "8.0.2"
+apachePoi = "5.4.0"
+opencsv = "5.10"
 
 
 [libraries]
@@ -97,6 +100,9 @@ androidx-foundation = { group = "androidx.compose.foundation", name = "foundatio
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 androidx-lifecycle-process = { group = "androidx.lifecycle", name = "lifecycle-process", version.ref = "lifecycleProcess" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
+itext7-core = { module = "com.itextpdf:itext7-core", version.ref = "itext7" }
+apache-poi = { module = "org.apache.poi:poi-ooxml", version.ref = "apachePoi" }
+opencsv = { module = "com.opencsv:opencsv", version.ref = "opencsv" }
 
 
 [plugins]

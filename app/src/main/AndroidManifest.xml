@@ -4,9 +4,17 @@
 
     <!-- Required for biometric authentication -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
-    
+
     <!-- Required for internet connectivity (Firebase, Google Sign-In) -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Required for file export to external storage -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <application
         android:name=".Ledgerly"
@@ -30,6 +38,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
         <provider
             android:name="androidx.startup.InitializationProvider"

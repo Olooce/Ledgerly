@@ -97,10 +97,10 @@ fun ReauthenticationScreen(
     val authState by authViewModel.state.collectAsState()
 
     LaunchedEffect(authState.error) {
-           authState.error?.let { error ->
-                errorMessage = error
-                 authViewModel.onEvent(AuthEvent.DismissError)
-             }
+        authState.error?.let { error ->
+            errorMessage = error
+            authViewModel.onEvent(AuthEvent.DismissError)
+        }
     }
 
     Box(
@@ -123,10 +123,10 @@ fun ReauthenticationScreen(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(80.dp)
+                        .size(90.dp)
                         .background(
                             color = SurfaceLight.copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(24.dp)
+//                            shape = RoundedCornerShape(24.dp)
                         ),
                     contentAlignment = Alignment.Center
                 ) {

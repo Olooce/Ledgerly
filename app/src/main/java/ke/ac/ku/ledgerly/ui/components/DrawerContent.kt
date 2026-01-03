@@ -29,6 +29,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,11 +40,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.base.AuthEvent
 import ke.ac.ku.ledgerly.data.constants.NavRouts
+import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.presentation.auth.AuthViewModel
+import ke.ac.ku.ledgerly.presentation.transactions.ExportViewModel
 import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
 
 @Composable
@@ -49,12 +55,15 @@ fun DrawerContent(
     navController: NavController,
     themeViewModel: ThemeViewModel,
     authViewModel: AuthViewModel,
-    onCloseDrawer: () -> Unit
+    onCloseDrawer: () -> Unit,
+    transactionData: List<TransactionEntity> = emptyList()
 ) {
     val context = LocalContext.current
     val isDarkMode by themeViewModel.isDarkMode.collectAsState()
-
     val authState by authViewModel.state.collectAsState()
+    val exportViewModel: ExportViewModel = hiltViewModel()
+    val exportState by exportViewModel.exportState.collectAsState()
+    var showExportDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(authState.isAuthenticated, authState.isLoading) {
         if (!authState.isAuthenticated && !authState.isLoading) {
@@ -210,6 +219,37 @@ fun DrawerContent(
                 )
             }
 
+            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+
+            // Export Action
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showExportDialog = true }
+                    .padding(vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_export),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Export Data",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+
 
             HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
@@ -281,4 +321,27 @@ fun DrawerContent(
             }
         }
     }
+
+    // Export Dialog
+    if (showExportDialog) {
+        ExportDialog(
+            transactions = transactionData,
+            exportViewModel = exportViewModel,
+            onDismiss = { showExportDialog = false }
+        )
+    }
+
+    // Export Status Snackbar
+    val exportMessage = exportState.successMessage ?: exportState.errorMessage
+    ExportStatusSnackbar(
+        message = exportMessage,
+        isError = exportState.errorMessage != null,
+        onDismiss = { exportViewModel.clearMessages() }
+    )
+
+    // Export Progress Dialog
+    ExportProgressDialog(
+        progress = exportState.exportProgress,
+        isExporting = exportState.isExporting
+    )
 }

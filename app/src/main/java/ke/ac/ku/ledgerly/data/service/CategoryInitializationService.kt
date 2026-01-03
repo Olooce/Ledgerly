@@ -69,5 +69,5 @@ class CategoryInitializationService @Inject constructor(
         categoryDao.insertCategories(allCategories)
     }
 
-     private data class Quad(val id: String, val name: String, val color: Long, val type: String)
+    private data class Quad(val id: String, val name: String, val color: Long, val type: String)
 }

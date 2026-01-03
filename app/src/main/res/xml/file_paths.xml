@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- File provider paths for exporting documents -->
+    <files-path
+        name="exports"
+        path="Ledgerly_Exports/" />
+    <external-files-path
+        name="documents"
+        path="Documents/Ledgerly_Exports/" />
+</paths>
