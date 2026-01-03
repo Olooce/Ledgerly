@@ -39,7 +39,7 @@ class CategoryInitializationService @Inject constructor(
             Quad("Freelance", "Freelance", -14575885L, "Income"),
             Quad("Investments", "Investments", -8454016L, "Income"),
             Quad("Bonus", "Bonus", -4725256L, "Income"),
-            Quad("Rental_income", "Rental Income", -10702155L, "Income"),
+            Quad("Rent", "Rental Income", -10702155L, "Income"),
             Quad("Other_income", "Other Income", -3355444L, "Income")
         )
 

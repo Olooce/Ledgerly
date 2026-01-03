@@ -27,7 +27,8 @@ import ke.ac.ku.ledgerly.utils.FormatingUtils
 fun RecurringTransactionItem(
     recurring: RecurringTransactionEntity,
     onToggleActive: (Long, Boolean) -> Unit,
-    onDelete: (Long) -> Unit
+    onDelete: (Long) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val isIncome = recurring.type == "Income"
     val amountColor = if (isIncome) Color(0xFF2E7D32) else Color(0xFFC62828)
@@ -38,9 +39,9 @@ fun RecurringTransactionItem(
             iconSize = 60.dp,
             iconTint = MaterialTheme.colorScheme.primary
         )
-        Spacer(Modifier.width(12.dp))
+        Spacer(modifier.width(12.dp))
 
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+        Column(modifier.weight(1f), verticalArrangement = Arrangement.Center) {
             Text(
                 text = recurring.category,
                 style = MaterialTheme.typography.titleMedium,
@@ -90,7 +91,7 @@ fun RecurringTransactionItem(
             )
         }
 
-        Spacer(Modifier.width(8.dp))
+        Spacer(modifier.width(8.dp))
 
         Column(
             horizontalAlignment = Alignment.End,

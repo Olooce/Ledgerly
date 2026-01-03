@@ -43,6 +43,9 @@ foundationVersion = "1.10.0"
 securityCrypto = "1.1.0"
 lifecycleProcess = "2.10.0"
 ui = "1.10.0"
+itext7 = "7.2.4"
+apachePoi = "5.2.3"
+opencsv = "5.8"
 
 
 [libraries]
@@ -97,6 +100,9 @@ androidx-foundation = { group = "androidx.compose.foundation", name = "foundatio
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 androidx-lifecycle-process = { group = "androidx.lifecycle", name = "lifecycle-process", version.ref = "lifecycleProcess" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
+itext7-core = { module = "com.itextpdf:itext7-core", version.ref = "itext7" }
+apache-poi = { module = "org.apache.poi:poi-ooxml", version.ref = "apachePoi" }
+opencsv = { module = "com.opencsv:opencsv", version.ref = "opencsv" }
 
 
 [plugins]

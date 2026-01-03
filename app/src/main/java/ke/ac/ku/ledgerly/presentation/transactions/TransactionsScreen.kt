@@ -1,6 +1,9 @@
 package ke.ac.ku.ledgerly.presentation.transactions
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -90,163 +93,171 @@ fun TransactionsScreen(
     homeViewModel: HomeViewModel = hiltViewModel(),
     transactionViewModel: TransactionViewModel = hiltViewModel()
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf(FilterConstants.TAB_ALL_TRANSACTIONS, FilterConstants.TAB_RECURRING)
+    SharedTransitionLayout {
+        AnimatedVisibility(visible = true) {
+            var selectedTab by remember { mutableIntStateOf(0) }
+            val tabs = listOf(FilterConstants.TAB_ALL_TRANSACTIONS, FilterConstants.TAB_RECURRING)
 
-    val transactionsState by transactionViewModel.transactionsState.collectAsState()
-    val recurringTransactions by transactionViewModel.recurringTransactionsState.collectAsState()
+            val transactionsState by transactionViewModel.transactionsState.collectAsState()
+            val recurringTransactions by transactionViewModel.recurringTransactionsState.collectAsState()
 
-    val lazyListState = rememberLazyListState()
-    LaunchedEffect(lazyListState) {
-        snapshotFlow { lazyListState.layoutInfo }
-            .collect { layoutInfo ->
-                val shouldLoadMore =
-                    layoutInfo.visibleItemsInfo.lastOrNull()?.index?.let { lastVisibleIndex ->
-                        lastVisibleIndex >= layoutInfo.totalItemsCount - 5
-                    } ?: false
+            val lazyListState = rememberLazyListState()
+            LaunchedEffect(lazyListState) {
+                snapshotFlow { lazyListState.layoutInfo }
+                    .collect { layoutInfo ->
+                        val shouldLoadMore =
+                            layoutInfo.visibleItemsInfo.lastOrNull()?.index?.let { lastVisibleIndex ->
+                                lastVisibleIndex >= layoutInfo.totalItemsCount - 5
+                            } ?: false
 
-                if (shouldLoadMore && transactionsState.paginationState.hasNext && !transactionsState.paginationState.isLoading) {
-                    transactionViewModel.loadTransactions()
-                }
-            }
-    }
-
-    // Clear transactions when leaving screen
-    DisposableEffect(Unit) {
-        onDispose {
-            transactionViewModel.clearTransactions()
-        }
-    }
-
-    var filtersExpanded by remember { mutableStateOf(false) }
-    val dateRange = transactionsState.dateRange
-
-    val iconColor = Color.White
-    val primaryTextColor = MaterialTheme.colorScheme.onBackground
-    val secondaryTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-
-    var amountRange by remember { mutableStateOf<ClosedFloatingPointRange<Double>?>(null) }
-    var selectedCategories by remember { mutableStateOf<List<String>>(emptyList()) }
-    var statusFilter by remember { mutableStateOf("All") }
-
-    val displayedTransactions = transactionsState.transactions
-
-    val filteredRecurringTransactions = remember(
-        recurringTransactions,
-        transactionsState.filterType,
-        transactionsState.searchQuery,
-        amountRange,
-        selectedCategories,
-        statusFilter
-    ) {
-        var filtered = recurringTransactions
-
-        if (transactionsState.filterType != "All") {
-            filtered = filtered.filter {
-                it.type.equals(transactionsState.filterType, ignoreCase = true)
-            }
-        }
-
-        if (transactionsState.searchQuery.isNotEmpty()) {
-            filtered = filtered.filter { recurring ->
-                recurring.category.contains(transactionsState.searchQuery, ignoreCase = true) ||
-                        recurring.notes.contains(transactionsState.searchQuery, ignoreCase = true)
-            }
-        }
-
-        amountRange?.let { range ->
-            filtered = filtered.filter {
-                it.amount in range.start..range.endInclusive
-            }
-        }
-
-        if (selectedCategories.isNotEmpty()) {
-            filtered = filtered.filter {
-                selectedCategories.contains(it.category)
-            }
-        }
-
-        when (statusFilter) {
-            "Active" -> filtered = filtered.filter { it.isActive }
-            "Paused" -> filtered = filtered.filter { !it.isActive }
-        }
-
-        filtered
-    }
-
-    LaunchedEffect(Unit) {
-        homeViewModel.navigationEvent.collect { event ->
-            when (event) {
-                HomeNavigationEvent.NavigateToAddIncome -> navController.navigate(NavRouts.addIncome)
-                HomeNavigationEvent.NavigateToAddExpense -> navController.navigate(NavRouts.addExpense)
-                else -> {}
-            }
-        }
-    }
-
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        ConstraintLayout(modifier = Modifier.fillMaxSize()) {
-            val (topBar, header, tabRow, content, add) = createRefs()
-
-            // Top Bar
-            Image(
-                painter = painterResource(id = R.drawable.ic_topbar),
-                contentDescription = null,
-                modifier = Modifier.constrainAs(topBar) {
-                    top.linkTo(parent.top)
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                }
-            )
-
-            // Header
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 64.dp, start = 16.dp, end = 16.dp)
-                    .constrainAs(header) {
-                        top.linkTo(parent.top)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
+                        if (shouldLoadMore && transactionsState.paginationState.hasNext && !transactionsState.paginationState.isLoading) {
+                            transactionViewModel.loadTransactions()
+                        }
                     }
+            }
+
+            // Clear transactions when leaving screen
+            DisposableEffect(Unit) {
+                onDispose {
+                    transactionViewModel.clearTransactions()
+                }
+            }
+
+            var filtersExpanded by remember { mutableStateOf(false) }
+            val dateRange = transactionsState.dateRange
+
+            val iconColor = Color.White
+            val primaryTextColor = MaterialTheme.colorScheme.onBackground
+            val secondaryTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+
+            var amountRange by remember { mutableStateOf<ClosedFloatingPointRange<Double>?>(null) }
+            var selectedCategories by remember { mutableStateOf<List<String>>(emptyList()) }
+            var statusFilter by remember { mutableStateOf("All") }
+
+            val displayedTransactions = transactionsState.transactions
+
+            val filteredRecurringTransactions = remember(
+                recurringTransactions,
+                transactionsState.filterType,
+                transactionsState.searchQuery,
+                amountRange,
+                selectedCategories,
+                statusFilter
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_back),
-                    contentDescription = "Back",
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .size(24.dp)
-                        .clickable { navController.popBackStack() },
-                    colorFilter = ColorFilter.tint(iconColor)
-                )
+                var filtered = recurringTransactions
 
-                Column(
-                    modifier = Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    TransactionTextView(
-                        text = "Transactions",
-                        style = Typography.titleLarge,
-                        color = iconColor,
-                        fontWeight = FontWeight.Bold
-                    )
-                    if (selectedTab == 0) {
-                        TransactionTextView(
-                            text = dateRange,
-                            style = Typography.bodyMedium,
-                            color = iconColor.copy(alpha = 0.9f)
-                        )
-                    } else {
-                        TransactionTextView(
-                            text = statusFilter,
-                            style = Typography.bodyMedium,
-                            color = iconColor.copy(alpha = 0.9f)
-                        )
+                if (transactionsState.filterType != "All") {
+                    filtered = filtered.filter {
+                        it.type.equals(transactionsState.filterType, ignoreCase = true)
                     }
                 }
+
+                if (transactionsState.searchQuery.isNotEmpty()) {
+                    filtered = filtered.filter { recurring ->
+                        recurring.category.contains(
+                            transactionsState.searchQuery,
+                            ignoreCase = true
+                        ) ||
+                                recurring.notes.contains(
+                                    transactionsState.searchQuery,
+                                    ignoreCase = true
+                                )
+                    }
+                }
+
+                amountRange?.let { range ->
+                    filtered = filtered.filter {
+                        it.amount in range.start..range.endInclusive
+                    }
+                }
+
+                if (selectedCategories.isNotEmpty()) {
+                    filtered = filtered.filter {
+                        selectedCategories.contains(it.category)
+                    }
+                }
+
+                when (statusFilter) {
+                    "Active" -> filtered = filtered.filter { it.isActive }
+                    "Paused" -> filtered = filtered.filter { !it.isActive }
+                }
+
+                filtered
+            }
+
+            LaunchedEffect(Unit) {
+                homeViewModel.navigationEvent.collect { event ->
+                    when (event) {
+                        HomeNavigationEvent.NavigateToAddIncome -> navController.navigate(NavRouts.addIncome)
+                        HomeNavigationEvent.NavigateToAddExpense -> navController.navigate(NavRouts.addExpense)
+                        else -> {}
+                    }
+                }
+            }
+
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                ConstraintLayout(modifier = Modifier.fillMaxSize()) {
+                    val (topBar, header, tabRow, content, add) = createRefs()
+
+                    // Top Bar
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_topbar),
+                        contentDescription = null,
+                        modifier = Modifier.constrainAs(topBar) {
+                            top.linkTo(parent.top)
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                        }
+                    )
+
+                    // Header
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 64.dp, start = 16.dp, end = 16.dp)
+                            .constrainAs(header) {
+                                top.linkTo(parent.top)
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
+                            }
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_back),
+                            contentDescription = "Back",
+                            modifier = Modifier
+                                .align(Alignment.CenterStart)
+                                .size(24.dp)
+                                .clickable { navController.popBackStack() },
+                            colorFilter = ColorFilter.tint(iconColor)
+                        )
+
+                        Column(
+                            modifier = Modifier.align(Alignment.Center),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            TransactionTextView(
+                                text = "Transactions",
+                                style = Typography.titleLarge,
+                                color = iconColor,
+                                fontWeight = FontWeight.Bold
+                            )
+                            if (selectedTab == 0) {
+                                TransactionTextView(
+                                    text = dateRange,
+                                    style = Typography.bodyMedium,
+                                    color = iconColor.copy(alpha = 0.9f)
+                                )
+                            } else {
+                                TransactionTextView(
+                                    text = statusFilter,
+                                    style = Typography.bodyMedium,
+                                    color = iconColor.copy(alpha = 0.9f)
+                                )
+                            }
+                        }
 
 //                Row(
 //                    modifier = Modifier.align(Alignment.CenterEnd),
@@ -261,132 +272,151 @@ fun TransactionsScreen(
 //                        colorFilter = ColorFilter.tint(iconColor)
 //                    )
 //                }
-            }
+                    }
 
-            TabRow(
-                selectedTabIndex = selectedTab,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .constrainAs(tabRow) {
-                        top.linkTo(header.bottom, margin = 16.dp)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                    },
-                containerColor = Color.Transparent,
-                contentColor = primaryTextColor
-            ) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = {
-                            TransactionTextView(
-                                text = title,
-                                style = Typography.bodyLarge,
-                                fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
-                                color = if (selectedTab == index) primaryTextColor else secondaryTextColor
+                    TabRow(
+                        selectedTabIndex = selectedTab,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .constrainAs(tabRow) {
+                                top.linkTo(header.bottom, margin = 16.dp)
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
+                            },
+                        containerColor = Color.Transparent,
+                        contentColor = primaryTextColor
+                    ) {
+                        tabs.forEachIndexed { index, title ->
+                            Tab(
+                                selected = selectedTab == index,
+                                onClick = { selectedTab = index },
+                                text = {
+                                    TransactionTextView(
+                                        text = title,
+                                        style = Typography.bodyLarge,
+                                        fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (selectedTab == index) primaryTextColor else secondaryTextColor
+                                    )
+                                }
                             )
                         }
-                    )
-                }
-            }
-
-            // Content
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .constrainAs(content) {
-                        top.linkTo(tabRow.bottom, margin = 8.dp)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        bottom.linkTo(parent.bottom)
-                        height = Dimension.fillToConstraints
                     }
-            ) {
-                when (selectedTab) {
-                    0 -> AllTransactionsContent(
-                        transactions = displayedTransactions,
-                        paginationState = transactionsState.paginationState,
-                        filterType = transactionsState.filterType,
-                        dateRange = dateRange,
-                        searchQuery = transactionsState.searchQuery,
-                        amountRange = amountRange,
-                        selectedCategories = selectedCategories,
-                        filtersExpanded = filtersExpanded,
-                        lazyListState = lazyListState,
-                        onFilterTypeChange = {
-                            transactionViewModel.updateFilter(it)
-                        },
-                        onDateRangeChange = {
-                            transactionViewModel.updateDateRange(it)
-                        },
-                        onSearchQueryChange = { transactionViewModel.updateSearchQuery(it) },
-                        onAmountRangeChange = { amountRange = it },
-                        onCategoriesChange = { selectedCategories = it },
-                        onLoadMore = { transactionViewModel.loadTransactions() },
-                        onRefresh = { transactionViewModel.loadInitialTransactions() },
-                        onClearFilters = {
-                            transactionViewModel.updateFilter("All")
-                            transactionViewModel.updateSearchQuery("")
-                            transactionViewModel.updateDateRange("All Time")
-                            amountRange = null
-                            selectedCategories = emptyList()
-                        },
-                        onToggleFilters = { filtersExpanded = !filtersExpanded }
-                    )
 
-                    1 -> RecurringTransactionsContent(
-                        recurringTransactions = filteredRecurringTransactions,
-                        filterType = transactionsState.filterType,
-                        statusFilter = statusFilter,
-                        searchQuery = transactionsState.searchQuery,
-                        amountRange = amountRange,
-                        selectedCategories = selectedCategories,
-                        filtersExpanded = filtersExpanded,
-                        onFilterTypeChange = {
-                            transactionViewModel.updateFilter(it)
-                        },
-                        onSearchQueryChange = { transactionViewModel.updateSearchQuery(it) },
-                        onAmountRangeChange = { amountRange = it },
-                        onCategoriesChange = { selectedCategories = it },
-                        onStatusFilterChange = { statusFilter = it },
-                        onToggleActive = { id, isActive ->
-                            transactionViewModel.toggleRecurringTransactionStatus(id, isActive)
-                        },
-                        onDelete = { id ->
-                            transactionViewModel.deleteRecurringTransaction(id)
-                        },
-                        onClearFilters = {
-                            transactionViewModel.updateFilter("All")
-                            transactionViewModel.updateSearchQuery("")
-                            statusFilter = "All"
-                            amountRange = null
-                            selectedCategories = emptyList()
-                        },
-                        onToggleFilters = { filtersExpanded = !filtersExpanded }
-                    )
-                }
-            }
+                    // Content
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .constrainAs(content) {
+                                top.linkTo(tabRow.bottom, margin = 8.dp)
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
+                                bottom.linkTo(parent.bottom)
+                                height = Dimension.fillToConstraints
+                            }
+                    ) {
+                        when (selectedTab) {
+                            0 -> AnimatedVisibility(visible = true) {
+                                AllTransactionsContent(
+                                    animatedScope = this,
+                                    transactions = displayedTransactions,
+                                    paginationState = transactionsState.paginationState,
+                                    filterType = transactionsState.filterType,
+                                    dateRange = dateRange,
+                                    searchQuery = transactionsState.searchQuery,
+                                    amountRange = amountRange,
+                                    selectedCategories = selectedCategories,
+                                    filtersExpanded = filtersExpanded,
+                                    lazyListState = lazyListState,
+                                    onFilterTypeChange = {
+                                        transactionViewModel.updateFilter(it)
+                                    },
+                                    onDateRangeChange = {
+                                        transactionViewModel.updateDateRange(it)
+                                    },
+                                    onSearchQueryChange = {
+                                        transactionViewModel.updateSearchQuery(
+                                            it
+                                        )
+                                    },
+                                    onAmountRangeChange = { amountRange = it },
+                                    onCategoriesChange = { selectedCategories = it },
+                                    onLoadMore = { transactionViewModel.loadTransactions() },
+                                    onRefresh = { transactionViewModel.loadInitialTransactions() },
+                                    onClearFilters = {
+                                        transactionViewModel.updateFilter("All")
+                                        transactionViewModel.updateSearchQuery("")
+                                        transactionViewModel.updateDateRange("All Time")
+                                        amountRange = null
+                                        selectedCategories = emptyList()
+                                    },
+                                    onToggleFilters = { filtersExpanded = !filtersExpanded }
+                                )
+                            }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .constrainAs(add) {
-                        bottom.linkTo(parent.bottom)
-                        end.linkTo(parent.end)
-                    },
-                contentAlignment = Alignment.BottomEnd
-            ) {
-                MultiFloatingActionButton(
-                    modifier = Modifier,
-                    onAddExpenseClicked = {
-                        homeViewModel.onEvent(HomeUiEvent.OnAddExpenseClicked)
-                    },
-                    onAddIncomeClicked = {
-                        homeViewModel.onEvent(HomeUiEvent.OnAddIncomeClicked)
+                            1 -> AnimatedVisibility(visible = true) {
+                                RecurringTransactionsContent(
+                                    animatedScope = this,
+                                    recurringTransactions = filteredRecurringTransactions,
+                                    filterType = transactionsState.filterType,
+                                    statusFilter = statusFilter,
+                                    searchQuery = transactionsState.searchQuery,
+                                    amountRange = amountRange,
+                                    selectedCategories = selectedCategories,
+                                    filtersExpanded = filtersExpanded,
+                                    onFilterTypeChange = {
+                                        transactionViewModel.updateFilter(it)
+                                    },
+                                    onSearchQueryChange = {
+                                        transactionViewModel.updateSearchQuery(
+                                            it
+                                        )
+                                    },
+                                    onAmountRangeChange = { amountRange = it },
+                                    onCategoriesChange = { selectedCategories = it },
+                                    onStatusFilterChange = { statusFilter = it },
+                                    onToggleActive = { id, isActive ->
+                                        transactionViewModel.toggleRecurringTransactionStatus(
+                                            id,
+                                            isActive
+                                        )
+                                    },
+                                    onDelete = { id ->
+                                        transactionViewModel.deleteRecurringTransaction(id)
+                                    },
+                                    onClearFilters = {
+                                        transactionViewModel.updateFilter("All")
+                                        transactionViewModel.updateSearchQuery("")
+                                        statusFilter = "All"
+                                        amountRange = null
+                                        selectedCategories = emptyList()
+                                    },
+                                    onToggleFilters = { filtersExpanded = !filtersExpanded }
+                                )
+                            }
+                        }
                     }
-                )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .constrainAs(add) {
+                                bottom.linkTo(parent.bottom)
+                                end.linkTo(parent.end)
+                            },
+                        contentAlignment = Alignment.BottomEnd
+                    ) {
+                        MultiFloatingActionButton(
+                            modifier = Modifier,
+                            onAddExpenseClicked = {
+                                homeViewModel.onEvent(HomeUiEvent.OnAddExpenseClicked)
+                            },
+                            onAddIncomeClicked = {
+                                homeViewModel.onEvent(HomeUiEvent.OnAddIncomeClicked)
+                            }
+                        )
+                    }
+                }
             }
         }
     }
@@ -394,7 +424,8 @@ fun TransactionsScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AllTransactionsContent(
+fun SharedTransitionScope.AllTransactionsContent(
+    animatedScope: AnimatedVisibilityScope,
     transactions: List<TransactionEntity>,
     paginationState: PaginationState,
     filterType: String,
@@ -634,6 +665,13 @@ fun AllTransactionsContent(
                         color = if (transaction.type.equals("Income", true))
                             Color(0xFF2E7D32) else Color(0xFFC62828),
                         modifier = Modifier
+                            .animateItem()
+                            .sharedBounds(
+                                sharedContentState = rememberSharedContentState(
+                                    key = "transaction_${transaction.id}"
+                                ),
+                                animatedVisibilityScope = animatedScope
+                            )
                     )
                 }
 
@@ -664,7 +702,8 @@ fun AllTransactionsContent(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RecurringTransactionsContent(
+fun SharedTransitionScope.RecurringTransactionsContent(
+    animatedScope: AnimatedVisibilityScope,
     recurringTransactions: List<RecurringTransactionEntity>,
     filterType: String,
     statusFilter: String,
@@ -885,7 +924,15 @@ fun RecurringTransactionsContent(
                     RecurringTransactionItem(
                         recurring = recurring,
                         onToggleActive = onToggleActive,
-                        onDelete = onDelete
+                        onDelete = onDelete,
+                        modifier = Modifier
+                            .animateItem()
+                            .sharedBounds(
+                                sharedContentState = rememberSharedContentState(
+                                    key = "recurring_${recurring.id}"
+                                ),
+                                animatedVisibilityScope = animatedScope
+                            )
                     )
                 }
             }

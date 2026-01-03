@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -56,6 +55,7 @@ import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.auth.api.identity.SignInClient
 import ke.ac.ku.ledgerly.base.AuthEvent
 import ke.ac.ku.ledgerly.data.constants.NavRouts
+import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
 import ke.ac.ku.ledgerly.data.security.BiometricAuthenticationManager
 import ke.ac.ku.ledgerly.domain.SessionTimeoutManager
@@ -72,10 +72,12 @@ import ke.ac.ku.ledgerly.presentation.onboarding.OnboardingScreen
 import ke.ac.ku.ledgerly.presentation.settings.SettingsScreen
 import ke.ac.ku.ledgerly.presentation.settings.SettingsViewModel
 import ke.ac.ku.ledgerly.presentation.stats.StatsScreen
+import ke.ac.ku.ledgerly.presentation.transactions.TransactionViewModel
 import ke.ac.ku.ledgerly.presentation.transactions.TransactionsScreen
 import ke.ac.ku.ledgerly.ui.components.DrawerContent
 import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
 import ke.ac.ku.ledgerly.ui.theme.Zinc
+import ke.ac.ku.ledgerly.ui.transitions.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -87,7 +89,8 @@ fun NavHostScreen(
     settingsViewModel: SettingsViewModel,
     authViewModel: AuthViewModel = hiltViewModel(),
     userPreferencesRepository: UserPreferencesRepository,
-    sessionTimeoutManager: SessionTimeoutManager? = null
+    sessionTimeoutManager: SessionTimeoutManager? = null,
+    transactionViewModel: TransactionViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -96,6 +99,7 @@ fun NavHostScreen(
     val activity = LocalActivity.current as? FragmentActivity
 
     val authState by authViewModel.state.collectAsState()
+    val transactionState by transactionViewModel.transactionsState.collectAsState()
 
     val biometricManager = remember { BiometricAuthenticationManager(context) }
 
@@ -137,7 +141,8 @@ fun NavHostScreen(
                         navController = navController,
                         themeViewModel = themeViewModel,
                         onCloseDrawer = { scope.launch { drawerState.close() } },
-                        authViewModel = authViewModel
+                        authViewModel = authViewModel,
+                        transactionData = transactionState.transactions.map { it as Any } as List<TransactionEntity>
                     )
                 }
             }

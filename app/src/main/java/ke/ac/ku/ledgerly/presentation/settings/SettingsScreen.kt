@@ -47,10 +47,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.work.WorkInfo
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.constants.NavRouts
+import ke.ac.ku.ledgerly.presentation.transactions.ExportViewModel
+import ke.ac.ku.ledgerly.presentation.transactions.TransactionViewModel
+import ke.ac.ku.ledgerly.ui.components.ExportDialog
+import ke.ac.ku.ledgerly.ui.components.ExportProgressDialog
 import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
 import kotlinx.coroutines.flow.Flow
 import java.text.SimpleDateFormat
@@ -62,7 +67,9 @@ import java.util.Locale
 fun SettingsScreen(
     navController: NavController,
     themeViewModel: ThemeViewModel,
-    settingsViewModel: SettingsViewModel
+    settingsViewModel: SettingsViewModel,
+    transactionViewModel: TransactionViewModel = hiltViewModel(),
+    exportViewModel: ExportViewModel = hiltViewModel()
 ) {
     val isDarkMode by themeViewModel.isDarkMode.collectAsState()
     val isCloudSyncEnabled by settingsViewModel.isSyncEnabled.collectAsState()
@@ -77,12 +84,27 @@ fun SettingsScreen(
     val isSessionTimeoutEnabled by settingsViewModel.isSessionTimeoutEnabled.collectAsState()
     val sessionTimeoutMinutes by settingsViewModel.sessionTimeoutMinutes.collectAsState()
 
+    val transactionState by transactionViewModel.transactionsState.collectAsState()
+    val exportState by exportViewModel.exportState.collectAsState()
+    var showExportDialog by remember { mutableStateOf(false) }
+
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let { message ->
             snackbarHostState.showSnackbar(message)
             settingsViewModel.clearError()
+        }
+    }
+
+    LaunchedEffect(exportState.successMessage, exportState.errorMessage) {
+        exportState.successMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            exportViewModel.clearMessages()
+        }
+        exportState.errorMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            exportViewModel.clearMessages()
         }
     }
 
@@ -222,7 +244,11 @@ fun SettingsScreen(
 
                             Slider(
                                 value = sessionTimeoutMinutes.toFloat(),
-                                onValueChange = { settingsViewModel.updateSessionTimeoutMinutes(it.toLong()) },
+                                onValueChange = {
+                                    settingsViewModel.updateSessionTimeoutMinutes(
+                                        it.toLong()
+                                    )
+                                },
                                 valueRange = 5f..60f,
                                 steps = 10,
                                 modifier = Modifier.fillMaxWidth()
@@ -361,13 +387,38 @@ fun SettingsScreen(
             // Manage Categories Section
             SettingsSection(title = "Categories") {
                 NavigationSettingRow(
-                    title = "Manage Categories",
-                    description = "Add, edit, or delete transaction categories",
                     icon = R.drawable.ic_default_category,
                     onClick = {
                         navController.navigate(NavRouts.categoryManagement)
                     }
                 )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Data Export Section
+            SettingsSection(title = "Data Export") {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "Export your transactions to CSV, Excel, or PDF for offline review and sharing",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Button(
+                        onClick = { showExportDialog = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_export),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(18.dp)
+                                .padding(end = 8.dp)
+                        )
+                        Text("Export Transactions")
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -380,6 +431,23 @@ fun SettingsScreen(
                     .padding(vertical = 16.dp)
             )
         }
+    }
+
+    // Export Dialog
+    if (showExportDialog) {
+        ExportDialog(
+            transactions = transactionState.transactions,
+            exportViewModel = exportViewModel,
+            onDismiss = { showExportDialog = false }
+        )
+    }
+
+    // Export Progress Dialog
+    if (exportState.isExporting) {
+        ExportProgressDialog(
+            progress = exportState.exportProgress,
+            isExporting = true
+        )
     }
 }
 
@@ -451,8 +519,6 @@ private fun SettingRow(
 
 @Composable
 private fun NavigationSettingRow(
-    title: String,
-    description: String,
     icon: Int,
     onClick: () -> Unit
 ) {
@@ -485,12 +551,12 @@ private fun NavigationSettingRow(
             }
             Column {
                 Text(
-                    text = title,
+                    text = "Manage Categories",
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = description,
+                    text = "Add, edit, or delete transaction categories",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
