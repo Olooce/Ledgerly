@@ -55,7 +55,6 @@ import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.auth.api.identity.SignInClient
 import ke.ac.ku.ledgerly.base.AuthEvent
 import ke.ac.ku.ledgerly.data.constants.NavRouts
-import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
 import ke.ac.ku.ledgerly.data.security.BiometricAuthenticationManager
 import ke.ac.ku.ledgerly.domain.SessionTimeoutManager
@@ -77,7 +76,6 @@ import ke.ac.ku.ledgerly.presentation.transactions.TransactionsScreen
 import ke.ac.ku.ledgerly.ui.components.DrawerContent
 import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
 import ke.ac.ku.ledgerly.ui.theme.Zinc
-import ke.ac.ku.ledgerly.ui.transitions.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -142,7 +140,7 @@ fun NavHostScreen(
                         themeViewModel = themeViewModel,
                         onCloseDrawer = { scope.launch { drawerState.close() } },
                         authViewModel = authViewModel,
-                        transactionData = transactionState.transactions.map { it as Any } as List<TransactionEntity>
+                        transactionData = transactionState.transactions
                     )
                 }
             }
@@ -364,12 +362,15 @@ fun NavHostScreen(
                                     showReauthScreen = false
                                     isReAuthLoading = false
                                 }
+
                                 is BiometricAuthenticationManager.BiometricAuthResult.Error -> {
                                     isReAuthLoading = false
-                                                               }
+                                }
+
                                 is BiometricAuthenticationManager.BiometricAuthResult.Failed -> {
                                     isReAuthLoading = false
-                                                               }
+                                }
+
                                 is BiometricAuthenticationManager.BiometricAuthResult.Fallback -> {
                                     isReAuthLoading = false
                                 }

@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.BoundsTransform
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.ArcMode
 import androidx.compose.animation.core.CubicBezierEasing
@@ -51,7 +50,6 @@ interface TransitionScreenState
  * @param detailStateCheck Lambda to check if current state is a detail state
  */
 @Stable
-@OptIn(ExperimentalSharedTransitionApi::class)
 fun <T : TransitionScreenState> createDirectionAwareSharedConfig(
     transition: Transition<T>,
     listState: T,
@@ -95,7 +93,6 @@ fun createLinearBoundsTransform(
  * @param arcMode The direction of the arc path
  * @param easing Easing function to use
  */
-@OptIn(ExperimentalSharedTransitionApi::class)
 fun createArcBoundsTransform(
     durationMillis: Int = TransitionConfig.SHARED_DURATION,
     arcMode: ArcMode = ArcMode.ArcAbove,
@@ -111,7 +108,6 @@ fun createArcBoundsTransform(
 /**
  * Specialized arc transform for title text elements.
  */
-@OptIn(ExperimentalSharedTransitionApi::class)
 fun createTitleBoundsTransform(
     durationMillis: Int = TransitionConfig.SHARED_DURATION
 ): BoundsTransform = createArcBoundsTransform(
@@ -123,7 +119,6 @@ fun createTitleBoundsTransform(
 /**
  * Specialized arc transform for subtitle text elements.
  */
-@OptIn(ExperimentalSharedTransitionApi::class)
 fun createSubtitleBoundsTransform(
     durationMillis: Int = TransitionConfig.SHARED_DURATION
 ): BoundsTransform = createArcBoundsTransform(
@@ -135,7 +130,7 @@ fun createSubtitleBoundsTransform(
 /**
  * Extension function to create standard forward transition spec (list -> detail).
  */
-@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalAnimationApi::class)
+@OptIn(ExperimentalAnimationApi::class)
 fun <S> AnimatedContentTransitionScope<S>.createForwardTransition(
     screenDuration: Int = TransitionConfig.SCREEN_DURATION
 ) = (slideIntoContainer(
@@ -153,7 +148,7 @@ fun <S> AnimatedContentTransitionScope<S>.createForwardTransition(
 /**
  * Extension function to create standard backward transition spec (detail -> list).
  */
-@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalAnimationApi::class)
+@OptIn(ExperimentalAnimationApi::class)
 fun <S> AnimatedContentTransitionScope<S>.createBackwardTransition(
     screenDuration: Int = TransitionConfig.SCREEN_DURATION - 80
 ) = (slideIntoContainer(
@@ -172,7 +167,6 @@ fun <S> AnimatedContentTransitionScope<S>.createBackwardTransition(
  * @param animatedVisibilityScope The animated visibility scope
  * @param boundsTransform Optional custom bounds transform
  */
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.sharedImageElement(
     key: String,
@@ -197,7 +191,6 @@ fun SharedTransitionScope.sharedImageElement(
  * @param animatedVisibilityScope The animated visibility scope
  * @param boundsTransform Optional custom bounds transform
  */
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.sharedTextElement(
     key: String,
@@ -225,7 +218,6 @@ fun SharedTransitionScope.sharedTextElement(
  * @param resizeMode The resize mode for the shared bounds
  * @param boundsTransform Optional custom bounds transform
  */
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.sharedBoundsElement(
     key: String,
@@ -247,7 +239,6 @@ fun SharedTransitionScope.sharedBoundsElement(
 /**
  * Data class to hold shared transition dependencies for cleaner function signatures.
  */
-@OptIn(ExperimentalSharedTransitionApi::class)
 data class SharedTransitionDependencies(
     val sharedScope: SharedTransitionScope,
     val animatedVisibilityScope: AnimatedVisibilityScope,
@@ -257,7 +248,6 @@ data class SharedTransitionDependencies(
 /**
  * Helper extension to simplify creating shared elements with dependencies.
  */
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionDependencies.sharedImage(
     key: String,
@@ -273,7 +263,6 @@ fun SharedTransitionDependencies.sharedImage(
     )
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionDependencies.sharedText(
     key: String,
@@ -289,7 +278,6 @@ fun SharedTransitionDependencies.sharedText(
     )
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionDependencies.sharedBounds(
     key: String,

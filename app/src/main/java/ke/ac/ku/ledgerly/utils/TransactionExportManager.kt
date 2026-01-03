@@ -2,25 +2,21 @@ package ke.ac.ku.ledgerly.utils
 
 import android.content.Context
 import android.os.Environment
-import com.itextpdf.io.font.PdfEncodings
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfWriter
 import com.itextpdf.layout.Document
-import com.itextpdf.layout.element.Table
 import com.itextpdf.layout.element.Cell
 import com.itextpdf.layout.element.Paragraph
-import com.itextpdf.layout.properties.TextAlignment
+import com.itextpdf.layout.element.Table
 import com.opencsv.CSVWriter
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
-import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
-import org.apache.poi.xssf.usermodel.XSSFSheet
-import org.apache.poi.xssf.usermodel.XSSFRow
 import java.io.File
-import java.io.FileWriter
 import java.io.FileOutputStream
+import java.io.FileWriter
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 object TransactionExportManager {
 
@@ -29,7 +25,7 @@ object TransactionExportManager {
     private val dateFormatShort = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
     fun getExportDirectory(context: Context): File {
-        val documentsDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) 
+        val documentsDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
             ?: throw Exception("Documents directory not available")
         val exportDir = File(documentsDir, EXPORT_DIR)
         if (!exportDir.exists()) {
@@ -48,7 +44,16 @@ object TransactionExportManager {
 
         CSVWriter(FileWriter(csvFile)).use { writer ->
             // Write header
-            val header = arrayOf("ID", "Category", "Amount", "Date", "Type", "Notes", "Payment Method", "Tags")
+            val header = arrayOf(
+                "ID",
+                "Category",
+                "Amount",
+                "Date",
+                "Type",
+                "Notes",
+                "Payment Method",
+                "Tags"
+            )
             writer.writeNext(header)
 
             // Write transactions
@@ -83,7 +88,16 @@ object TransactionExportManager {
 
             // Create header row
             val headerRow = sheet.createRow(0)
-            val headers = listOf("ID", "Category", "Amount", "Date", "Type", "Notes", "Payment Method", "Tags")
+            val headers = listOf(
+                "ID",
+                "Category",
+                "Amount",
+                "Date",
+                "Type",
+                "Notes",
+                "Payment Method",
+                "Tags"
+            )
             headers.forEachIndexed { index, header ->
                 val cell = headerRow.createCell(index)
                 cell.setCellValue(header)
@@ -107,7 +121,7 @@ object TransactionExportManager {
                 row.createCell(7).setCellValue(transaction.tags)
             }
 
-            // Set column widths manually (AWT autoSizeColumn not available on Android)
+            // Set column widths manually
             sheet.setColumnWidth(0, 3000)   // ID
             sheet.setColumnWidth(1, 5000)   // Category
             sheet.setColumnWidth(2, 4000)   // Amount
@@ -134,64 +148,94 @@ object TransactionExportManager {
         val exportDir = getExportDirectory(context)
         val pdfFile = File(exportDir, fileName)
 
-        val writer = PdfWriter(pdfFile)
-        val pdfDocument = PdfDocument(writer)
-        val document = Document(pdfDocument)
+        var document: Document? = null
+        var pdfDocument: PdfDocument? = null
+        var writer: PdfWriter? = null
 
-        // Add title
-        val title = Paragraph("Transaction Report")
-            .setFontSize(20f)
-            .setBold()
-            .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
-        document.add(title)
+        try {
+            writer = PdfWriter(pdfFile)
+            pdfDocument = PdfDocument(writer)
+            document = Document(pdfDocument)
 
-        // Add date generated
-        val dateGenerated = Paragraph("Generated on: ${dateFormat.format(Date())}")
-            .setFontSize(10f)
-            .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
-        document.add(dateGenerated)
+            // Add title
+            val title = Paragraph("Transaction Report")
+                .setFontSize(20f)
+                .setBold()
+                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
+            document.add(title)
 
-        document.add(Paragraph("\n"))
+            // Add date generated
+            val dateGenerated = Paragraph("Generated on: ${dateFormat.format(Date())}")
+                .setFontSize(10f)
+                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
+            document.add(dateGenerated)
 
-        // Create table
-        val columnCount = 8
-        val table = Table(floatArrayOf(1f, 2f, 1.5f, 2f, 1.5f, 2f, 2f, 1.5f))
+            document.add(Paragraph("\n"))
 
-        // Add header cells
-        val headers = listOf("ID", "Category", "Amount", "Date", "Type", "Notes", "Payment Method", "Tags")
-        headers.forEach { header ->
-            val cell = Cell()
-            cell.setBackgroundColor(com.itextpdf.kernel.colors.ColorConstants.LIGHT_GRAY)
-            cell.add(Paragraph(header).setBold())
-            table.addCell(cell)
+            // Create table
+            val columnCount = 8
+            val table = Table(floatArrayOf(1f, 2f, 1.5f, 2f, 1.5f, 2f, 2f, 1.5f))
+
+            // Add header cells
+            val headers = listOf(
+                "ID",
+                "Category",
+                "Amount",
+                "Date",
+                "Type",
+                "Notes",
+                "Payment Method",
+                "Tags"
+            )
+            headers.forEach { header ->
+                val cell = Cell()
+                cell.setBackgroundColor(com.itextpdf.kernel.colors.ColorConstants.LIGHT_GRAY)
+                cell.add(Paragraph(header).setBold())
+                table.addCell(cell)
+            }
+
+            // Add data rows
+            transactions.forEach { transaction ->
+                table.addCell(transaction.id.toString())
+                table.addCell(transaction.category)
+                table.addCell("${transaction.amount}")
+                table.addCell(dateFormatShort.format(Date(transaction.date)))
+                table.addCell(transaction.type)
+                table.addCell(transaction.notes)
+                table.addCell(transaction.paymentMethod)
+                table.addCell(transaction.tags)
+            }
+
+            document.add(table)
+
+            // Add summary
+            document.add(Paragraph("\n"))
+            val totalExpense = transactions.filter { it.type == "Expense" }.sumOf { it.amount }
+            val totalIncome = transactions.filter { it.type == "Income" }.sumOf { it.amount }
+            val summary = Paragraph()
+            summary.add("Total Transactions: ${transactions.size}\n")
+            summary.add("Total Expense: $totalExpense\n")
+            summary.add("Total Income: $totalIncome\n")
+            summary.add("Net: ${totalIncome - totalExpense}")
+            document.add(summary)
+        } finally {
+            // Close resources in reverse order of creation to avoid leaks
+            try {
+                document?.close()
+            } catch (e: Exception) {
+
+            }
+            try {
+                pdfDocument?.close()
+            } catch (e: Exception) {
+
+            }
+            try {
+                writer?.close()
+            } catch (e: Exception) {
+
+            }
         }
-
-        // Add data rows
-        transactions.forEach { transaction ->
-            table.addCell(transaction.id.toString())
-            table.addCell(transaction.category)
-            table.addCell("${transaction.amount}")
-            table.addCell(dateFormatShort.format(Date(transaction.date)))
-            table.addCell(transaction.type)
-            table.addCell(transaction.notes)
-            table.addCell(transaction.paymentMethod)
-            table.addCell(transaction.tags)
-        }
-
-        document.add(table)
-
-        // Add summary
-        document.add(Paragraph("\n"))
-        val totalExpense = transactions.filter { it.type == "Expense" }.sumOf { it.amount }
-        val totalIncome = transactions.filter { it.type == "Income" }.sumOf { it.amount }
-        val summary = Paragraph()
-        summary.add("Total Transactions: ${transactions.size}\n")
-        summary.add("Total Expense: $totalExpense\n")
-        summary.add("Total Income: $totalIncome\n")
-        summary.add("Net: ${totalIncome - totalExpense}")
-        document.add(summary)
-
-        document.close()
 
         return pdfFile
     }

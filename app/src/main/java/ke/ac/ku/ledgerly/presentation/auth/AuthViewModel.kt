@@ -123,7 +123,8 @@ class AuthViewModel @Inject constructor(
                 .onSuccess { signInRequest ->
                     try {
                         val result = oneTapClient.beginSignIn(signInRequest).await()
-                        val intentReq = IntentSenderRequest.Builder(result.pendingIntent.intentSender).build()
+                        val intentReq =
+                            IntentSenderRequest.Builder(result.pendingIntent.intentSender).build()
 
                         _oneTapIntent.emit(intentReq)
 
@@ -204,7 +205,7 @@ class AuthViewModel @Inject constructor(
     }
 
     private fun handleBiometricSignIn() {
-               viewModelScope.launch {
+        viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
 
             val currentUser = repository.getCurrentUser()
@@ -233,7 +234,12 @@ class AuthViewModel @Inject constructor(
             val currentUser = repository.getCurrentUser()
             val email = currentUser?.email
             if (currentUser == null || email.isNullOrBlank()) {
-                _state.update { it.copy(error = "No user account found. Please sign in again.", isLoading = false) }
+                _state.update {
+                    it.copy(
+                        error = "No user account found. Please sign in again.",
+                        isLoading = false
+                    )
+                }
                 return@launch
             }
             try {

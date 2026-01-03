@@ -7,7 +7,6 @@ import com.google.android.gms.auth.api.identity.SignInClient
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import dagger.hilt.android.qualifiers.ApplicationContext
-import ke.ac.ku.ledgerly.BuildConfig
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.WorkManagerSetup
 import ke.ac.ku.ledgerly.data.LedgerlyDatabase

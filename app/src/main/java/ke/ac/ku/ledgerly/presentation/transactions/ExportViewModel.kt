@@ -68,6 +68,7 @@ class ExportViewModel @Inject constructor(
                             customFileName ?: "transactions_${System.currentTimeMillis()}.csv"
                         )
                     }
+
                     ExportFormat.EXCEL -> {
                         _exportState.update { it.copy(exportProgress = 66) }
                         TransactionExportManager.exportToExcel(
@@ -76,6 +77,7 @@ class ExportViewModel @Inject constructor(
                             customFileName ?: "transactions_${System.currentTimeMillis()}.xlsx"
                         )
                     }
+
                     ExportFormat.PDF -> {
                         _exportState.update { it.copy(exportProgress = 50) }
                         TransactionExportManager.exportToPDF(
