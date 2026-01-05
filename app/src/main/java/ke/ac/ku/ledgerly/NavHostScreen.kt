@@ -312,7 +312,6 @@ fun NavHostScreen(
                         }
 
 
-
                         composable(
                             route = NavRouts.debtTracker,
                             enterTransition = {
@@ -349,7 +348,14 @@ fun NavHostScreen(
                         }
 
                         composable(
-                            route = NavRouts.ADD_EDIT_DEBT,
+                            route = "${NavRouts.ADD_EDIT_DEBT}?debtId={debtId}",
+                            arguments = listOf(
+                                navArgument("debtId") {
+                                    type = NavType.StringType
+                                    nullable = true
+                                    defaultValue = null
+                                }
+                            ),
                             enterTransition = {
                                 fadeIn(animationSpec = tween(300)) +
                                         slideIntoContainer(
@@ -370,14 +376,21 @@ fun NavHostScreen(
                                             animationSpec = tween(400)
                                         )
                             }
-                        ) {
-                            AddEditDebtScreen(navController = navController)
+                        ) { backStackEntry ->
+                            val debtIdString = backStackEntry.arguments?.getString("debtId")
+                            val debtId = debtIdString?.toLongOrNull()
+                            AddEditDebtScreen(
+                                navController = navController,
+                                debtId = debtId
+                            )
                         }
 
                         composable(
                             route = "${NavRouts.DEBT_DETAIL}/{debtId}",
                             arguments = listOf(
-                                navArgument("debtId") { type = NavType.LongType }
+                                navArgument("debtId") {
+                                    type = NavType.LongType
+                                }
                             ),
                             enterTransition = {
                                 fadeIn(animationSpec = tween(300)) +
@@ -400,7 +413,7 @@ fun NavHostScreen(
                                         )
                             }
                         ) { backStackEntry ->
-                            val debtId = backStackEntry.arguments?.getLong("debtId") ?: 0L
+                            val debtId = backStackEntry.arguments?.getLong("debtId")
                             AnimatedVisibility(
                                 visible = true,
                                 enter = fadeIn(),

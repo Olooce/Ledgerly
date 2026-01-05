@@ -48,6 +48,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -71,12 +72,21 @@ import java.util.Locale
 @Composable
 fun AddEditDebtScreen(
     navController: NavController,
+    debtId: Long? = null,
     viewModel: DebtViewModel = hiltViewModel()
 ) {
     val addEditState by viewModel.addEditState.collectAsState()
     val context = LocalContext.current
     val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
     val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
+
+    LaunchedEffect(debtId) {
+        debtId?.let {
+            viewModel.initializeEditDebt(it)
+        } ?: run {
+            viewModel.initializeAddDebt()
+        }
+    }
 
     var showStatusMenu by remember { mutableStateOf(false) }
 

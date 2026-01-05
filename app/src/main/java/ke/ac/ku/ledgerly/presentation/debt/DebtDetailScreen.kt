@@ -59,7 +59,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.DebtDetailScreen(
-    debtId: Long,
+    debtId: Long?,
     navController: NavController,
     animatedVisibilityScope: AnimatedVisibilityScope,
     viewModel: DebtViewModel = hiltViewModel()
@@ -93,8 +93,7 @@ fun SharedTransitionScope.DebtDetailScreen(
                 actions = {
                     if (detailState.debt != null) {
                         IconButton(onClick = {
-                            viewModel.initializeEditDebt(detailState.debt!!)
-                            navController.navigate(NavRouts.ADD_EDIT_DEBT)
+                            navController.navigate("${NavRouts.ADD_EDIT_DEBT}?debtId=${detailState.debt!!.id}")
                         }) {
                             Icon(
                                 Icons.Filled.Edit,

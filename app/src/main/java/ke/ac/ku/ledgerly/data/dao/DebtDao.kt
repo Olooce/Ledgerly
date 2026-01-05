@@ -22,7 +22,7 @@ interface DebtDao {
     suspend fun getDebtById(id: Long): DebtEntity?
 
     @Query("SELECT * FROM debts WHERE id = :id AND isDeleted = 0")
-    fun getDebtByIdFlow(id: Long): Flow<DebtEntity?>
+    fun getDebtByIdFlow(id: Long?): Flow<DebtEntity?>
 
     @Query(
         """

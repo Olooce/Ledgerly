@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -108,7 +109,7 @@ class DebtViewModel @Inject constructor(
         }
     }
 
-    fun loadDebtDetail(debtId: Long) {
+    fun loadDebtDetail(debtId: Long?) {
         viewModelScope.launch {
             _debtDetailState.update { it.copy(isLoading = true) }
             try {
@@ -143,23 +144,38 @@ class DebtViewModel @Inject constructor(
         }
     }
 
-    fun initializeEditDebt(debt: DebtEntity) {
-        _addEditState.update {
-            AddEditDebtState(
-                personName = debt.personName,
-                amount = debt.amount.toString(),
-                debtType = debt.debtType,
-                dueDate = debt.dueDate,
-                status = debt.status,
-                description = debt.description,
-                reminderDays = debt.reminderDays.toString(),
-                reminderEnabled = debt.reminderEnabled,
-                notes = debt.notes,
-                isEditMode = true,
-                editingDebtId = debt.id
-            )
+    fun initializeEditDebt(debtId: Long) {
+        viewModelScope.launch {
+            val debt = debtRepository.getDebtById(debtId).firstOrNull()
+
+            if (debt == null) {
+                _addEditState.update {
+                    it.copy(
+                        error = "Debt not found",
+                        isEditMode = false
+                    )
+                }
+                return@launch
+            }
+
+            _addEditState.update {
+                AddEditDebtState(
+                    personName = debt.personName,
+                    amount = debt.amount.toString(),
+                    debtType = debt.debtType,
+                    dueDate = debt.dueDate,
+                    status = debt.status,
+                    description = debt.description,
+                    reminderDays = debt.reminderDays.toString(),
+                    reminderEnabled = debt.reminderEnabled,
+                    notes = debt.notes,
+                    isEditMode = true,
+                    editingDebtId = debt.id
+                )
+            }
         }
     }
+
 
     fun updatePersonName(name: String) {
         _addEditState.update { it.copy(personName = name) }

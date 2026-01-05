@@ -211,8 +211,7 @@ fun SharedTransitionScope.DebtListScreen(
                                 navController.navigate("${NavRouts.DEBT_DETAIL}/${debt.id}")
                             },
                             onEdit = {
-                                viewModel.initializeEditDebt(debt)
-                                navController.navigate(NavRouts.ADD_EDIT_DEBT)
+                                navController.navigate("${NavRouts.ADD_EDIT_DEBT}?debtId=${debt.id}")
                             },
                             onDelete = { viewModel.deleteDebt(debt.id!!) },
                             onMarkSettled = { viewModel.markDebtAsSettled(debt.id!!) },

@@ -15,7 +15,7 @@ class DebtRepository @Inject constructor(
 
     suspend fun getAllDebtSync(): List<DebtEntity> = debtDao.getAllDebtSync()
 
-    fun getDebtById(id: Long): Flow<DebtEntity?> = debtDao.getDebtByIdFlow(id)
+    fun getDebtById(id: Long?): Flow<DebtEntity?> = debtDao.getDebtByIdFlow(id)
 
     fun getDebtsByType(debtType: String): Flow<List<DebtEntity>> = debtDao.getDebtsByType(debtType)
 
