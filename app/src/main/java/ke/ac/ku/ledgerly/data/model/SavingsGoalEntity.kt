@@ -26,12 +26,14 @@ data class SavingsGoalEntity(
         get() = (targetAmount - currentAmount).coerceAtLeast(0.0)
 
     val isOnTrack: Boolean
-        get() = if (targetDate == null || isCompleted) true else {
-            val totalDays = (targetDate - createdDate) / (1000 * 60 * 60 * 24)
-            if (totalDays <= 0) return@get true  // Goal deadline is in the past or same as creation
-            val elapsedDays = (System.currentTimeMillis() - createdDate) / (1000 * 60 * 60 * 24)
-            val expectedProgress = (elapsedDays / totalDays) * 100
-            progressPercentage >= expectedProgress
+        get() {
+            return if (targetDate == null || isCompleted) true else {
+                val totalDays = (targetDate - createdDate) / (1000 * 60 * 60 * 24)
+                if (totalDays <= 0) return true  // Goal deadline is in the past or same as creation
+                val elapsedDays = (System.currentTimeMillis() - createdDate) / (1000 * 60 * 60 * 24)
+                val expectedProgress = (elapsedDays / totalDays) * 100
+                progressPercentage >= expectedProgress
+            }
         }
 
     val daysRemaining: Long?
