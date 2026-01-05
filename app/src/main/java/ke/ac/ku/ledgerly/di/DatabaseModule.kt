@@ -11,6 +11,7 @@ import ke.ac.ku.ledgerly.data.dao.BudgetDao
 import ke.ac.ku.ledgerly.data.dao.CategoryDao
 import ke.ac.ku.ledgerly.data.dao.DebtDao
 import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
+import ke.ac.ku.ledgerly.data.dao.SavingsGoalDao
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import javax.inject.Singleton
 
@@ -43,4 +44,8 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDebtDao(db: LedgerlyDatabase): DebtDao = db.debtDao()
+
+    @Provides
+    @Singleton
+    fun provideSavingsGoalDao(db: LedgerlyDatabase): SavingsGoalDao = db.savingsGoalDao()
 }
