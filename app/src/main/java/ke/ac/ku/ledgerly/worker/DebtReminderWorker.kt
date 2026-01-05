@@ -32,9 +32,15 @@ class DebtReminderWorker @AssistedInject constructor(
             checkAndSendReminders()
             Result.success()
         } catch (e: Exception) {
-            Result.retry()
+            // Retry only a limited number of times
+            if (runAttemptCount < 3 && isRecoverable(e)) {
+                Result.retry()
+            } else {
+                Result.failure()
+            }
         }
     }
+
 
     private suspend fun checkAndSendReminders() {
         val debtsNeedingReminder = debtRepository.getDebtsNeedingReminder()
@@ -60,12 +66,14 @@ class DebtReminderWorker @AssistedInject constructor(
 
             val message = "${debt.personName} - ${debt.amount} (Due: $dueDate)"
 
+            val debtId = debt.id ?: return@forEach
+
             sendNotification(
                 title = title,
                 message = message,
-                notificationId = (NOTIFICATION_ID_BASE + debt.id!!.toInt()).toInt(),
+                notificationId = NOTIFICATION_ID_BASE + debtId.toInt(),
                 daysUntilDue = daysUntilDue,
-                debtId = debt.id
+                debtId = debtId
             )
         }
     }
@@ -80,6 +88,17 @@ class DebtReminderWorker @AssistedInject constructor(
         val notificationManager =
             applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
+        // Android 13+ runtime permission check
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            val hasPermission =
+                androidx.core.content.ContextCompat.checkSelfPermission(
+                    applicationContext,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+            if (!hasPermission) return
+        }
+
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(message)
@@ -87,14 +106,13 @@ class DebtReminderWorker @AssistedInject constructor(
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .setStyle(
-                NotificationCompat.BigTextStyle()
-                    .bigText(
-                        when {
-                            daysUntilDue < 0 -> "This debt is OVERDUE!"
-                            daysUntilDue == 0 -> "This debt is due TODAY!"
-                            else -> "This debt is due in $daysUntilDue days."
-                        }
-                    )
+                NotificationCompat.BigTextStyle().bigText(
+                    when {
+                        daysUntilDue < 0 -> "This debt is OVERDUE!"
+                        daysUntilDue == 0 -> "This debt is due TODAY!"
+                        else -> "This debt is due in $daysUntilDue days."
+                    }
+                )
             )
             .build()
 
@@ -113,4 +131,14 @@ class DebtReminderWorker @AssistedInject constructor(
             applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
     }
+
+    private fun isRecoverable(e: Exception): Boolean {
+        return when (e) {
+            is java.io.IOException -> true        // transient I/O issues
+            is android.database.sqlite.SQLiteException -> false // DB corruption, schema issues
+            is IllegalArgumentException -> false  // invalid data
+            else -> false
+        }
+    }
+
 }
