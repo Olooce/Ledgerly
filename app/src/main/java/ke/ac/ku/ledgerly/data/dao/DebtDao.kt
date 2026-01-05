@@ -70,11 +70,15 @@ interface DebtDao {
         SELECT * FROM debts 
         WHERE isDeleted = 0 
         AND reminderEnabled = 1 
-        AND dueDate <= :reminderTime 
+        AND (dueDate - reminderDays * :dayMs) <= :reminderTime 
+        AND dueDate > :reminderTime
         AND status != 'settled'
     """
     )
-    suspend fun getDebtsNeedingReminder(reminderTime: Long = System.currentTimeMillis()): List<DebtEntity>
+    suspend fun getDebtsNeedingReminder(
+        reminderTime: Long = System.currentTimeMillis(),
+        dayMs: Long = 86400000L // 24 hours in milliseconds
+    ): List<DebtEntity>
 
     @Query(
         """
