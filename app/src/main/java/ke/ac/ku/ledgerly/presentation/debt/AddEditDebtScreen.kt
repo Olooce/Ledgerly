@@ -62,6 +62,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import ke.ac.ku.ledgerly.base.NavigationEvent
 import ke.ac.ku.ledgerly.ui.theme.Typography
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -87,6 +88,21 @@ fun AddEditDebtScreen(
             viewModel.initializeAddDebt()
         }
     }
+
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collect { event ->
+            when (event) {
+                NavigationEvent.NavigateBack -> {
+                    navController.popBackStack()
+                }
+
+                else -> {
+
+                }
+            }
+        }
+    }
+
 
     var showStatusMenu by remember { mutableStateOf(false) }
 
