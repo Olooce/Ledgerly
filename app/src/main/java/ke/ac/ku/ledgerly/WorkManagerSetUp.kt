@@ -10,6 +10,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ke.ac.ku.ledgerly.worker.CleanupWorker
+import ke.ac.ku.ledgerly.worker.DebtReminderWorker
 import ke.ac.ku.ledgerly.worker.RecurringTransactionWorker
 import ke.ac.ku.ledgerly.worker.SyncWorker
 import kotlinx.coroutines.flow.Flow
@@ -28,7 +29,7 @@ class WorkManagerSetup @Inject constructor(
         private const val TAG = "WorkManagerSetup"
         private const val SYNC_WORK_NAME = "full_sync_work"
         private const val RECURRING_WORK_NAME = "recurring_transactions_work"
-
+        private const val DEBT_REMINDER_WORK_NAME = "debt_reminder_work"
         private const val CLEANUP_WORK_NAME = "cleanup_deleted_items"
         private const val MIN_INTERVAL_MINUTES = 15L
     }
@@ -119,6 +120,35 @@ class WorkManagerSetup @Inject constructor(
         )
     }
 
+    fun scheduleDebtReminders() {
+        Log.d(TAG, "Setting up debt reminder work")
+
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
+            .setRequiresBatteryNotLow(false)
+            .build()
+
+        val debtReminderRequest = PeriodicWorkRequestBuilder<DebtReminderWorker>(
+            1, TimeUnit.DAYS
+        )
+            .setConstraints(constraints)
+            .setInitialDelay(1, TimeUnit.HOURS)
+            .addTag(DEBT_REMINDER_WORK_NAME)
+            .build()
+
+        workManager.enqueueUniquePeriodicWork(
+            DEBT_REMINDER_WORK_NAME,
+            ExistingPeriodicWorkPolicy.KEEP,
+            debtReminderRequest
+        )
+
+        Log.d(TAG, "Debt reminder work scheduled")
+    }
+
+    fun cancelDebtReminderWork() {
+        Log.d(TAG, "Cancelling debt reminder work")
+        workManager.cancelUniqueWork(DEBT_REMINDER_WORK_NAME)
+    }
 
     fun cancelPeriodicSync() {
         Log.d(TAG, "Cancelling periodic sync")
@@ -129,6 +159,7 @@ class WorkManagerSetup @Inject constructor(
         Log.d(TAG, "Cancelling all work")
         cancelPeriodicSync()
         cancelRecurringTransactionWork()
+        cancelDebtReminderWork()
     }
 
     fun getSyncWorkInfo(): Flow<WorkInfo?> =

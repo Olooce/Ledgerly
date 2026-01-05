@@ -9,6 +9,7 @@ import dagger.hilt.components.SingletonComponent
 import ke.ac.ku.ledgerly.data.LedgerlyDatabase
 import ke.ac.ku.ledgerly.data.dao.BudgetDao
 import ke.ac.ku.ledgerly.data.dao.CategoryDao
+import ke.ac.ku.ledgerly.data.dao.DebtDao
 import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import javax.inject.Singleton
@@ -38,4 +39,8 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideCategoryDao(db: LedgerlyDatabase): CategoryDao = db.categoryDao()
+
+    @Provides
+    @Singleton
+    fun provideDebtDao(db: LedgerlyDatabase): DebtDao = db.debtDao()
 }
