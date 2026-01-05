@@ -345,7 +345,11 @@ fun SharedTransitionScope.DebtDetailScreen(
                     if (debt.status != "settled") {
                         Spacer(modifier = Modifier.height(24.dp))
                         Button(
-                            onClick = { viewModel.markDebtAsSettled(debt.id!!) },
+                            onClick = {
+                                debt.id?.let { id ->
+                                    viewModel.markDebtAsSettled(id)
+                                }
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp)
