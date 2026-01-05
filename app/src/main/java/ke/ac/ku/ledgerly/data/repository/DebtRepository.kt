@@ -25,7 +25,7 @@ class DebtRepository @Inject constructor(
 
     fun getUpcomingDebts(days: Int = 30): Flow<List<DebtEntity>> {
         val currentTime = System.currentTimeMillis()
-        val endTime = currentTime + (days * 24 * 60 * 60 * 1000)
+        val endTime = currentTime + (days * 24L * 60 * 60 * 1000)
         return debtDao.getUpcomingDebts(currentTime, endTime)
     }
 
