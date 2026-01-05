@@ -109,19 +109,28 @@ fun AddSavingsGoalScreen(
                         val target = targetAmount.toDoubleOrNull() ?: 0.0
                         val current = currentAmount.toDoubleOrNull() ?: 0.0
 
+                        val isEdit = goalId != null && goalId > 0
+                        val original = selectedGoal
+
                         val goal = SavingsGoalEntity(
-                            id = goalId ?: 0L,
+                            id = if (isEdit) goalId else 0L,
                             name = goalName,
                             description = goalDescription,
                             targetAmount = target,
                             currentAmount = current,
                             icon = goalIcon,
                             color = goalColor,
-                            targetDate = null,
+                            targetDate = original?.targetDate,
+                            createdDate = original?.createdDate ?: System.currentTimeMillis(),
                             lastModified = System.currentTimeMillis()
                         )
 
-                        viewModel.addGoal(goal)
+                        if (isEdit) {
+                            viewModel.updateGoal(goal)
+                        } else {
+                            viewModel.addGoal(goal)
+                        }
+
                         navController.popBackStack()
                     },
                     modifier = Modifier.padding(bottom = 16.dp, end = 16.dp),
