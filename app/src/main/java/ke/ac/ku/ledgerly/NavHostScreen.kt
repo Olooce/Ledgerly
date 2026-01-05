@@ -77,6 +77,8 @@ import ke.ac.ku.ledgerly.presentation.debt.DebtDetailScreen
 import ke.ac.ku.ledgerly.presentation.debt.DebtListScreen
 import ke.ac.ku.ledgerly.presentation.home.HomeScreen
 import ke.ac.ku.ledgerly.presentation.onboarding.OnboardingScreen
+import ke.ac.ku.ledgerly.presentation.savings_goals.AddSavingsGoalScreen
+import ke.ac.ku.ledgerly.presentation.savings_goals.SavingsGoalScreen
 import ke.ac.ku.ledgerly.presentation.settings.SettingsScreen
 import ke.ac.ku.ledgerly.presentation.settings.SettingsViewModel
 import ke.ac.ku.ledgerly.presentation.stats.StatsScreen
@@ -425,6 +427,69 @@ fun NavHostScreen(
                                     animatedVisibilityScope = this
                                 )
                             }
+                        }
+
+                        composable(
+                            route = NavRouts.savingsGoals,
+                            enterTransition = {
+                                fadeIn(animationSpec = tween(300)) +
+                                        slideIntoContainer(
+                                            towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                                            animationSpec = tween(300)
+                                        )
+                            },
+                            exitTransition = {
+                                fadeOut(animationSpec = tween(300))
+                            },
+                            popEnterTransition = {
+                                fadeIn(animationSpec = tween(300))
+                            },
+                            popExitTransition = {
+                                fadeOut(animationSpec = tween(300)) +
+                                        slideOutOfContainer(
+                                            towards = AnimatedContentTransitionScope.SlideDirection.End,
+                                            animationSpec = tween(300)
+                                        )
+                            }
+                        ) {
+                            bottomBarVisible = true
+                            SavingsGoalScreen(navController = navController)
+                        }
+
+                        composable(
+                            route = "${NavRouts.ADD_SAVINGS_GOAL}?goalId={goalId}",
+                            arguments = listOf(
+                                navArgument("goalId") {
+                                    type = NavType.StringType
+                                    nullable = true
+                                    defaultValue = null
+                                }
+                            ),
+                            enterTransition = {
+                                fadeIn(animationSpec = tween(300)) +
+                                        slideIntoContainer(
+                                            towards = AnimatedContentTransitionScope.SlideDirection.Up,
+                                            animationSpec = tween(300)
+                                        )
+                            },
+                            exitTransition = {
+                                fadeOut(animationSpec = tween(300))
+                            },
+                            popEnterTransition = {
+                                fadeIn(animationSpec = tween(300))
+                            },
+                            popExitTransition = {
+                                fadeOut(animationSpec = tween(300)) +
+                                        slideOutOfContainer(
+                                            towards = AnimatedContentTransitionScope.SlideDirection.Down,
+                                            animationSpec = tween(300)
+                                        )
+                            }
+                        ) { backStackEntry ->
+                            bottomBarVisible = false
+                            val goalIdArg = backStackEntry.arguments?.getString("goalId")
+                            val goalId = goalIdArg?.toLongOrNull()
+                            AddSavingsGoalScreen(navController = navController, goalId = goalId)
                         }
                     }
                 }

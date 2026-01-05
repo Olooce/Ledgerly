@@ -8,16 +8,19 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import dagger.hilt.android.qualifiers.ApplicationContext
+import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.dao.BudgetDao
 import ke.ac.ku.ledgerly.data.dao.CategoryDao
 import ke.ac.ku.ledgerly.data.dao.DebtDao
 import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
+import ke.ac.ku.ledgerly.data.dao.SavingsGoalDao
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.data.model.CategoryEntity
 import ke.ac.ku.ledgerly.data.model.Converters
 import ke.ac.ku.ledgerly.data.model.DebtEntity
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
+import ke.ac.ku.ledgerly.data.model.SavingsGoalEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import javax.inject.Singleton
 
@@ -27,9 +30,10 @@ import javax.inject.Singleton
         BudgetEntity::class,
         RecurringTransactionEntity::class,
         CategoryEntity::class,
-        DebtEntity::class
+        DebtEntity::class,
+        SavingsGoalEntity::class
     ],
-    version = 9,
+    version = 11,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -41,6 +45,7 @@ abstract class LedgerlyDatabase : RoomDatabase() {
     abstract fun budgetDao(): BudgetDao
     abstract fun categoryDao(): CategoryDao
     abstract fun debtDao(): DebtDao
+    abstract fun savingsGoalDao(): SavingsGoalDao
 
     companion object {
         const val DATABASE_NAME = "ledgerly_db"
@@ -63,7 +68,9 @@ abstract class LedgerlyDatabase : RoomDatabase() {
                         MIGRATION_5_6,
                         MIGRATION_6_7,
                         MIGRATION_7_8,
-                        MIGRATION_8_9
+                        MIGRATION_8_9,
+                        MIGRATION_9_10,
+                        MIGRATION_10_11
                     )
 //                    .fallbackToDestructiveMigration(true) //  Delete and recreate the database: For Dev
                     .build()
@@ -327,6 +334,110 @@ val MIGRATION_8_9 = object : Migration(8, 9) {
             )
             """.trimIndent()
         )
+    }
+}
+
+val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS savings_goals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                name TEXT NOT NULL,
+                description TEXT NOT NULL DEFAULT '',
+                targetAmount REAL NOT NULL,
+                currentAmount REAL NOT NULL DEFAULT 0.0,
+                icon TEXT NOT NULL DEFAULT '🎯',
+                color TEXT NOT NULL DEFAULT '#4CAF50',
+                targetDate INTEGER,
+                createdDate INTEGER NOT NULL,
+                lastModified INTEGER NOT NULL,
+                isCompleted INTEGER NOT NULL DEFAULT 0,
+                isDeleted INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent()
+        )
+    }
+}
+
+val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+
+        // 1. Add new temp column
+        database.execSQL(
+            "ALTER TABLE savings_goals ADD COLUMN icon_res INTEGER NOT NULL DEFAULT ${R.drawable.ic_target}"
+        )
+
+        // 2. Map old emoji values to drawable icons
+        database.execSQL(
+            """
+            UPDATE savings_goals SET icon_res = CASE icon
+                WHEN '🎯' THEN ${R.drawable.ic_target}
+                WHEN '🏠' THEN ${R.drawable.ic_goal_house}
+                WHEN '🚗' THEN ${R.drawable.ic_goal_car}
+                WHEN '💻' THEN ${R.drawable.ic_goal_laptop}
+                WHEN '✈️' THEN ${R.drawable.ic_goal_plane}
+                WHEN '👨‍👩‍👧‍👦' THEN ${R.drawable.ic_goal_family}
+                WHEN '🎓' THEN ${R.drawable.ic_goal_school}
+                ELSE ${R.drawable.ic_target}
+            END
+            """.trimIndent()
+        )
+
+//        database.execSQL(
+//            """
+//            UPDATE savings_goals SET icon_res = CASE icon
+//                WHEN '🎯' THEN ${R.drawable.ic_target}
+//                WHEN '🏠' THEN ${R.drawable.ic_goal_house}
+//                WHEN '🚗' THEN ${R.drawable.ic_goal_car}
+//                WHEN '💻' THEN ${R.drawable.ic_goal_laptop}
+//                WHEN '✈️' THEN ${R.drawable.ic_goal_plane}
+//                WHEN '👨‍👩‍👧‍👦' THEN ${R.drawable.ic_goal_family}
+//                WHEN '🎓' THEN ${R.drawable.ic_goal_school}
+//                WHEN '💍' THEN ${R.drawable.ic_goal_ring}
+//                WHEN '⌚' THEN ${R.drawable.ic_goal_watch}
+//                WHEN '🎮' THEN ${R.drawable.ic_goal_game}
+//                ELSE ${R.drawable.ic_target}
+//            END
+//            """.trimIndent()
+//        )
+
+        // 3. Recreate table WITHOUT old icon column
+        database.execSQL(
+            """
+         CREATE TABLE savings_goals_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                name TEXT NOT NULL,
+                description TEXT NOT NULL,
+                targetAmount REAL NOT NULL,
+                currentAmount REAL NOT NULL,
+                icon INTEGER NOT NULL,
+                color TEXT NOT NULL,
+                targetDate INTEGER,
+                createdDate INTEGER NOT NULL,
+                lastModified INTEGER NOT NULL,
+                isCompleted INTEGER NOT NULL,
+                isDeleted INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+
+        database.execSQL(
+            """
+               INSERT INTO savings_goals_new (
+                    id, name, description, targetAmount, currentAmount,
+                    icon, color, targetDate, createdDate, lastModified, isCompleted, isDeleted
+                )
+                SELECT
+                    id, name, description, targetAmount, currentAmount,
+                    icon_res, color, targetDate, createdDate, lastModified, isCompleted, isDeleted
+                FROM savings_goals
+
+            """.trimIndent()
+        )
+
+        database.execSQL("DROP TABLE savings_goals")
+        database.execSQL("ALTER TABLE savings_goals_new RENAME TO savings_goals")
     }
 }
 
