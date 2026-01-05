@@ -109,32 +109,17 @@ fun AddSavingsGoalScreen(
                         val target = targetAmount.toDoubleOrNull() ?: 0.0
                         val current = currentAmount.toDoubleOrNull() ?: 0.0
 
-                        val goal = if (goalId != null && goalId > 0) {
-                            SavingsGoalEntity(
-                                id = goalId ?: 0L,
-                                name = goalName,
-                                description = goalDescription,
-                                targetAmount = target,
-                                currentAmount = current,
-                                icon = goalIcon,
-                                color = goalColor,
-                                targetDate = null,
-                                lastModified = System.currentTimeMillis()
-                            )
-
-                        } else {
-                            SavingsGoalEntity(
-                                id = goalId ?: 0L,
-                                name = goalName,
-                                description = goalDescription,
-                                targetAmount = target,
-                                currentAmount = current,
-                                icon = goalIcon,
-                                color = goalColor,
-                                targetDate = null,
-                                lastModified = System.currentTimeMillis()
-                            )
-                        }
+                        val goal = SavingsGoalEntity(
+                            id = goalId ?: 0L,
+                            name = goalName,
+                            description = goalDescription,
+                            targetAmount = target,
+                            currentAmount = current,
+                            icon = goalIcon,
+                            color = goalColor,
+                            targetDate = null,
+                            lastModified = System.currentTimeMillis()
+                        )
 
                         viewModel.addGoal(goal)
                         navController.popBackStack()
