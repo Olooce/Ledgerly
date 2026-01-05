@@ -50,7 +50,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -88,93 +87,95 @@ fun StatsScreen(
     val tabs = listOf("Comparison", "Trends", "Categories")
 
     Box(modifier = Modifier.fillMaxSize()) {
-        ConstraintLayout(modifier = Modifier.fillMaxSize()) {
-            val (topBar) = createRefs()
-            Image(
-                painter = painterResource(R.drawable.ic_topbar),
-                contentDescription = "TopBar",
-                modifier = Modifier.constrainAs(topBar) {
-                    top.linkTo(parent.top)
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                })
+//        ConstraintLayout(modifier = Modifier.fillMaxSize()) {
+//            val (topBar) = createRefs()
+        Image(
+            painter = painterResource(R.drawable.ic_topbar),
+            contentDescription = "TopBar",
+//                modifier = Modifier.constrainAs(topBar) {
+//                    top.linkTo(parent.top)
+//                    start.linkTo(parent.start)
+//                    end.linkTo(parent.end)
 
-            Scaffold(
-                modifier = Modifier.fillMaxSize(),
-                containerColor = Color.Transparent,
-                topBar = {
-                    CenterAlignedTopAppBar(
-                        title = {
-                            Text(
-                                "Statistics",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
+//                }
+        )
+
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = Color.Transparent,
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = {
+                        Text(
+                            "Statistics",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.navigateUp() }) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_back),
+                                contentDescription = "Back",
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
-                        },
-                        navigationIcon = {
-                            IconButton(onClick = { navController.navigateUp() }) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_back),
-                                    contentDescription = "Back",
-                                    tint = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color.Transparent
-                        )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent
                     )
-                }
-            ) { padding ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(
-                            top = padding.calculateTopPadding(),
-                            start = 2.dp,
-                            end = 2.dp
-                        )
+                )
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        top = padding.calculateTopPadding(),
+                        start = 2.dp,
+                        end = 2.dp
+                    )
+            ) {
+
+                // Period Filter
+                PeriodFilterRow(
+                    selectedPeriod = selectedPeriod,
+                    onPeriodSelected = { selectedPeriod = it }
+                )
+
+                TabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = Color.Transparent,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-
-                    // Period Filter
-                    PeriodFilterRow(
-                        selectedPeriod = selectedPeriod,
-                        onPeriodSelected = { selectedPeriod = it }
-                    )
-
-                    TabRow(
-                        selectedTabIndex = selectedTab,
-                        containerColor = Color.Transparent,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        tabs.forEachIndexed { index, title ->
-                            Tab(
-                                selected = selectedTab == index,
-                                onClick = { selectedTab = index },
-                                text = { Text(title) }
-                            )
-                        }
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            text = { Text(title) }
+                        )
                     }
+                }
 
-                    AnimatedContent(
-                        targetState = selectedTab,
-                        transitionSpec = {
-                            slideInHorizontally { it }.togetherWith(slideOutHorizontally { -it })
-                        },
-                        label = "tab_animation",
-                        modifier = Modifier.fillMaxSize()
-                    ) { index ->
-                        when (index) {
-                            0 -> ComparisonTab(viewModel, selectedPeriod)
-                            1 -> TrendsTab(viewModel, navController, selectedPeriod)
-                            2 -> CategoriesTab(viewModel, selectedPeriod)
-                        }
+                AnimatedContent(
+                    targetState = selectedTab,
+                    transitionSpec = {
+                        slideInHorizontally { it }.togetherWith(slideOutHorizontally { -it })
+                    },
+                    label = "tab_animation",
+                    modifier = Modifier.fillMaxSize()
+                ) { index ->
+                    when (index) {
+                        0 -> ComparisonTab(viewModel, selectedPeriod)
+                        1 -> TrendsTab(viewModel, navController, selectedPeriod)
+                        2 -> CategoriesTab(viewModel, selectedPeriod)
                     }
                 }
             }
         }
     }
 }
+//}
 
 @Composable
 private fun PeriodFilterRow(

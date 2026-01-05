@@ -28,5 +28,6 @@ class Ledgerly : Application(), Configuration.Provider {
         super.onCreate()
         workManagerSetup.setupRecurringTransactionWork()
         workManagerSetup.scheduleCleanup()
+        workManagerSetup.scheduleDebtReminders()
     }
 }

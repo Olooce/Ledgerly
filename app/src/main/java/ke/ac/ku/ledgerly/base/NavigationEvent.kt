@@ -2,6 +2,7 @@ package ke.ac.ku.ledgerly.base
 
 sealed class NavigationEvent {
     object NavigateBack : NavigationEvent()
+
 }
 
 sealed class AddTransactionNavigationEvent : NavigationEvent() {

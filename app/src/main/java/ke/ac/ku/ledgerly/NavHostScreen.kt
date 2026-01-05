@@ -1,7 +1,9 @@
 package ke.ac.ku.ledgerly
 
 import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -10,6 +12,8 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
@@ -48,10 +52,12 @@ import androidx.compose.ui.zIndex
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.google.android.gms.auth.api.identity.SignInClient
 import ke.ac.ku.ledgerly.base.AuthEvent
 import ke.ac.ku.ledgerly.data.constants.NavRouts
@@ -66,6 +72,9 @@ import ke.ac.ku.ledgerly.presentation.auth.ReauthenticationScreen
 import ke.ac.ku.ledgerly.presentation.budget.AddBudgetScreen
 import ke.ac.ku.ledgerly.presentation.budget.BudgetScreen
 import ke.ac.ku.ledgerly.presentation.categories.CategoryManagementScreen
+import ke.ac.ku.ledgerly.presentation.debt.AddEditDebtScreen
+import ke.ac.ku.ledgerly.presentation.debt.DebtDetailScreen
+import ke.ac.ku.ledgerly.presentation.debt.DebtListScreen
 import ke.ac.ku.ledgerly.presentation.home.HomeScreen
 import ke.ac.ku.ledgerly.presentation.onboarding.OnboardingScreen
 import ke.ac.ku.ledgerly.presentation.settings.SettingsScreen
@@ -126,7 +135,8 @@ fun NavHostScreen(
         NavRouts.home,
         NavRouts.budget,
         NavRouts.allTransactions,
-        NavRouts.stats
+        NavRouts.stats,
+        NavRouts.debtTracker
     )
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -176,128 +186,246 @@ fun NavHostScreen(
                     }
                 }
             ) { contentPadding ->
-                NavHost(
-                    navController = navController,
-                    startDestination = startDestination,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(contentPadding)
-                ) {
-                    composable(NavRouts.auth) {
-                        bottomBarVisible = false
+                SharedTransitionLayout {
+                    NavHost(
+                        navController = navController,
+                        startDestination = startDestination,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(contentPadding)
+                    ) {
+                        composable(NavRouts.auth) {
+                            bottomBarVisible = false
 
-                        LaunchedEffect(authState.isAuthenticated, authState.isLoading) {
-                            if (authState.isAuthenticated && !authState.isLoading) {
-                                if (authState.showBiometricOptIn) {
-                                    navController.navigate(NavRouts.biometricOptIn) {
-                                        popUpTo(NavRouts.auth) { inclusive = true }
-                                    }
-                                } else {
-                                    val isOnboardingComplete =
-                                        userPreferencesRepository.onboardingCompleted.first()
-
-                                    val destination = if (isOnboardingComplete) {
-                                        NavRouts.home
+                            LaunchedEffect(authState.isAuthenticated, authState.isLoading) {
+                                if (authState.isAuthenticated && !authState.isLoading) {
+                                    if (authState.showBiometricOptIn) {
+                                        navController.navigate(NavRouts.biometricOptIn) {
+                                            popUpTo(NavRouts.auth) { inclusive = true }
+                                        }
                                     } else {
-                                        NavRouts.onboarding
-                                    }
+                                        val isOnboardingComplete =
+                                            userPreferencesRepository.onboardingCompleted.first()
 
-                                    navController.navigate(destination) {
-                                        popUpTo(NavRouts.auth) { inclusive = true }
+                                        val destination = if (isOnboardingComplete) {
+                                            NavRouts.home
+                                        } else {
+                                            NavRouts.onboarding
+                                        }
+
+                                        navController.navigate(destination) {
+                                            popUpTo(NavRouts.auth) { inclusive = true }
+                                        }
                                     }
                                 }
+                            }
+
+                            AuthScreen(
+                                oneTapClient = oneTapClient,
+                                viewModel = authViewModel,
+                                onAuthSuccess = {}
+                            )
+                        }
+
+                        composable(NavRouts.biometricOptIn) {
+                            bottomBarVisible = false
+                            BiometricOptInScreen(
+                                onContinue = {
+                                    scope.launch {
+                                        val isOnboardingComplete =
+                                            userPreferencesRepository.onboardingCompleted.first()
+
+                                        val destination = if (isOnboardingComplete) {
+                                            NavRouts.home
+                                        } else {
+                                            NavRouts.onboarding
+                                        }
+
+                                        navController.navigate(destination) {
+                                            popUpTo(NavRouts.biometricOptIn) { inclusive = true }
+                                        }
+                                    }
+                                }
+                            )
+                        }
+
+                        composable(NavRouts.onboarding) {
+                            bottomBarVisible = false
+                            OnboardingScreen(
+                                onComplete = {
+                                    navController.navigate(NavRouts.home) {
+                                        popUpTo(NavRouts.onboarding) { inclusive = true }
+                                    }
+                                },
+                                onExit = {
+                                    authViewModel.onEvent(AuthEvent.SignOut)
+                                    navController.navigate(NavRouts.auth) {
+                                        popUpTo(NavRouts.onboarding) { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
+                        composable(NavRouts.home) {
+                            bottomBarVisible = true
+                            HomeScreen(navController)
+                        }
+
+                        composable(NavRouts.addIncome) {
+                            bottomBarVisible = false
+                            AddTransaction(navController, isIncome = true)
+                        }
+
+                        composable(NavRouts.addExpense) {
+                            bottomBarVisible = false
+                            AddTransaction(navController, isIncome = false)
+                        }
+
+                        composable(NavRouts.stats) {
+                            bottomBarVisible = true
+                            StatsScreen(navController)
+                        }
+
+                        composable(NavRouts.allTransactions) {
+                            bottomBarVisible = true
+                            TransactionsScreen(navController)
+                        }
+
+                        composable(NavRouts.budget) {
+                            bottomBarVisible = true
+                            BudgetScreen(navController)
+                        }
+
+                        composable(NavRouts.addBudget) {
+                            bottomBarVisible = false
+                            AddBudgetScreen(navController)
+                        }
+
+                        composable(NavRouts.settings) {
+                            bottomBarVisible = true
+                            SettingsScreen(navController, themeViewModel, settingsViewModel)
+                        }
+
+                        composable(NavRouts.categoryManagement) {
+                            bottomBarVisible = false
+                            CategoryManagementScreen(navController)
+                        }
+
+
+                        composable(
+                            route = NavRouts.debtTracker,
+                            enterTransition = {
+                                fadeIn(animationSpec = tween(300)) +
+                                        slideIntoContainer(
+                                            towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                                            animationSpec = tween(300)
+                                        )
+                            },
+                            exitTransition = {
+                                fadeOut(animationSpec = tween(300))
+                            },
+                            popEnterTransition = {
+                                fadeIn(animationSpec = tween(300))
+                            },
+                            popExitTransition = {
+                                fadeOut(animationSpec = tween(300)) +
+                                        slideOutOfContainer(
+                                            towards = AnimatedContentTransitionScope.SlideDirection.End,
+                                            animationSpec = tween(300)
+                                        )
+                            }
+                        ) {
+                            AnimatedVisibility(
+                                visible = true,
+                                enter = fadeIn(),
+                                exit = fadeOut()
+                            ) {
+                                DebtListScreen(
+                                    navController = navController,
+                                    animatedVisibilityScope = this
+                                )
                             }
                         }
 
-                        AuthScreen(
-                            oneTapClient = oneTapClient,
-                            viewModel = authViewModel,
-                            onAuthSuccess = {}
-                        )
-                    }
-
-                    composable(NavRouts.biometricOptIn) {
-                        bottomBarVisible = false
-                        BiometricOptInScreen(
-                            onContinue = {
-                                scope.launch {
-                                    val isOnboardingComplete =
-                                        userPreferencesRepository.onboardingCompleted.first()
-
-                                    val destination = if (isOnboardingComplete) {
-                                        NavRouts.home
-                                    } else {
-                                        NavRouts.onboarding
-                                    }
-
-                                    navController.navigate(destination) {
-                                        popUpTo(NavRouts.biometricOptIn) { inclusive = true }
-                                    }
+                        composable(
+                            route = "${NavRouts.ADD_EDIT_DEBT}?debtId={debtId}",
+                            arguments = listOf(
+                                navArgument("debtId") {
+                                    type = NavType.StringType
+                                    nullable = true
+                                    defaultValue = null
                                 }
-                            }
-                        )
-                    }
-
-                    composable(NavRouts.onboarding) {
-                        bottomBarVisible = false
-                        OnboardingScreen(
-                            onComplete = {
-                                navController.navigate(NavRouts.home) {
-                                    popUpTo(NavRouts.onboarding) { inclusive = true }
-                                }
+                            ),
+                            enterTransition = {
+                                fadeIn(animationSpec = tween(300)) +
+                                        slideIntoContainer(
+                                            towards = AnimatedContentTransitionScope.SlideDirection.Up,
+                                            animationSpec = tween(400)
+                                        )
                             },
-                            onExit = {
-                                authViewModel.onEvent(AuthEvent.SignOut)
-                                navController.navigate(NavRouts.auth) {
-                                    popUpTo(NavRouts.onboarding) { inclusive = true }
-                                }
+                            exitTransition = {
+                                fadeOut(animationSpec = tween(300))
+                            },
+                            popEnterTransition = {
+                                fadeIn(animationSpec = tween(300))
+                            },
+                            popExitTransition = {
+                                fadeOut(animationSpec = tween(300)) +
+                                        slideOutOfContainer(
+                                            towards = AnimatedContentTransitionScope.SlideDirection.Down,
+                                            animationSpec = tween(400)
+                                        )
                             }
-                        )
-                    }
+                        ) { backStackEntry ->
+                            val debtIdString = backStackEntry.arguments?.getString("debtId")
+                            val debtId = debtIdString?.toLongOrNull()
+                            AddEditDebtScreen(
+                                navController = navController,
+                                debtId = debtId
+                            )
+                        }
 
-                    composable(NavRouts.home) {
-                        bottomBarVisible = true
-                        HomeScreen(navController)
-                    }
-
-                    composable(NavRouts.addIncome) {
-                        bottomBarVisible = false
-                        AddTransaction(navController, isIncome = true)
-                    }
-
-                    composable(NavRouts.addExpense) {
-                        bottomBarVisible = false
-                        AddTransaction(navController, isIncome = false)
-                    }
-
-                    composable(NavRouts.stats) {
-                        bottomBarVisible = true
-                        StatsScreen(navController)
-                    }
-
-                    composable(NavRouts.allTransactions) {
-                        bottomBarVisible = true
-                        TransactionsScreen(navController)
-                    }
-
-                    composable(NavRouts.budget) {
-                        bottomBarVisible = true
-                        BudgetScreen(navController)
-                    }
-
-                    composable(NavRouts.addBudget) {
-                        bottomBarVisible = false
-                        AddBudgetScreen(navController)
-                    }
-
-                    composable(NavRouts.settings) {
-                        bottomBarVisible = true
-                        SettingsScreen(navController, themeViewModel, settingsViewModel)
-                    }
-
-                    composable(NavRouts.categoryManagement) {
-                        bottomBarVisible = false
-                        CategoryManagementScreen(navController)
+                        composable(
+                            route = "${NavRouts.DEBT_DETAIL}/{debtId}",
+                            arguments = listOf(
+                                navArgument("debtId") {
+                                    type = NavType.LongType
+                                }
+                            ),
+                            enterTransition = {
+                                fadeIn(animationSpec = tween(300)) +
+                                        scaleIn(
+                                            initialScale = 0.95f,
+                                            animationSpec = tween(300)
+                                        )
+                            },
+                            exitTransition = {
+                                fadeOut(animationSpec = tween(300))
+                            },
+                            popEnterTransition = {
+                                fadeIn(animationSpec = tween(300))
+                            },
+                            popExitTransition = {
+                                fadeOut(animationSpec = tween(300)) +
+                                        scaleOut(
+                                            targetScale = 0.95f,
+                                            animationSpec = tween(300)
+                                        )
+                            }
+                        ) { backStackEntry ->
+                            val debtId = backStackEntry.arguments?.getLong("debtId")
+                            AnimatedVisibility(
+                                visible = true,
+                                enter = fadeIn(),
+                                exit = fadeOut()
+                            ) {
+                                DebtDetailScreen(
+                                    debtId = debtId,
+                                    navController = navController,
+                                    animatedVisibilityScope = this
+                                )
+                            }
+                        }
                     }
                 }
             }

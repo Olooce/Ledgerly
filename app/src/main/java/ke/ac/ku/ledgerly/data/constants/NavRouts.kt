@@ -14,4 +14,7 @@ object NavRouts {
     const val addBudget = "add_budget"
     const val settings = "/settings"
     const val categoryManagement = "/categories"
+    const val debtTracker = "/debt_tracker"
+    const val ADD_EDIT_DEBT = "/add_edit_debt"
+    const val DEBT_DETAIL = "/debt_detail"
 }

@@ -10,11 +10,13 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ke.ac.ku.ledgerly.data.dao.BudgetDao
 import ke.ac.ku.ledgerly.data.dao.CategoryDao
+import ke.ac.ku.ledgerly.data.dao.DebtDao
 import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.data.model.CategoryEntity
 import ke.ac.ku.ledgerly.data.model.Converters
+import ke.ac.ku.ledgerly.data.model.DebtEntity
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import javax.inject.Singleton
@@ -24,9 +26,10 @@ import javax.inject.Singleton
         TransactionEntity::class,
         BudgetEntity::class,
         RecurringTransactionEntity::class,
-        CategoryEntity::class
+        CategoryEntity::class,
+        DebtEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -37,6 +40,7 @@ abstract class LedgerlyDatabase : RoomDatabase() {
     abstract fun recurringTransactionDao(): RecurringTransactionDao
     abstract fun budgetDao(): BudgetDao
     abstract fun categoryDao(): CategoryDao
+    abstract fun debtDao(): DebtDao
 
     companion object {
         const val DATABASE_NAME = "ledgerly_db"
@@ -58,7 +62,8 @@ abstract class LedgerlyDatabase : RoomDatabase() {
                         MIGRATION_4_5,
                         MIGRATION_5_6,
                         MIGRATION_6_7,
-                        MIGRATION_7_8
+                        MIGRATION_7_8,
+                        MIGRATION_8_9
                     )
 //                    .fallbackToDestructiveMigration(true) //  Delete and recreate the database: For Dev
                     .build()
@@ -297,6 +302,31 @@ val MIGRATION_7_8 = object : Migration(7, 8) {
                 arrayOf<Any>(id, name, icon, color, System.currentTimeMillis())
             )
         }
+    }
+}
+
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS debts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                personName TEXT NOT NULL,
+                amount REAL NOT NULL,
+                currency TEXT NOT NULL DEFAULT 'KES',
+                debtType TEXT NOT NULL,
+                dueDate INTEGER NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                description TEXT NOT NULL DEFAULT '',
+                reminderDays INTEGER NOT NULL DEFAULT 0,
+                reminderEnabled INTEGER NOT NULL DEFAULT 1,
+                notes TEXT NOT NULL DEFAULT '',
+                createdAt INTEGER NOT NULL,
+                lastModified INTEGER NOT NULL,
+                isDeleted INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent()
+        )
     }
 }
 
