@@ -136,9 +136,13 @@ fun ExportDialog(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
+                val invalidChars = Regex("[/\\\\:*?\"<>|]")
                 TextField(
                     value = customFileName,
-                    onValueChange = { customFileName = it },
+                    onValueChange = { newValue ->
+                        // Filter out invalid filename characters
+                        customFileName = newValue.replace(invalidChars, "")
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = {
                         Text(
@@ -147,7 +151,15 @@ fun ExportDialog(
                         )
                     },
                     singleLine = true,
-                    label = { Text("File name (without extension)") }
+                    label = { Text("File name (without extension)") },
+                    supportingText = {
+                        if (customFileName.contains(invalidChars)) {
+                            Text(
+                                "Special characters will be removed",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
                 )
 
                 // Encryption Section
