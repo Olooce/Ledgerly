@@ -7,6 +7,7 @@ import ke.ac.ku.ledgerly.base.HomeNavigationEvent
 import ke.ac.ku.ledgerly.base.NavigationEvent
 import ke.ac.ku.ledgerly.data.model.PageRequest
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
+import ke.ac.ku.ledgerly.data.repository.NotificationRepository
 import ke.ac.ku.ledgerly.data.repository.TransactionRepository
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
 import ke.ac.ku.ledgerly.utils.FormatingUtils
@@ -48,6 +49,7 @@ data class HomeState(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
+    private val notificationRepository: NotificationRepository,
     userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
@@ -70,6 +72,14 @@ class HomeViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = "KES"
         )
+
+    val unreadNotificationCount: StateFlow<Int> =
+        notificationRepository.getUnreadNotificationCount()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = 0
+            )
 
     init {
         loadInitialTransactions()
@@ -191,6 +201,14 @@ class HomeViewModel @Inject constructor(
                 HomeUiEvent.OnAddExpenseClicked -> {
                     _navigationEvent.emit(HomeNavigationEvent.NavigateToAddExpense)
                 }
+
+                HomeUiEvent.OnNotificationsClicked -> {
+                    _navigationEvent.emit(HomeNavigationEvent.NavigateToNotifications)
+                }
+
+                HomeUiEvent.OnProfileClicked -> {
+                    _navigationEvent.emit(HomeNavigationEvent.NavigateToProfile)
+                }
             }
         }
     }
@@ -210,4 +228,6 @@ sealed class HomeUiEvent {
     object OnSeeAllClicked : HomeUiEvent()
     object OnAddIncomeClicked : HomeUiEvent()
     object OnAddExpenseClicked : HomeUiEvent()
+    object OnNotificationsClicked : HomeUiEvent()
+    object OnProfileClicked : HomeUiEvent()
 }

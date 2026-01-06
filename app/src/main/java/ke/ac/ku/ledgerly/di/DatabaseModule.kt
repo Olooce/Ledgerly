@@ -11,6 +11,7 @@ import ke.ac.ku.ledgerly.data.dao.BillReminderDao
 import ke.ac.ku.ledgerly.data.dao.BudgetDao
 import ke.ac.ku.ledgerly.data.dao.CategoryDao
 import ke.ac.ku.ledgerly.data.dao.DebtDao
+import ke.ac.ku.ledgerly.data.dao.NotificationDao
 import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
 import ke.ac.ku.ledgerly.data.dao.SavingsGoalDao
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
@@ -53,4 +54,8 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideBillReminderDao(db: LedgerlyDatabase): BillReminderDao = db.billReminderDao()
+
+    @Provides
+    @Singleton
+    fun provideNotificationDao(db: LedgerlyDatabase): NotificationDao = db.notificationDao()
 }

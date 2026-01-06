@@ -78,7 +78,9 @@ import ke.ac.ku.ledgerly.presentation.debt.AddEditDebtScreen
 import ke.ac.ku.ledgerly.presentation.debt.DebtDetailScreen
 import ke.ac.ku.ledgerly.presentation.debt.DebtListScreen
 import ke.ac.ku.ledgerly.presentation.home.HomeScreen
+import ke.ac.ku.ledgerly.presentation.notifications.NotificationScreen
 import ke.ac.ku.ledgerly.presentation.onboarding.OnboardingScreen
+import ke.ac.ku.ledgerly.presentation.profile.ProfileScreen
 import ke.ac.ku.ledgerly.presentation.savings_goals.AddSavingsGoalScreen
 import ke.ac.ku.ledgerly.presentation.savings_goals.SavingsGoalScreen
 import ke.ac.ku.ledgerly.presentation.settings.SettingsScreen
@@ -562,6 +564,17 @@ fun NavHostScreen(
                                 billId = billId
                             )
                         }
+                        composable(NavRouts.notifications) {
+                            bottomBarVisible = false
+                            NotificationScreen(navController = navController)
+                        }
+
+                        composable(NavRouts.profile) {
+                            bottomBarVisible = false
+                            ProfileScreen(navController = navController)
+                        }
+
+
                     }
                 }
             }

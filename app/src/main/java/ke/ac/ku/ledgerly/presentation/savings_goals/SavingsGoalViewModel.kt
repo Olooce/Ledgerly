@@ -3,6 +3,7 @@ package ke.ac.ku.ledgerly.presentation.savings_goals
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.SavingsGoalEntity
 import ke.ac.ku.ledgerly.data.repository.SavingsGoalRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -155,4 +156,31 @@ class SavingsGoalViewModel @Inject constructor(
     fun clearError() {
         _errorMessage.value = null
     }
+
+    fun replaceInvalidIconsInDb() {
+        viewModelScope.launch {
+            val goals = repository.getAllGoalsSync()
+
+            goals.forEach { goal ->
+                if (goal.icon !in GoalIcons.allowedIcons) {
+                    repository.updateGoal(
+                        goal.copy(icon = R.drawable.ic_target)
+                    )
+                }
+            }
+        }
+    }
+
+    object GoalIcons {
+        val allowedIcons = setOf(
+            R.drawable.ic_goal_car,
+            R.drawable.ic_goal_house,
+            R.drawable.ic_goal_plane,
+            R.drawable.ic_goal_school,
+            R.drawable.ic_goal_laptop,
+            R.drawable.ic_target
+        )
+    }
+
+
 }

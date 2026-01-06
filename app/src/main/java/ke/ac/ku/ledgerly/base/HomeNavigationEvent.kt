@@ -4,4 +4,7 @@ sealed class HomeNavigationEvent : NavigationEvent {
     object NavigateToAddExpense : HomeNavigationEvent()
     object NavigateToAddIncome : HomeNavigationEvent()
     object NavigateToSeeAll : HomeNavigationEvent()
+    object NavigateToNotifications : HomeNavigationEvent()
+    object NavigateToProfile : HomeNavigationEvent()
 }
+

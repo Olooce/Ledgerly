@@ -71,6 +71,11 @@ fun SavingsGoalScreen(
         viewModel.loadSavingsSummary()
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.replaceInvalidIconsInDb()
+    }
+
+
     Scaffold(
         topBar = {
             TopAppBar(
