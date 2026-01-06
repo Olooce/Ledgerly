@@ -222,21 +222,12 @@ fun AddSavingsGoalScreen(
                     ) {
 
                         val iconPainter = rememberSafeIconPainter(iconRes, R.drawable.ic_target)
-                        iconPainter?.let { painter ->
-                            Icon(
-                                painter = painter,
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp),
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        } ?: run {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_target),
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp),
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
+                        Icon(
+                            painter = iconPainter,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 }
             }
