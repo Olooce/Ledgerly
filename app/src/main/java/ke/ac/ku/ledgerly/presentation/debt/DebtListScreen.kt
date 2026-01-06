@@ -458,7 +458,11 @@ fun SharedTransitionScope.DebtListItem(
                         contentPadding = PaddingValues(horizontal = 10.dp),
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Text("Mark Settled", style = Typography.labelSmall, fontWeight = FontWeight.Medium)
+                        Text(
+                            "Mark Settled",
+                            style = Typography.labelSmall,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
                     Spacer(modifier = Modifier.width(6.dp))
                 }

@@ -64,6 +64,13 @@ fun DrawerContent(
     val exportViewModel: ExportViewModel = hiltViewModel()
     val exportState by exportViewModel.exportState.collectAsState()
     var showExportDialog by remember { mutableStateOf(false) }
+    var showExportSuccessDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(exportState.successMessage) {
+        if (exportState.successMessage != null && exportState.exportedFile != null) {
+            showExportSuccessDialog = true
+        }
+    }
 
     LaunchedEffect(authState.isAuthenticated, authState.isLoading) {
         if (!authState.isAuthenticated && !authState.isLoading) {
@@ -109,6 +116,7 @@ fun DrawerContent(
 
             HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
+            // Theme Switch
             // Theme Switch
             Row(
                 modifier = Modifier
@@ -446,4 +454,13 @@ fun DrawerContent(
         progress = exportState.exportProgress,
         isExporting = exportState.isExporting
     )
+
+    // Export Success Dialog
+    if (showExportSuccessDialog && exportState.exportedFile != null) {
+        ExportSuccessDialog(
+            exportViewModel = exportViewModel,
+            file = exportState.exportedFile,
+            onDismiss = { showExportSuccessDialog = false }
+        )
+    }
 }

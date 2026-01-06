@@ -5,7 +5,6 @@ import ke.ac.ku.ledgerly.data.model.BillReminderEntity
 import ke.ac.ku.ledgerly.data.model.BillReminderSummary
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import java.util.Calendar
 import javax.inject.Inject
 
@@ -66,7 +65,6 @@ class BillReminderRepository @Inject constructor(
             )
         )
     }
-
 
 
     // Insert bill reminder

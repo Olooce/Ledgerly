@@ -20,7 +20,10 @@ data class SavingsGoalEntity(
     val isDeleted: Boolean = false
 ) {
     val progressPercentage: Double
-        get() = if (targetAmount > 0) (currentAmount / targetAmount).coerceIn(0.0, 1.0) * 100 else 0.0
+        get() = if (targetAmount > 0) (currentAmount / targetAmount).coerceIn(
+            0.0,
+            1.0
+        ) * 100 else 0.0
 
     val remainingAmount: Double
         get() = (targetAmount - currentAmount).coerceAtLeast(0.0)

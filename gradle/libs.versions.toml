@@ -46,6 +46,7 @@ ui = "1.10.0"
 itext7 = "8.0.2"
 apachePoi = "5.4.0"
 opencsv = "5.10"
+zip4j = "2.11.5"
 
 
 [libraries]
@@ -103,6 +104,7 @@ androidx-compose-ui = { group = "androidx.compose.ui", name = "ui", version.ref 
 itext7-core = { module = "com.itextpdf:itext7-core", version.ref = "itext7" }
 apache-poi = { module = "org.apache.poi:poi-ooxml", version.ref = "apachePoi" }
 opencsv = { module = "com.opencsv:opencsv", version.ref = "opencsv" }
+zip4j = { module = "net.lingala.zip4j:zip4j", version.ref = "zip4j" }
 
 
 [plugins]

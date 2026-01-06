@@ -15,35 +15,35 @@ import javax.inject.Inject
 class SavingsGoalViewModel @Inject constructor(
     private val repository: SavingsGoalRepository
 ) : ViewModel() {
-    
+
     private val _allGoals = MutableStateFlow<List<SavingsGoalEntity>>(emptyList())
     val allGoals: StateFlow<List<SavingsGoalEntity>> = _allGoals.asStateFlow()
-    
+
     private val _activeGoals = MutableStateFlow<List<SavingsGoalEntity>>(emptyList())
     val activeGoals: StateFlow<List<SavingsGoalEntity>> = _activeGoals.asStateFlow()
-    
+
     private val _completedGoals = MutableStateFlow<List<SavingsGoalEntity>>(emptyList())
     val completedGoals: StateFlow<List<SavingsGoalEntity>> = _completedGoals.asStateFlow()
-    
+
     private val _selectedGoal = MutableStateFlow<SavingsGoalEntity?>(null)
     val selectedGoal: StateFlow<SavingsGoalEntity?> = _selectedGoal.asStateFlow()
-    
+
     private val _totalSavings = MutableStateFlow(0.0)
     val totalSavings: StateFlow<Double> = _totalSavings.asStateFlow()
-    
+
     private val _totalTarget = MutableStateFlow(0.0)
     val totalTarget: StateFlow<Double> = _totalTarget.asStateFlow()
-    
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-    
+
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
-    
+
     init {
         loadAllGoals()
     }
-    
+
     private fun loadAllGoals() {
         viewModelScope.launch {
             try {
@@ -85,7 +85,7 @@ class SavingsGoalViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun addGoal(goal: SavingsGoalEntity) {
         viewModelScope.launch {
             try {
@@ -100,7 +100,7 @@ class SavingsGoalViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun updateGoal(goal: SavingsGoalEntity) {
         viewModelScope.launch {
             try {
@@ -115,7 +115,7 @@ class SavingsGoalViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun updateGoalProgress(goalId: Long, newAmount: Double) {
         viewModelScope.launch {
             try {
@@ -127,7 +127,7 @@ class SavingsGoalViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun completeGoal(goalId: Long) {
         viewModelScope.launch {
             try {
@@ -139,7 +139,7 @@ class SavingsGoalViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun deleteGoal(goalId: Long) {
         viewModelScope.launch {
             try {
@@ -151,7 +151,7 @@ class SavingsGoalViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun clearError() {
         _errorMessage.value = null
     }

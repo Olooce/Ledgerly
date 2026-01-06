@@ -65,14 +65,31 @@ class BillReminderWorker @AssistedInject constructor(
             val dueDate = dateFormat.format(Date(bill.dueDate))
 
             val message = when {
-                daysUntilDue < 0 -> "${bill.billName} - KES ${String.format("%.2f", bill.amount)} (OVERDUE)"
-                daysUntilDue == 0 -> "${bill.billName} - KES ${String.format("%.2f", bill.amount)} (DUE TODAY)"
-                else -> "${bill.billName} - KES ${String.format("%.2f", bill.amount)} (Due: $dueDate)"
+                daysUntilDue < 0 -> "${bill.billName} - KES ${
+                    String.format(
+                        "%.2f",
+                        bill.amount
+                    )
+                } (OVERDUE)"
+
+                daysUntilDue == 0 -> "${bill.billName} - KES ${
+                    String.format(
+                        "%.2f",
+                        bill.amount
+                    )
+                } (DUE TODAY)"
+
+                else -> "${bill.billName} - KES ${
+                    String.format(
+                        "%.2f",
+                        bill.amount
+                    )
+                } (Due: $dueDate)"
             }
 
             val billId = bill.id ?: return@forEach
 
-          val sent =  sendNotification(
+            val sent = sendNotification(
                 title = title,
                 message = message,
                 notificationId = NOTIFICATION_ID_BASE + (billId % Int.MAX_VALUE).toInt(),

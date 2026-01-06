@@ -2,16 +2,26 @@ package ke.ac.ku.ledgerly.utils
 
 import android.content.Context
 import android.os.Environment
+import com.itextpdf.kernel.pdf.EncryptionConstants
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfWriter
+import com.itextpdf.kernel.pdf.WriterProperties
 import com.itextpdf.layout.Document
 import com.itextpdf.layout.element.Cell
 import com.itextpdf.layout.element.Paragraph
 import com.itextpdf.layout.element.Table
 import com.opencsv.CSVWriter
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
+import ke.ac.ku.ledgerly.presentation.transactions.ExportFormat
+import net.lingala.zip4j.ZipFile
+import net.lingala.zip4j.model.ZipParameters
+import net.lingala.zip4j.model.enums.EncryptionMethod
+import org.apache.poi.poifs.crypt.EncryptionInfo
+import org.apache.poi.poifs.crypt.EncryptionMode
+import org.apache.poi.poifs.filesystem.POIFSFileSystem
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.FileWriter
 import java.text.SimpleDateFormat
@@ -21,235 +31,204 @@ import java.util.Locale
 object TransactionExportManager {
 
     private const val EXPORT_DIR = "Ledgerly_Exports"
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-    private val dateFormatShort = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
-    fun getExportDirectory(context: Context): File {
-        val documentsDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-            ?: throw Exception("Documents directory not available")
-        val exportDir = File(documentsDir, EXPORT_DIR)
-        if (!exportDir.exists()) {
-            exportDir.mkdirs()
+    fun export(
+        context: Context,
+        transactions: List<TransactionEntity>,
+        format: ExportFormat,
+        fileName: String,
+        password: String? = null
+    ): File {
+        return when (format) {
+            ExportFormat.PDF -> exportPdf(context, transactions, fileName, password)
+            ExportFormat.EXCEL -> exportExcel(context, transactions, fileName, password)
+            ExportFormat.CSV -> exportCsv(context, transactions, fileName, password)
         }
-        return exportDir
     }
 
     fun exportToCSV(
         context: Context,
         transactions: List<TransactionEntity>,
-        fileName: String = "transactions_${System.currentTimeMillis()}.csv"
+        fileName: String,
+        password: String? = null
     ): File {
-        val exportDir = getExportDirectory(context)
-        val csvFile = File(exportDir, fileName)
-
-        CSVWriter(FileWriter(csvFile)).use { writer ->
-            // Write header
-            val header = arrayOf(
-                "ID",
-                "Category",
-                "Amount",
-                "Date",
-                "Type",
-                "Notes",
-                "Payment Method",
-                "Tags"
-            )
-            writer.writeNext(header)
-
-            // Write transactions
-            transactions.forEach { transaction ->
-                val row = arrayOf(
-                    transaction.id.toString(),
-                    transaction.category,
-                    transaction.amount.toString(),
-                    dateFormat.format(Date(transaction.date)),
-                    transaction.type,
-                    transaction.notes,
-                    transaction.paymentMethod,
-                    transaction.tags
-                )
-                writer.writeNext(row)
-            }
-        }
-
-        return csvFile
+        return exportCsv(context, transactions, fileName, password)
     }
 
     fun exportToExcel(
         context: Context,
         transactions: List<TransactionEntity>,
-        fileName: String = "transactions_${System.currentTimeMillis()}.xlsx"
+        fileName: String,
+        password: String? = null
     ): File {
-        val exportDir = getExportDirectory(context)
-        val excelFile = File(exportDir, fileName)
-
-        XSSFWorkbook().use { workbook ->
-            val sheet = workbook.createSheet("Transactions")
-
-            // Create header row
-            val headerRow = sheet.createRow(0)
-            val headers = listOf(
-                "ID",
-                "Category",
-                "Amount",
-                "Date",
-                "Type",
-                "Notes",
-                "Payment Method",
-                "Tags"
-            )
-            headers.forEachIndexed { index, header ->
-                val cell = headerRow.createCell(index)
-                cell.setCellValue(header)
-                val style = workbook.createCellStyle()
-                val font = workbook.createFont()
-                font.bold = true
-                style.setFont(font)
-                cell.cellStyle = style
-            }
-
-            // Create data rows
-            transactions.forEachIndexed { rowIndex, transaction ->
-                val row = sheet.createRow(rowIndex + 1)
-                row.createCell(0).setCellValue(transaction.id?.toDouble() ?: 0.0)
-                row.createCell(1).setCellValue(transaction.category)
-                row.createCell(2).setCellValue(transaction.amount)
-                row.createCell(3).setCellValue(dateFormat.format(Date(transaction.date)))
-                row.createCell(4).setCellValue(transaction.type)
-                row.createCell(5).setCellValue(transaction.notes)
-                row.createCell(6).setCellValue(transaction.paymentMethod)
-                row.createCell(7).setCellValue(transaction.tags)
-            }
-
-            // Set column widths manually
-            sheet.setColumnWidth(0, 3000)   // ID
-            sheet.setColumnWidth(1, 5000)   // Category
-            sheet.setColumnWidth(2, 4000)   // Amount
-            sheet.setColumnWidth(3, 5000)   // Date
-            sheet.setColumnWidth(4, 4000)   // Type
-            sheet.setColumnWidth(5, 6000)   // Notes
-            sheet.setColumnWidth(6, 5000)   // Payment Method
-            sheet.setColumnWidth(7, 4000)   // Tags
-
-            // Write to file
-            FileOutputStream(excelFile).use { fos ->
-                workbook.write(fos)
-            }
-        }
-
-        return excelFile
+        return exportExcel(context, transactions, fileName, password)
     }
 
     fun exportToPDF(
         context: Context,
         transactions: List<TransactionEntity>,
-        fileName: String = "transactions_${System.currentTimeMillis()}.pdf"
+        fileName: String,
+        password: String? = null
     ): File {
-        val exportDir = getExportDirectory(context)
-        val pdfFile = File(exportDir, fileName)
-
-        var document: Document? = null
-        var pdfDocument: PdfDocument? = null
-        var writer: PdfWriter? = null
-
-        try {
-            writer = PdfWriter(pdfFile)
-            pdfDocument = PdfDocument(writer)
-            document = Document(pdfDocument)
-
-            // Add title
-            val title = Paragraph("Transaction Report")
-                .setFontSize(20f)
-                .setBold()
-                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
-            document.add(title)
-
-            // Add date generated
-            val dateGenerated = Paragraph("Generated on: ${dateFormat.format(Date())}")
-                .setFontSize(10f)
-                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
-            document.add(dateGenerated)
-
-            document.add(Paragraph("\n"))
-
-            // Create table
-            val columnCount = 8
-            val table = Table(floatArrayOf(1f, 2f, 1.5f, 2f, 1.5f, 2f, 2f, 1.5f))
-
-            // Add header cells
-            val headers = listOf(
-                "ID",
-                "Category",
-                "Amount",
-                "Date",
-                "Type",
-                "Notes",
-                "Payment Method",
-                "Tags"
-            )
-            headers.forEach { header ->
-                val cell = Cell()
-                cell.setBackgroundColor(com.itextpdf.kernel.colors.ColorConstants.LIGHT_GRAY)
-                cell.add(Paragraph(header).setBold())
-                table.addCell(cell)
-            }
-
-            // Add data rows
-            transactions.forEach { transaction ->
-                table.addCell(transaction.id.toString())
-                table.addCell(transaction.category)
-                table.addCell("${transaction.amount}")
-                table.addCell(dateFormatShort.format(Date(transaction.date)))
-                table.addCell(transaction.type)
-                table.addCell(transaction.notes)
-                table.addCell(transaction.paymentMethod)
-                table.addCell(transaction.tags)
-            }
-
-            document.add(table)
-
-            // Add summary
-            document.add(Paragraph("\n"))
-            val totalExpense = transactions.filter { it.type == "Expense" }.sumOf { it.amount }
-            val totalIncome = transactions.filter { it.type == "Income" }.sumOf { it.amount }
-            val summary = Paragraph()
-            summary.add("Total Transactions: ${transactions.size}\n")
-            summary.add("Total Expense: $totalExpense\n")
-            summary.add("Total Income: $totalIncome\n")
-            summary.add("Net: ${totalIncome - totalExpense}")
-            document.add(summary)
-        } finally {
-            // Close resources in reverse order of creation to avoid leaks
-            try {
-                document?.close()
-            } catch (e: Exception) {
-
-            }
-            try {
-                pdfDocument?.close()
-            } catch (e: Exception) {
-
-            }
-            try {
-                writer?.close()
-            } catch (e: Exception) {
-
-            }
-        }
-
-        return pdfFile
+        return exportPdf(context, transactions, fileName, password)
     }
 
     fun getExportedFiles(context: Context): List<File> {
-        return try {
-            val exportDir = getExportDirectory(context)
-            exportDir.listFiles()?.toList() ?: emptyList()
-        } catch (e: Exception) {
-            emptyList()
-        }
+        val exportDir = getExportDir(context)
+        return exportDir.listFiles()?.toList()?.sortedByDescending { it.lastModified() }
+            ?: emptyList()
     }
 
     fun deleteExportedFile(file: File): Boolean {
-        return file.delete()
+        return file.exists() && file.delete()
     }
+
+    private fun exportPdf(
+        context: Context,
+        transactions: List<TransactionEntity>,
+        fileName: String,
+        password: String?
+    ): File {
+        val file = File(getExportDir(context), fileName)
+
+        val writerProps = WriterProperties().apply {
+            if (!password.isNullOrBlank()) {
+                setStandardEncryption(
+                    password.toByteArray(),
+                    password.toByteArray(),
+                    EncryptionConstants.ALLOW_PRINTING,
+                    EncryptionConstants.ENCRYPTION_AES_128
+                )
+            }
+        }
+
+        val pdfWriter = PdfWriter(file.absolutePath, writerProps)
+        val pdfDocument = PdfDocument(pdfWriter)
+        val document = Document(pdfDocument)
+
+        // Header
+        document.add(Paragraph("Transaction Report").setBold().setFontSize(18f))
+        document.add(Paragraph("Generated: ${dateFormat.format(Date())}\n"))
+
+        // Table
+        val table = Table(floatArrayOf(2f, 2f, 2f, 2f))
+        listOf("Category", "Amount", "Type", "Date").forEach {
+            table.addHeaderCell(Cell().add(Paragraph(it).setBold()))
+        }
+
+        transactions.forEach {
+            table.addCell(it.category)
+            table.addCell(it.amount.toString())
+            table.addCell(it.type)
+            table.addCell(dateFormat.format(Date(it.date)))
+        }
+
+        document.add(table)
+        document.close()
+
+        return file
+    }
+
+    private fun exportExcel(
+        context: Context,
+        transactions: List<TransactionEntity>,
+        fileName: String,
+        password: String?
+    ): File {
+        val tempFile = File(getExportDir(context), "tmp_$fileName")
+        val finalFile = File(getExportDir(context), fileName)
+
+        val workbook = XSSFWorkbook()
+        val sheet = workbook.createSheet("Transactions")
+
+        // Header row
+        val header = sheet.createRow(0)
+        listOf("Category", "Amount", "Type", "Date").forEachIndexed { i, h ->
+            header.createCell(i).setCellValue(h)
+        }
+
+        // Data rows
+        transactions.forEachIndexed { i, t ->
+            val row = sheet.createRow(i + 1)
+            row.createCell(0).setCellValue(t.category)
+            row.createCell(1).setCellValue(t.amount)
+            row.createCell(2).setCellValue(t.type)
+            row.createCell(3).setCellValue(dateFormat.format(Date(t.date)))
+        }
+
+        // Write unencrypted workbook to temp file
+        FileOutputStream(tempFile).use { workbook.write(it) }
+        workbook.close()
+
+        // If no password, just rename and return
+        if (password.isNullOrBlank()) {
+            tempFile.renameTo(finalFile)
+            return finalFile
+        }
+
+        // Apply Excel encryption
+        FileOutputStream(finalFile).use { fos ->
+            val fs = POIFSFileSystem()
+            val encryptionInfo = EncryptionInfo(EncryptionMode.standard)
+            val encryptor = encryptionInfo.encryptor
+            encryptor.confirmPassword(password)
+
+            val dataStream = encryptor.getDataStream(fs)
+            FileInputStream(tempFile).use { fis ->
+                fis.copyTo(dataStream)
+            }
+            dataStream.close()
+
+            fs.writeFilesystem(fos)
+            fs.close()
+        }
+
+        tempFile.delete()
+        return finalFile
+    }
+
+    private fun exportCsv(
+        context: Context,
+        transactions: List<TransactionEntity>,
+        fileName: String,
+        password: String?
+    ): File {
+        val csvFile = File(getExportDir(context), fileName)
+
+        // Write CSV data
+        CSVWriter(FileWriter(csvFile)).use {
+            it.writeNext(arrayOf("Category", "Amount", "Type", "Date"))
+            transactions.forEach { t ->
+                it.writeNext(
+                    arrayOf(
+                        t.category,
+                        t.amount.toString(),
+                        t.type,
+                        dateFormat.format(Date(t.date))
+                    )
+                )
+            }
+        }
+
+        if (password.isNullOrBlank()) return csvFile
+
+        val zipFile = File(csvFile.parent, "${csvFile.nameWithoutExtension}.zip")
+
+        val params = ZipParameters().apply {
+            isEncryptFiles = true
+            encryptionMethod = EncryptionMethod.AES
+        }
+
+        ZipFile(zipFile, password.toCharArray()).addFile(csvFile, params)
+        csvFile.delete()
+
+        return zipFile
+    }
+
+    private fun getExportDir(context: Context): File =
+        File(
+            context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS),
+            EXPORT_DIR
+        ).apply { mkdirs() }
 }

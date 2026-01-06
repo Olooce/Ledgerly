@@ -1,6 +1,8 @@
 package ke.ac.ku.ledgerly.presentation.transactions
 
 import android.content.Context
+import android.content.Intent
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,6 +31,7 @@ data class ExportState(
     val errorMessage: String? = null,
     val successMessage: String? = null,
     val availableFiles: List<File> = emptyList(),
+    val showShareButton: Boolean = false,
 )
 
 @HiltViewModel
@@ -47,7 +50,9 @@ class ExportViewModel @Inject constructor(
     fun exportTransactions(
         transactions: List<TransactionEntity>,
         format: ExportFormat,
-        customFileName: String? = null
+        customFileName: String? = null,
+        enableEncryption: Boolean = false,
+        encryptionPassword: String = ""
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -55,8 +60,15 @@ class ExportViewModel @Inject constructor(
                     it.copy(
                         isExporting = true,
                         errorMessage = null,
-                        successMessage = null
+                        successMessage = null,
+                        showShareButton = false
                     )
+                }
+
+                val password = if (enableEncryption && encryptionPassword.isNotEmpty()) {
+                    encryptionPassword
+                } else {
+                    null
                 }
 
                 val file = when (format) {
@@ -65,7 +77,8 @@ class ExportViewModel @Inject constructor(
                         TransactionExportManager.exportToCSV(
                             context,
                             transactions,
-                            customFileName ?: "transactions_${System.currentTimeMillis()}.csv"
+                            customFileName ?: "transactions_${System.currentTimeMillis()}.csv",
+                            password
                         )
                     }
 
@@ -74,7 +87,8 @@ class ExportViewModel @Inject constructor(
                         TransactionExportManager.exportToExcel(
                             context,
                             transactions,
-                            customFileName ?: "transactions_${System.currentTimeMillis()}.xlsx"
+                            customFileName ?: "transactions_${System.currentTimeMillis()}.xlsx",
+                            password
                         )
                     }
 
@@ -83,7 +97,8 @@ class ExportViewModel @Inject constructor(
                         TransactionExportManager.exportToPDF(
                             context,
                             transactions,
-                            customFileName ?: "transactions_${System.currentTimeMillis()}.pdf"
+                            customFileName ?: "transactions_${System.currentTimeMillis()}.pdf",
+                            password
                         )
                     }
                 }
@@ -94,7 +109,8 @@ class ExportViewModel @Inject constructor(
                         exportProgress = 100,
                         exportedFile = file,
                         successMessage = "Export successful: ${file.name}",
-                        errorMessage = null
+                        errorMessage = null,
+                        showShareButton = true
                     )
                 }
 
@@ -104,7 +120,8 @@ class ExportViewModel @Inject constructor(
                     it.copy(
                         isExporting = false,
                         errorMessage = "Export failed: ${e.message}",
-                        successMessage = null
+                        successMessage = null,
+                        showShareButton = false
                     )
                 }
             }
@@ -152,8 +169,34 @@ class ExportViewModel @Inject constructor(
             it.copy(
                 errorMessage = null,
                 successMessage = null,
-                exportProgress = 0
+                exportProgress = 0,
+                showShareButton = false
             )
+        }
+    }
+
+    fun shareExportedFile(file: File): Intent {
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+
+        return Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_STREAM, uri)
+            type = getMimeType(file)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+    }
+
+    private fun getMimeType(file: File): String {
+        return when {
+            file.name.endsWith(".csv") -> "text/csv"
+            file.name.endsWith(".xlsx") -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            file.name.endsWith(".pdf") -> "application/pdf"
+            file.name.endsWith(".zip") -> "application/zip"
+            else -> "application/octet-stream"
         }
     }
 }

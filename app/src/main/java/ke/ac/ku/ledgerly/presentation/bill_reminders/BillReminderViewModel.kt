@@ -76,7 +76,7 @@ class BillReminderViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-     val overdueBills = billReminderRepository.getAllBillReminders()
+    val overdueBills = billReminderRepository.getAllBillReminders()
         .map { bills ->
             val now = System.currentTimeMillis()
             bills.filter { bill ->
