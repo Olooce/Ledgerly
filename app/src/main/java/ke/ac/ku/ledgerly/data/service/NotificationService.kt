@@ -186,7 +186,7 @@ class NotificationService @Inject constructor(
 
         return sendSystemNotification(
             channelId = CHANNEL_DEBT_REMINDERS,
-            notificationId = NOTIFICATION_ID_DEBTS + debtId.toInt(),
+            notificationId = NOTIFICATION_ID_DEBTS + (debtId % Int.MAX_VALUE).toInt(),
             title = title,
             message = message,
             bigText = bigText,
