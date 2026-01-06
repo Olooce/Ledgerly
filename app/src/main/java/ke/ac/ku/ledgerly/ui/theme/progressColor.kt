@@ -3,7 +3,11 @@ package ke.ac.ku.ledgerly.ui.theme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-@Composable
+/**
+ * Returns a color based on progress percentage.
+ * @param progress Progress value in range 0-100
+ * @return Color representing progress urgency
+ */
 fun progressColor(progress: Double): Color {
     return when {
         progress >= 100.0 -> LedgerlyGreen
