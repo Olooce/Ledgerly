@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -184,8 +185,6 @@ fun ExportDialog(
 
                     // Encryption Password Field (visible only when encryption is enabled)
                     if (enableEncryption) {
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-
                         TextField(
                             value = encryptionPassword,
                             onValueChange = { encryptionPassword = it },
@@ -238,9 +237,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
                                         ExportFormat.CSV -> "${customFileName}.csv"
                                         ExportFormat.EXCEL -> "${customFileName}.xlsx"
                                         ExportFormat.PDF -> "${customFileName}.pdf"
-                                        else -> {
-                                            null
-                                        }
                                     }
                                 }
 

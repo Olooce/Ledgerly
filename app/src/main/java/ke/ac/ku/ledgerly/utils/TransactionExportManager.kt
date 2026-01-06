@@ -136,61 +136,64 @@ object TransactionExportManager {
         fileName: String,
         password: String?
     ): File {
-        val tempFile = File(getExportDir(context), "tmp_$fileName")
-        val finalFile = File(getExportDir(context), fileName)
+        val exportDir = getExportDir(context)
+        val tempFile = File(exportDir, "tmp_$fileName")
+        val finalFile = File(exportDir, fileName)
 
-        val workbook = XSSFWorkbook()
-        val sheet = workbook.createSheet("Transactions")
+        // Create workbook
+        XSSFWorkbook().use { workbook ->
+            val sheet = workbook.createSheet("Transactions")
 
-        // Header row
-        val header = sheet.createRow(0)
-        listOf("Category", "Amount", "Type", "Date").forEachIndexed { i, h ->
-            header.createCell(i).setCellValue(h)
+            // Header
+            val header = sheet.createRow(0)
+            listOf("Category", "Amount", "Type", "Date").forEachIndexed { i, h ->
+                header.createCell(i).setCellValue(h)
+            }
+
+            // Rows
+            transactions.forEachIndexed { i, t ->
+                val row = sheet.createRow(i + 1)
+                row.createCell(0).setCellValue(t.category)
+                row.createCell(1).setCellValue(t.amount)
+                row.createCell(2).setCellValue(t.type)
+                row.createCell(3).setCellValue(dateFormat.format(Date(t.date)))
+            }
+
+            // Write plaintext workbook
+            FileOutputStream(tempFile).use { workbook.write(it) }
         }
 
-        // Data rows
-        transactions.forEachIndexed { i, t ->
-            val row = sheet.createRow(i + 1)
-            row.createCell(0).setCellValue(t.category)
-            row.createCell(1).setCellValue(t.amount)
-            row.createCell(2).setCellValue(t.type)
-            row.createCell(3).setCellValue(dateFormat.format(Date(t.date)))
-        }
-
-        // Write unencrypted workbook to temp file
-        FileOutputStream(tempFile).use { workbook.write(it) }
-        workbook.close()
-
-        // If no password, just rename and return
+        // No password- > move file and return
         if (password.isNullOrBlank()) {
             if (!tempFile.renameTo(finalFile)) {
-                // Fallback: copy content if rename fails (e.g., cross-filesystem)
                 tempFile.copyTo(finalFile, overwrite = true)
                 tempFile.delete()
             }
             return finalFile
         }
 
-        // Apply Excel encryption
+        // Encrypted output
         FileOutputStream(finalFile).use { fos ->
-            val fs = POIFSFileSystem()
-            val encryptionInfo = EncryptionInfo(EncryptionMode.standard)
-            val encryptor = encryptionInfo.encryptor
-            encryptor.confirmPassword(password)
+            POIFSFileSystem().use { fs ->
+                val info = EncryptionInfo(EncryptionMode.standard)
+                val encryptor = info.encryptor.apply {
+                    confirmPassword(password)
+                }
 
-            val dataStream = encryptor.getDataStream(fs)
-            FileInputStream(tempFile).use { fis ->
-                fis.copyTo(dataStream)
+                encryptor.getDataStream(fs).use { encryptedStream ->
+                    FileInputStream(tempFile).use { fis ->
+                        fis.copyTo(encryptedStream)
+                    }
+                }
+
+                fs.writeFilesystem(fos)
             }
-            dataStream.close()
-
-            fs.writeFilesystem(fos)
-            fs.close()
         }
 
         tempFile.delete()
         return finalFile
     }
+
 
     private fun exportCsv(
         context: Context,
