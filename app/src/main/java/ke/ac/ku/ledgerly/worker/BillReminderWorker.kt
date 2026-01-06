@@ -69,7 +69,7 @@ class BillReminderWorker @AssistedInject constructor(
             sendNotification(
                 title = title,
                 message = message,
-                notificationId = NOTIFICATION_ID_BASE + billId.toInt(),
+                notificationId = NOTIFICATION_ID_BASE + (billId % Int.MAX_VALUE).toInt(),
                 daysUntilDue = daysUntilDue,
                 billId = billId
             )
