@@ -95,6 +95,7 @@ fun AddEditDebtScreen(
                 NavigationEvent.NavigateBack -> {
                     navController.popBackStack()
                 }
+
                 else -> {}
             }
         }
@@ -181,7 +182,11 @@ fun AddEditDebtScreen(
                 label = { Text("Person Name") },
                 placeholder = { Text("e.g., John Doe") },
                 leadingIcon = {
-                    Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Icon(
+                        Icons.Default.Person,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -204,7 +209,11 @@ fun AddEditDebtScreen(
                 label = { Text("Amount (KES)") },
                 placeholder = { Text("0.00") },
                 leadingIcon = {
-                    Icon(Icons.Default.AccountBalance, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Icon(
+                        Icons.Default.AccountBalance,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -329,9 +338,11 @@ fun AddEditDebtScreen(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            Box(modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 12.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp)
+            ) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -401,7 +412,11 @@ fun AddEditDebtScreen(
                 label = { Text("Description") },
                 placeholder = { Text("Add details...") },
                 leadingIcon = {
-                    Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Icon(
+                        Icons.Default.Description,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -484,7 +499,11 @@ fun AddEditDebtScreen(
                 label = { Text("Notes (Optional)") },
                 placeholder = { Text("Additional notes...") },
                 leadingIcon = {
-                    Icon(Icons.Default.Note, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Icon(
+                        Icons.Default.Note,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()

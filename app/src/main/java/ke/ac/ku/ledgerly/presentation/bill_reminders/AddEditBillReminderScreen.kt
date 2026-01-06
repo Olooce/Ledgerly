@@ -60,7 +60,6 @@ import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.base.BillReminderNavigationEvent
 import ke.ac.ku.ledgerly.ui.theme.Typography
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -566,7 +565,11 @@ private fun ReminderSettingsSection(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Enable Reminders", style = Typography.labelMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    "Enable Reminders",
+                    style = Typography.labelMedium,
+                    fontWeight = FontWeight.Bold
+                )
                 Switch(
                     checked = reminderEnabled,
                     onCheckedChange = onReminderEnabledChanged,
@@ -640,7 +643,7 @@ private fun ReminderDaysChip(
 private fun ColorPickerSection(
     selectedColor: Int,
     onColorSelected: (Int) -> Unit
-){
+) {
     val colors = listOf(
         0xFF6750A4.toInt(),
         0xFF03DAC6.toInt(),

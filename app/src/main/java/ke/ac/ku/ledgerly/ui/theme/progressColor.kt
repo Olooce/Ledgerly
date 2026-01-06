@@ -1,6 +1,5 @@
 package ke.ac.ku.ledgerly.ui.theme
 
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 /**

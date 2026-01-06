@@ -56,6 +56,7 @@ import ke.ac.ku.ledgerly.presentation.transactions.ExportViewModel
 import ke.ac.ku.ledgerly.presentation.transactions.TransactionViewModel
 import ke.ac.ku.ledgerly.ui.components.ExportDialog
 import ke.ac.ku.ledgerly.ui.components.ExportProgressDialog
+import ke.ac.ku.ledgerly.ui.components.ExportSuccessDialog
 import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
 import kotlinx.coroutines.flow.Flow
 import java.text.SimpleDateFormat
@@ -87,6 +88,7 @@ fun SettingsScreen(
     val transactionState by transactionViewModel.transactionsState.collectAsState()
     val exportState by exportViewModel.exportState.collectAsState()
     var showExportDialog by remember { mutableStateOf(false) }
+    var showExportSuccessDialog by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -101,6 +103,7 @@ fun SettingsScreen(
         exportState.successMessage?.let { message ->
             snackbarHostState.showSnackbar(message)
             exportViewModel.clearMessages()
+            showExportSuccessDialog = true
         }
         exportState.errorMessage?.let { message ->
             snackbarHostState.showSnackbar(message)
@@ -447,6 +450,15 @@ fun SettingsScreen(
         ExportProgressDialog(
             progress = exportState.exportProgress,
             isExporting = true
+        )
+    }
+
+    // Export Success Dialog
+    if (showExportSuccessDialog && exportState.exportedFile != null) {
+        ExportSuccessDialog(
+            exportViewModel = exportViewModel,
+            file = exportState.exportedFile,
+            onDismiss = { showExportSuccessDialog = false }
         )
     }
 }

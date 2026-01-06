@@ -298,7 +298,10 @@ fun SharedTransitionScope.DebtDetailScreen(
                                         text = if (debt.debtType == "owe") "I OWE" else "OWED TO ME",
                                         style = Typography.labelMedium,
                                         fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                        modifier = Modifier.padding(
+                                            horizontal = 12.dp,
+                                            vertical = 4.dp
+                                        )
                                     )
                                 }
 
@@ -312,7 +315,10 @@ fun SharedTransitionScope.DebtDetailScreen(
                                             text = "OVERDUE",
                                             style = Typography.labelMedium,
                                             fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                            modifier = Modifier.padding(
+                                                horizontal = 12.dp,
+                                                vertical = 4.dp
+                                            )
                                         )
                                     }
                                 }

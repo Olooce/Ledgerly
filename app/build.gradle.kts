@@ -147,4 +147,5 @@ dependencies {
     implementation(libs.itext7.core)
     implementation(libs.apache.poi)
     implementation(libs.opencsv)
+    implementation(libs.zip4j)
 }
