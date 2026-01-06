@@ -4,7 +4,9 @@ import ke.ac.ku.ledgerly.data.dao.BillReminderDao
 import ke.ac.ku.ledgerly.data.model.BillReminderEntity
 import ke.ac.ku.ledgerly.data.model.BillReminderSummary
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.util.Calendar
 import javax.inject.Inject
 
 class BillReminderRepository @Inject constructor(
@@ -44,29 +46,28 @@ class BillReminderRepository @Inject constructor(
     suspend fun getBillReminderById(id: Long): BillReminderEntity? =
         billReminderDao.getBillReminderById(id)
 
-    // Get bill reminder summary
     suspend fun getBillReminderSummary(): BillReminderSummary {
-        val allBills = billReminderDao.getAllBillRemindersOnce()
-        val currentTime = System.currentTimeMillis()
-        val thirtyDaysFromNow = currentTime + (30 * 24 * 60 * 60 * 1000)
+        val now = System.currentTimeMillis()
+        val thirtyDaysFromNow = now + (30L * 24 * 60 * 60 * 1000)
+        val (startOfMonth, startOfNextMonth) = currentMonthRange()
 
-        val upcomingBills = allBills.filter {
-            it.status == "pending" && it.dueDate in currentTime..thirtyDaysFromNow
-        }
-
-        val overdueBills = allBills.filter {
-            it.status == "pending" && it.dueDate < currentTime
-        }
-
-        val totalAmount = upcomingBills.sumOf { it.amount }
+        val totalUpcoming = billReminderDao
+            .getUpcomingBills(now, thirtyDaysFromNow)
+            .first()
+            .size
 
         return BillReminderSummary(
-            totalUpcoming = upcomingBills.size,
-            totalAmount = totalAmount,
-            overdueCount = overdueBills.size,
-            thisMonthCount = upcomingBills.size
+            totalUpcoming = totalUpcoming,
+            totalAmount = billReminderDao.getTotalUpcomingAmount(now, thirtyDaysFromNow) ?: 0.0,
+            overdueCount = billReminderDao.getOverdueBillsCount(now),
+            thisMonthCount = billReminderDao.getThisMonthBillsCount(
+                startOfMonth,
+                startOfNextMonth
+            )
         )
     }
+
+
 
     // Insert bill reminder
     suspend fun insertBillReminder(billReminder: BillReminderEntity): Long =
@@ -99,4 +100,22 @@ class BillReminderRepository @Inject constructor(
     // Get overdue bills count
     suspend fun getOverdueBillsCount(): Int =
         billReminderDao.getOverdueBillsCount(System.currentTimeMillis())
+
+
+    private fun currentMonthRange(): Pair<Long, Long> {
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.DAY_OF_MONTH, 1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val startOfMonth = cal.timeInMillis
+
+        cal.add(Calendar.MONTH, 1)
+        val startOfNextMonth = cal.timeInMillis
+
+        return startOfMonth to startOfNextMonth
+    }
+
 }

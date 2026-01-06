@@ -3,6 +3,8 @@ package ke.ac.ku.ledgerly.data.model
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import ke.ac.ku.ledgerly.data.enums.BillStatus
+
 @Entity(
     tableName = "bill_reminders",
     indices = [
@@ -12,7 +14,6 @@ import androidx.room.PrimaryKey
     ]
 )
 data class BillReminderEntity(
-
     @PrimaryKey(autoGenerate = true)
     val id: Long? = null,
 
@@ -40,24 +41,23 @@ data class BillReminderEntity(
     val lastModified: Long,
     val isDeleted: Boolean
 ) {
+    companion object {
+        private const val MILLIS_IN_DAY = 24 * 60 * 60 * 1000L
+    }
+
     val daysUntilDue: Int
-        get() {
-            // Calculate days considering local time zone
-            val now = System.currentTimeMillis()
-            val diff = dueDate - now
-            return (diff / (1000 * 60 * 60 * 24)).toInt()
-        }
+        get() = ((dueDate - System.currentTimeMillis()) / MILLIS_IN_DAY).toInt()
 
     fun isUpcoming(): Boolean =
-        daysUntilDue in 0..reminderDays && status == "pending"
+        status == BillStatus.PENDING.name &&
+                daysUntilDue in 0..reminderDays
 
     fun needsReminder(): Boolean =
         reminderEnabled &&
-                daysUntilDue <= reminderDays &&
-                !notificationSent &&
-                status == "pending"
+                status == BillStatus.PENDING.name &&
+                daysUntilDue in 0..reminderDays &&
+                !notificationSent
 }
-
 
 data class BillReminderSummary(
     val totalUpcoming: Int = 0,

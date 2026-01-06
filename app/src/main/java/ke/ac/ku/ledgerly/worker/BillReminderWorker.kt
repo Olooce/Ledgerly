@@ -1,14 +1,20 @@
 package ke.ac.ku.ledgerly.worker
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import ke.ac.ku.ledgerly.MainActivity
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.repository.BillReminderRepository
 import java.text.SimpleDateFormat
@@ -66,7 +72,7 @@ class BillReminderWorker @AssistedInject constructor(
 
             val billId = bill.id ?: return@forEach
 
-            sendNotification(
+          val sent =  sendNotification(
                 title = title,
                 message = message,
                 notificationId = NOTIFICATION_ID_BASE + (billId % Int.MAX_VALUE).toInt(),
@@ -75,7 +81,9 @@ class BillReminderWorker @AssistedInject constructor(
             )
 
             // Mark reminder as sent
-            billReminderRepository.markReminderSent(billId)
+            if (sent) {
+                billReminderRepository.markReminderSent(billId)
+            }
         }
     }
 
@@ -85,7 +93,32 @@ class BillReminderWorker @AssistedInject constructor(
         notificationId: Int,
         daysUntilDue: Int,
         billId: Long
-    ) {
+    ): Boolean {
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            val permissionGranted = ContextCompat.checkSelfPermission(
+                applicationContext,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (!permissionGranted) {
+                return false
+            }
+        }
+
+
+        val intent = Intent(applicationContext, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra("billId", billId)
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            applicationContext,
+            billId.toInt(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         val notificationManager =
             applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -101,6 +134,7 @@ class BillReminderWorker @AssistedInject constructor(
             .setSmallIcon(R.drawable.ic_ledgerly)
             .setColor(urgencyColor)
             .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setStyle(
                 NotificationCompat.BigTextStyle()
@@ -109,6 +143,8 @@ class BillReminderWorker @AssistedInject constructor(
             .build()
 
         notificationManager.notify(notificationId, notification)
+        return true
+
     }
 
     private fun createNotificationChannel() {

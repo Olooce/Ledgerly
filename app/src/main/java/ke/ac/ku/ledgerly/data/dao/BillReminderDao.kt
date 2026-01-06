@@ -109,4 +109,19 @@ interface BillReminderDao {
         WHERE id = :id
     """)
     suspend fun softDeleteBillReminder(id: Long, timestamp: Long = System.currentTimeMillis())
+
+
+    @Query("""
+    SELECT COUNT(*) FROM bill_reminders
+    WHERE status = 'pending'
+      AND isDeleted = 0
+      AND dueDate >= :startOfMonth
+      AND dueDate < :startOfNextMonth
+""")
+    suspend fun getThisMonthBillsCount(
+        startOfMonth: Long,
+        startOfNextMonth: Long
+    ): Int
+
+
 }

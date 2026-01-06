@@ -40,6 +40,7 @@ data class AddEditBillReminderState(
     val color: Int = 0xFF6750A4.toInt(),
     val isLoading: Boolean = false,
     val error: String? = null,
+    val createdAt: Long? = null,
     val isEditing: Boolean = false,
     val currentBillId: Long? = null
 )
@@ -206,9 +207,11 @@ class BillReminderViewModel @Inject constructor(
                             paymentMethod = bill.paymentMethod,
                             notes = bill.notes,
                             color = bill.color,
+                            createdAt = bill.createdAt,
                             isEditing = true,
                             currentBillId = billId
                         )
+
                     }
                 } else {
                     _addEditState.value = AddEditBillReminderState()
@@ -302,10 +305,11 @@ class BillReminderViewModel @Inject constructor(
                     paymentMethod = state.paymentMethod,
                     notes = state.notes,
                     color = state.color,
-                    createdAt = if (state.isEditing) now else now,
+                    createdAt = state.createdAt ?: now,
                     lastModified = now,
                     isDeleted = false
                 )
+
 
                 if (state.isEditing && state.currentBillId != null) {
                     billReminderRepository.updateBillReminder(billReminder)
