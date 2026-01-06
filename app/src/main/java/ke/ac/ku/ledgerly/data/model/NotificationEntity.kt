@@ -25,9 +25,9 @@ data class NotificationEntity(
     val isRead: Boolean = false,
     val isDeleted: Boolean = false,
 
-    val createdDate: Long = System.currentTimeMillis(),
+    val createdDate: Long,
     val readDate: Long? = null,
-    val lastModified: Long = System.currentTimeMillis(),
+    val lastModified: Long,
     val icon: Int? = null,
     val actionUrl: String? = null
 ) {
