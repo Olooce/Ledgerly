@@ -163,7 +163,11 @@ object TransactionExportManager {
 
         // If no password, just rename and return
         if (password.isNullOrBlank()) {
-            tempFile.renameTo(finalFile)
+            if (!tempFile.renameTo(finalFile)) {
+                // Fallback: copy content if rename fails (e.g., cross-filesystem)
+                tempFile.copyTo(finalFile, overwrite = true)
+                tempFile.delete()
+            }
             return finalFile
         }
 
