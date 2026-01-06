@@ -184,6 +184,8 @@ fun ExportDialog(
 
                     // Encryption Password Field (visible only when encryption is enabled)
                     if (enableEncryption) {
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+
                         TextField(
                             value = encryptionPassword,
                             onValueChange = { encryptionPassword = it },
@@ -196,7 +198,8 @@ fun ExportDialog(
                             },
                             label = { Text("Encryption Password") },
                             singleLine = true,
-                            isError = enableEncryption && encryptionPassword.isBlank()
+                            isError = enableEncryption && encryptionPassword.isBlank(),
+                            visualTransformation = PasswordVisualTransformation()
                         )
                         if (enableEncryption && encryptionPassword.isBlank()) {
                             Text(
