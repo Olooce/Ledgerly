@@ -41,7 +41,12 @@ data class BillReminderEntity(
     val isDeleted: Boolean
 ) {
     val daysUntilDue: Int
-        get() = ((dueDate - System.currentTimeMillis()) / (1000 * 60 * 60 * 24)).toInt()
+        get() {
+            // Calculate days considering local time zone
+            val now = System.currentTimeMillis()
+            val diff = dueDate - now
+            return (diff / (1000 * 60 * 60 * 24)).toInt()
+        }
 
     fun isUpcoming(): Boolean =
         daysUntilDue in 0..reminderDays && status == "pending"
