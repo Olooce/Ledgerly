@@ -84,9 +84,12 @@ fun BillReminderListScreen(
             when (event) {
                 BillReminderNavigationEvent.NavigateBack -> navController.popBackStack()
                 is BillReminderNavigationEvent.NavigateToAddEditBill -> {
-                    navController.navigate(
+                    val route = if (event.billId != null) {
                         "${NavRouts.ADD_EDIT_BILL_REMINDER}?billId=${event.billId}"
-                    )
+                    } else {
+                        NavRouts.ADD_EDIT_BILL_REMINDER
+                    }
+                    navController.navigate(route)
 
                 }
 //                is BillReminderNavigationEvent.NavigateToBillDetail -> {
