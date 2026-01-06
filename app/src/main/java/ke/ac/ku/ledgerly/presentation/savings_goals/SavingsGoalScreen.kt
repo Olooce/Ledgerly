@@ -146,7 +146,7 @@ fun SavingsGoalScreen(
                     val progress = (
                             if (totalTarget > 0) totalSavings / totalTarget else 0.0
                             ).coerceIn(0.0, 1.0)
-                    val progressBarColor = progressColor(progress)
+                    val progressBarColor = progressColor(progress * 100)
 
                     LinearProgressIndicator(
                     progress = { progress.toFloat() },
