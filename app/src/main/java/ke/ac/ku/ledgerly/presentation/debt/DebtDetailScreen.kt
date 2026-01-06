@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -32,7 +34,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -43,7 +44,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -76,14 +76,19 @@ fun SharedTransitionScope.DebtDetailScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        "Debt Details",
-                        style = Typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column {
+                        Text(
+                            "Debt Details",
+                            style = Typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier.size(40.dp)
+                    ) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
@@ -93,23 +98,31 @@ fun SharedTransitionScope.DebtDetailScreen(
                 },
                 actions = {
                     if (detailState.debt != null) {
-                        IconButton(onClick = {
-                            navController.navigate("${NavRouts.ADD_EDIT_DEBT}?debtId=${detailState.debt!!.id}")
-                        }) {
+                        IconButton(
+                            onClick = {
+                                navController.navigate("${NavRouts.ADD_EDIT_DEBT}?debtId=${detailState.debt!!.id}")
+                            },
+                            modifier = Modifier.size(40.dp)
+                        ) {
                             Icon(
                                 Icons.Filled.Edit,
                                 contentDescription = "Edit",
-                                tint = MaterialTheme.colorScheme.onSurface
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
-                        IconButton(onClick = {
-                            viewModel.deleteDebt(detailState.debt!!.id!!)
-                            navController.popBackStack()
-                        }) {
+                        IconButton(
+                            onClick = {
+                                viewModel.deleteDebt(detailState.debt!!.id!!)
+                                navController.popBackStack()
+                            },
+                            modifier = Modifier.size(40.dp)
+                        ) {
                             Icon(
                                 Icons.Filled.Delete,
                                 contentDescription = "Delete",
-                                tint = MaterialTheme.colorScheme.error
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
@@ -131,8 +144,9 @@ fun SharedTransitionScope.DebtDetailScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(48.dp),
-                        color = MaterialTheme.colorScheme.primary
+                        modifier = Modifier.size(40.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        strokeWidth = 3.dp
                     )
                 }
             }
@@ -160,33 +174,32 @@ fun SharedTransitionScope.DebtDetailScreen(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        shape = RoundedCornerShape(24.dp),
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = if (isOverdue) {
-                                if (isDarkTheme) Color(0xFF4A2020) else Color(0xFFFFF3E0)
-                            } else {
-                                MaterialTheme.colorScheme.surfaceVariant
-                            }
+                            containerColor = if (debt.debtType == "owe")
+                                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.08f)
+                            else
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.08f)
                         ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(24.dp),
+                                .padding(20.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             // Avatar
                             Box(
                                 modifier = Modifier
-                                    .size(80.dp)
+                                    .size(64.dp)
                                     .clip(CircleShape)
                                     .background(
                                         if (debt.debtType == "owe")
-                                            MaterialTheme.colorScheme.errorContainer
+                                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.15f)
                                         else
-                                            MaterialTheme.colorScheme.primaryContainer
+                                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
                                     )
                                     .sharedElement(
                                         sharedContentState = rememberSharedContentState(key = "debt-avatar-${debt.id}"),
@@ -199,21 +212,21 @@ fun SharedTransitionScope.DebtDetailScreen(
                             ) {
                                 Text(
                                     text = debt.personName.firstOrNull()?.uppercase() ?: "?",
-                                    style = Typography.displaySmall,
+                                    style = Typography.headlineMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = if (debt.debtType == "owe")
-                                        MaterialTheme.colorScheme.onErrorContainer
+                                        MaterialTheme.colorScheme.error
                                     else
-                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                        MaterialTheme.colorScheme.primary
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
 
                             // Name
                             Text(
                                 text = debt.personName,
-                                style = Typography.headlineMedium,
+                                style = Typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 textAlign = TextAlign.Center,
@@ -227,7 +240,7 @@ fun SharedTransitionScope.DebtDetailScreen(
                             )
 
                             if (debt.description.isNotEmpty()) {
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     text = debt.description,
                                     style = Typography.bodyMedium,
@@ -243,12 +256,12 @@ fun SharedTransitionScope.DebtDetailScreen(
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(24.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
 
                             // Amount
                             Text(
                                 text = FormatingUtils.formatCurrency(debt.amount),
-                                style = Typography.displayMedium,
+                                style = Typography.displaySmall,
                                 fontWeight = FontWeight.Bold,
                                 color = if (debt.debtType == "owe")
                                     MaterialTheme.colorScheme.error
@@ -265,42 +278,43 @@ fun SharedTransitionScope.DebtDetailScreen(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // Type Badge
-                            Surface(
-                                color = if (debt.debtType == "owe")
-                                    MaterialTheme.colorScheme.errorContainer
-                                else
-                                    MaterialTheme.colorScheme.primaryContainer,
-                                shape = RoundedCornerShape(12.dp)
+                            // Badges Row
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Text(
-                                    text = if (debt.debtType == "owe") "I OWE" else "OWED TO ME",
-                                    style = Typography.labelLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (debt.debtType == "owe")
-                                        MaterialTheme.colorScheme.onErrorContainer
+                                // Type Badge
+                                Badge(
+                                    containerColor = if (debt.debtType == "owe")
+                                        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.15f)
                                     else
-                                        MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                                )
-                            }
-
-                            if (isOverdue) {
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Surface(
-                                    color = MaterialTheme.colorScheme.error,
-                                    shape = RoundedCornerShape(12.dp)
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f),
+                                    contentColor = if (debt.debtType == "owe")
+                                        MaterialTheme.colorScheme.error
+                                    else
+                                        MaterialTheme.colorScheme.primary
                                 ) {
                                     Text(
-                                        text = "OVERDUE",
-                                        style = Typography.labelLarge,
+                                        text = if (debt.debtType == "owe") "I OWE" else "OWED TO ME",
+                                        style = Typography.labelMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onError,
-                                        modifier = Modifier.padding(
-                                            horizontal = 16.dp,
-                                            vertical = 8.dp
-                                        )
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                                     )
+                                }
+
+                                // Overdue Badge
+                                if (isOverdue) {
+                                    Badge(
+                                        containerColor = MaterialTheme.colorScheme.error,
+                                        contentColor = MaterialTheme.colorScheme.onError
+                                    ) {
+                                        Text(
+                                            text = "OVERDUE",
+                                            style = Typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -309,7 +323,7 @@ fun SharedTransitionScope.DebtDetailScreen(
                     // Details Section
                     Column(
                         modifier = Modifier.padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         DetailCard(
                             title = "Due Date",
@@ -342,9 +356,9 @@ fun SharedTransitionScope.DebtDetailScreen(
                         }
                     }
 
-                    // Action Buttons
+                    // Action Button
                     if (debt.status != "settled") {
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
                         Button(
                             onClick = {
                                 debt.id?.let { id ->
@@ -353,7 +367,7 @@ fun SharedTransitionScope.DebtDetailScreen(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(56.dp)
+                                .height(48.dp)
                                 .padding(horizontal = 16.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = if (debt.debtType == "owe")
@@ -361,17 +375,18 @@ fun SharedTransitionScope.DebtDetailScreen(
                                 else
                                     MaterialTheme.colorScheme.primary
                             ),
-                            shape = RoundedCornerShape(16.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(vertical = 12.dp)
                         ) {
                             Text(
                                 "Mark as Settled",
                                 style = Typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Medium
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(80.dp))
                 }
             } else if (detailState.error != null) {
                 Box(
@@ -417,31 +432,27 @@ fun DetailCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isError) {
-                if (isDarkTheme) Color(0xFF4A2020) else Color(0xFFFFEBEE)
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant
-            }
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(12.dp)
         ) {
             Text(
                 text = title,
-                style = Typography.labelMedium,
+                style = Typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Medium
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = value,
-                style = if (isMultiline) Typography.bodyLarge else Typography.titleMedium,
+                style = if (isMultiline) Typography.bodyMedium else Typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = if (isError)
                     MaterialTheme.colorScheme.error

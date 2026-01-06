@@ -23,6 +23,7 @@ import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.constants.NavRouts
 import ke.ac.ku.ledgerly.ui.components.SavingsGoalItem
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyGreen
+import ke.ac.ku.ledgerly.ui.theme.progressColor
 import ke.ac.ku.ledgerly.utils.FormatingUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -124,30 +125,40 @@ fun SavingsGoalScreen(
                             horizontalAlignment = Alignment.End
                         ) {
                             Text(
-                                "of ${FormatingUtils.formatCurrency(totalTarget)}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
                                 "${if (totalTarget > 0) ((totalSavings / totalTarget) * 100).toInt() else 0}%",
-                                style = MaterialTheme.typography.titleMedium,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = FontWeight.Bold
                             )
+
+                            Text(
+                                "of ${FormatingUtils.formatCurrency(totalTarget)}",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = LedgerlyGreen
+                            )
+
                         }
                     }
 
                     Spacer(Modifier.height(12.dp))
 
+                    val progress = (
+                            if (totalTarget > 0) totalSavings / totalTarget else 0.0
+                            ).coerceIn(0.0, 1.0)
+                    val progressBarColor = progressColor(progress * 100)
+
                     LinearProgressIndicator(
-                    progress = { if (totalTarget > 0) (totalSavings / totalTarget).toFloat() else 0f },
+                    progress = { progress.toFloat() },
                     modifier = Modifier
                                                 .fillMaxWidth()
                                                 .height(6.dp)
                                                 .clip(RoundedCornerShape(3.dp)),
-                    color = LedgerlyGreen,
+                    color = progressBarColor,
                     trackColor = LedgerlyGreen.copy(alpha = 0.2f),
                     strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
                     )
+
                 }
             }
 

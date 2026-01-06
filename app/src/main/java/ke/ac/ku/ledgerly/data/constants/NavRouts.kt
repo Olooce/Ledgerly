@@ -19,4 +19,8 @@ object NavRouts {
     const val DEBT_DETAIL = "/debt_detail"
     const val savingsGoals = "/savings_goals"
     const val ADD_SAVINGS_GOAL = "/add_savings_goal"
+    const val ADD_EDIT_BILL_REMINDER="/add_edit_bill_reminder"
+    const val billReminders="/bill_reminders"
+
+
 }
