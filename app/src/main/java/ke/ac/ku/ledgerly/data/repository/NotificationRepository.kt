@@ -107,7 +107,7 @@ class NotificationRepository @Inject constructor(
     }
 
     suspend fun createBudgetAlertNotification(
-        budgetId: String,
+        budgetId: Long,
         category: String,
         percentageUsed: Double
     ) {
@@ -120,7 +120,7 @@ class NotificationRepository @Inject constructor(
                     percentageUsed
                 )
             }% of your $category budget",
-            relatedId = budgetId.hashCode().toLong(),
+            relatedId = budgetId,
             relatedType = "Budget"
         )
         insertNotification(notification)
