@@ -24,6 +24,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,6 +38,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -322,18 +325,46 @@ private fun FormTextField(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DueDateSelector(
     dueDate: Long,
     onDateChange: (Long) -> Unit
 ) {
-    val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-    val calendar = Calendar.getInstance().apply {
-        timeInMillis = dueDate
+    val dateFormat = remember {
+        SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
     }
 
     var showDatePicker by remember { mutableStateOf(false) }
 
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = dueDate
+    )
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let {
+                            onDateChange(it)
+                        }
+                        showDatePicker = false
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -351,13 +382,16 @@ private fun DueDateSelector(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text("Due Date", style = Typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "Due Date",
+                    style = Typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     dateFormat.format(Date(dueDate)),
                     style = Typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontWeight = FontWeight.Bold
                 )
             }
 
@@ -370,6 +404,7 @@ private fun DueDateSelector(
         }
     }
 }
+
 
 @Composable
 private fun CategorySelector(
