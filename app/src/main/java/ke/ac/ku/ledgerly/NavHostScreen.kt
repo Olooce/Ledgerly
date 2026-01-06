@@ -69,6 +69,8 @@ import ke.ac.ku.ledgerly.presentation.auth.AuthScreen
 import ke.ac.ku.ledgerly.presentation.auth.AuthViewModel
 import ke.ac.ku.ledgerly.presentation.auth.BiometricOptInScreen
 import ke.ac.ku.ledgerly.presentation.auth.ReauthenticationScreen
+import ke.ac.ku.ledgerly.presentation.bill_reminders.AddEditBillReminderScreen
+import ke.ac.ku.ledgerly.presentation.bill_reminders.BillReminderListScreen
 import ke.ac.ku.ledgerly.presentation.budget.AddBudgetScreen
 import ke.ac.ku.ledgerly.presentation.budget.BudgetScreen
 import ke.ac.ku.ledgerly.presentation.categories.CategoryManagementScreen
@@ -138,7 +140,9 @@ fun NavHostScreen(
         NavRouts.budget,
         NavRouts.allTransactions,
         NavRouts.stats,
-        NavRouts.debtTracker
+        NavRouts.debtTracker,
+        NavRouts.savingsGoals,
+        NavRouts.billReminders
     )
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -490,6 +494,73 @@ fun NavHostScreen(
                             val goalIdArg = backStackEntry.arguments?.getString("goalId")
                             val goalId = goalIdArg?.toLongOrNull()
                             AddSavingsGoalScreen(navController = navController, goalId = goalId)
+                        }
+
+                        composable(
+                            route = NavRouts.billReminders,
+                            enterTransition = {
+                                fadeIn(animationSpec = tween(300)) +
+                                        slideIntoContainer(
+                                            towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                                            animationSpec = tween(300)
+                                        )
+                            },
+                            exitTransition = {
+                                fadeOut(animationSpec = tween(300))
+                            },
+                            popEnterTransition = {
+                                fadeIn(animationSpec = tween(300))
+                            },
+                            popExitTransition = {
+                                fadeOut(animationSpec = tween(300)) +
+                                        slideOutOfContainer(
+                                            towards = AnimatedContentTransitionScope.SlideDirection.End,
+                                            animationSpec = tween(300)
+                                        )
+                            }
+                        ) {
+                            bottomBarVisible = true
+                            BillReminderListScreen(navController = navController)
+                        }
+
+                        composable(
+                            route = "${NavRouts.ADD_EDIT_BILL_REMINDER}?billId={billId}",
+                            arguments = listOf(
+                                navArgument("billId") {
+                                    type = NavType.StringType
+                                    nullable = true
+                                    defaultValue = null
+                                }
+                            ),
+                            enterTransition = {
+                                fadeIn(animationSpec = tween(300)) +
+                                        slideIntoContainer(
+                                            towards = AnimatedContentTransitionScope.SlideDirection.Up,
+                                            animationSpec = tween(300)
+                                        )
+                            },
+                            exitTransition = {
+                                fadeOut(animationSpec = tween(300))
+                            },
+                            popEnterTransition = {
+                                fadeIn(animationSpec = tween(300))
+                            },
+                            popExitTransition = {
+                                fadeOut(animationSpec = tween(300)) +
+                                        slideOutOfContainer(
+                                            towards = AnimatedContentTransitionScope.SlideDirection.Down,
+                                            animationSpec = tween(300)
+                                        )
+                            }
+                        ) { backStackEntry ->
+                            bottomBarVisible = false
+                            val billId = backStackEntry.arguments
+                                ?.getString("billId")
+                                ?.toLongOrNull()
+                            AddEditBillReminderScreen(
+                                navController = navController,
+                                billId = billId
+                            )
                         }
                     }
                 }

@@ -16,6 +16,7 @@ import androidx.core.graphics.toColorInt
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.SavingsGoalEntity
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyGreen
+import ke.ac.ku.ledgerly.ui.theme.progressColor
 import ke.ac.ku.ledgerly.utils.FormatingUtils
 
 @Composable
@@ -277,13 +278,3 @@ fun SavingsGoalItem(
     }
 }
 
-@Composable
-private fun progressColor(progress: Double): Color {
-    return when {
-        progress >= 100.0 -> LedgerlyGreen
-        progress >= 75.0 -> Color(0xFF4CAF50)
-        progress >= 50.0 -> Color(0xFFFFC107)
-        progress >= 25.0 -> Color(0xFFFF9800)
-        else -> Color(0xFFF44336)
-    }
-}

@@ -9,12 +9,14 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ke.ac.ku.ledgerly.R
+import ke.ac.ku.ledgerly.data.dao.BillReminderDao
 import ke.ac.ku.ledgerly.data.dao.BudgetDao
 import ke.ac.ku.ledgerly.data.dao.CategoryDao
 import ke.ac.ku.ledgerly.data.dao.DebtDao
 import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
 import ke.ac.ku.ledgerly.data.dao.SavingsGoalDao
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
+import ke.ac.ku.ledgerly.data.model.BillReminderEntity
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.data.model.CategoryEntity
 import ke.ac.ku.ledgerly.data.model.Converters
@@ -31,9 +33,10 @@ import javax.inject.Singleton
         RecurringTransactionEntity::class,
         CategoryEntity::class,
         DebtEntity::class,
-        SavingsGoalEntity::class
+        SavingsGoalEntity::class,
+        BillReminderEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -46,6 +49,7 @@ abstract class LedgerlyDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun debtDao(): DebtDao
     abstract fun savingsGoalDao(): SavingsGoalDao
+    abstract fun billReminderDao(): BillReminderDao
 
     companion object {
         const val DATABASE_NAME = "ledgerly_db"
@@ -70,7 +74,8 @@ abstract class LedgerlyDatabase : RoomDatabase() {
                         MIGRATION_7_8,
                         MIGRATION_8_9,
                         MIGRATION_9_10,
-                        MIGRATION_10_11
+                        MIGRATION_10_11,
+                        MIGRATION_11_12
                     )
 //                    .fallbackToDestructiveMigration(true) //  Delete and recreate the database: For Dev
                     .build()
@@ -361,15 +366,15 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
 }
 
 val MIGRATION_10_11 = object : Migration(10, 11) {
-    override fun migrate(database: SupportSQLiteDatabase) {
+    override fun migrate(db: SupportSQLiteDatabase) {
 
         // 1. Add new temp column
-        database.execSQL(
+        db.execSQL(
             "ALTER TABLE savings_goals ADD COLUMN icon_res INTEGER NOT NULL DEFAULT ${R.drawable.ic_target}"
         )
 
         // 2. Map old emoji values to drawable icons
-        database.execSQL(
+        db.execSQL(
             """
             UPDATE savings_goals SET icon_res = CASE icon
                 WHEN '🎯' THEN ${R.drawable.ic_target}
@@ -403,7 +408,7 @@ val MIGRATION_10_11 = object : Migration(10, 11) {
 //        )
 
         // 3. Recreate table WITHOUT old icon column
-        database.execSQL(
+        db.execSQL(
             """
          CREATE TABLE savings_goals_new (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -422,7 +427,7 @@ val MIGRATION_10_11 = object : Migration(10, 11) {
             """.trimIndent()
         )
 
-        database.execSQL(
+        db.execSQL(
             """
                INSERT INTO savings_goals_new (
                     id, name, description, targetAmount, currentAmount,
@@ -436,8 +441,53 @@ val MIGRATION_10_11 = object : Migration(10, 11) {
             """.trimIndent()
         )
 
-        database.execSQL("DROP TABLE savings_goals")
-        database.execSQL("ALTER TABLE savings_goals_new RENAME TO savings_goals")
+        db.execSQL("DROP TABLE savings_goals")
+        db.execSQL("ALTER TABLE savings_goals_new RENAME TO savings_goals")
+    }
+}
+
+val MIGRATION_11_12 = object : Migration(11, 12) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+
+        db.execSQL(
+            """
+            CREATE TABLE bill_reminders_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                billName TEXT NOT NULL,
+                description TEXT NOT NULL,
+                amount REAL NOT NULL,
+                currency TEXT NOT NULL,
+                dueDate INTEGER NOT NULL,
+                category TEXT NOT NULL,
+                frequency TEXT NOT NULL,
+                nextDueDate INTEGER,
+                reminderDays INTEGER NOT NULL,
+                reminderEnabled INTEGER NOT NULL,
+                notificationSent INTEGER NOT NULL,
+                isOverdue INTEGER NOT NULL,
+                status TEXT NOT NULL,
+                paymentMethod TEXT NOT NULL,
+                notes TEXT NOT NULL,
+                color INTEGER NOT NULL,
+                createdAt INTEGER NOT NULL,
+                lastModified INTEGER NOT NULL,
+                isDeleted INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+
+        db.execSQL(
+            "CREATE INDEX index_bill_reminders_status ON bill_reminders_new(status)"
+        )
+        db.execSQL(
+            "CREATE INDEX index_bill_reminders_dueDate ON bill_reminders_new(dueDate)"
+        )
+        db.execSQL(
+            "CREATE INDEX index_bill_reminders_isDeleted ON bill_reminders_new(isDeleted)"
+        )
+
+        db.execSQL("DROP TABLE IF EXISTS bill_reminders")
+        db.execSQL("ALTER TABLE bill_reminders_new RENAME TO bill_reminders")
     }
 }
 

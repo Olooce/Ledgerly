@@ -95,14 +95,10 @@ fun AddEditDebtScreen(
                 NavigationEvent.NavigateBack -> {
                     navController.popBackStack()
                 }
-
-                else -> {
-
-                }
+                else -> {}
             }
         }
     }
-
 
     var showStatusMenu by remember { mutableStateOf(false) }
 
@@ -110,14 +106,19 @@ fun AddEditDebtScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = if (addEditState.isEditMode) "Edit Debt" else "Add New Debt",
-                        style = Typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column {
+                        Text(
+                            text = if (addEditState.isEditMode) "Edit Debt" else "New Debt",
+                            style = Typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier.size(40.dp)
+                    ) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
@@ -136,27 +137,29 @@ fun AddEditDebtScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 16.dp)
         ) {
             // Error Message
             if (addEditState.error != null) {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp, top = 12.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = if (isDarkTheme) Color(0xFF5C1C1C) else Color(0xFFFFEBEE)
                     ),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             Icons.Default.Warning,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
@@ -169,15 +172,20 @@ fun AddEditDebtScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(if (addEditState.error != null) 0.dp else 12.dp))
+
             // Person Name
             OutlinedTextField(
                 value = addEditState.personName,
                 onValueChange = { viewModel.updatePersonName(it) },
                 label = { Text("Person Name") },
+                placeholder = { Text("e.g., John Doe") },
                 leadingIcon = {
-                    Icon(Icons.Default.Person, contentDescription = null)
+                    Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(20.dp))
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
                 singleLine = true,
                 enabled = !addEditState.isLoading,
                 colors = OutlinedTextFieldDefaults.colors(
@@ -194,10 +202,13 @@ fun AddEditDebtScreen(
                 value = addEditState.amount,
                 onValueChange = { viewModel.updateAmount(it) },
                 label = { Text("Amount (KES)") },
+                placeholder = { Text("0.00") },
                 leadingIcon = {
-                    Icon(Icons.Default.AccountBalance, contentDescription = null)
+                    Icon(Icons.Default.AccountBalance, contentDescription = null, modifier = Modifier.size(20.dp))
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
                 singleLine = true,
                 enabled = !addEditState.isLoading,
                 colors = OutlinedTextFieldDefaults.colors(
@@ -210,171 +221,175 @@ fun AddEditDebtScreen(
             )
 
             // Debt Type Section
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "Debt Type",
-                    style = Typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+            Text(
+                "Debt Type",
+                style = Typography.titleSmall,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
 
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                DebtTypeCard(
+                    title = "I Owe",
+                    subtitle = "Money you owe",
+                    isSelected = addEditState.debtType == "owe",
+                    isDarkTheme = isDarkTheme,
+                    onClick = { viewModel.updateDebtType("owe") },
+                    modifier = Modifier.weight(1f),
+                    isDebt = true
+                )
+                DebtTypeCard(
+                    title = "Owed to Me",
+                    subtitle = "Money owed to you",
+                    isSelected = addEditState.debtType == "owed",
+                    isDarkTheme = isDarkTheme,
+                    onClick = { viewModel.updateDebtType("owed") },
+                    modifier = Modifier.weight(1f),
+                    isDebt = false
+                )
+            }
+
+            // Due Date
+            Text(
+                "Due Date",
+                style = Typography.titleSmall,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp)
+                    .clickable {
+                        val calendar = Calendar.getInstance()
+                        calendar.timeInMillis = addEditState.dueDate
+                        DatePickerDialog(
+                            context,
+                            { _, year, month, day ->
+                                val newCalendar = Calendar.getInstance()
+                                newCalendar.set(year, month, day)
+                                viewModel.updateDueDate(newCalendar.timeInMillis)
+                            },
+                            calendar.get(Calendar.YEAR),
+                            calendar.get(Calendar.MONTH),
+                            calendar.get(Calendar.DAY_OF_MONTH)
+                        ).show()
+                    },
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    DebtTypeCard(
-                        title = "I Owe",
-                        subtitle = "Money you owe",
-                        isSelected = addEditState.debtType == "owe",
-                        isDarkTheme = isDarkTheme,
-                        onClick = { viewModel.updateDebtType("owe") },
-                        modifier = Modifier.weight(1f),
-                        isDebt = true
-                    )
-                    DebtTypeCard(
-                        title = "Owed to Me",
-                        subtitle = "Money owed to you",
-                        isSelected = addEditState.debtType == "owed",
-                        isDarkTheme = isDarkTheme,
-                        onClick = { viewModel.updateDebtType("owed") },
-                        modifier = Modifier.weight(1f),
-                        isDebt = false
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.CalendarMonth,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = dateFormat.format(Date(addEditState.dueDate)),
+                            style = Typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
 
-            // Due Date
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "Due Date",
-                    style = Typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+            // Status
+            Text(
+                "Status",
+                style = Typography.titleSmall,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
 
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp)) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            val calendar = Calendar.getInstance()
-                            calendar.timeInMillis = addEditState.dueDate
-                            DatePickerDialog(
-                                context,
-                                { _, year, month, day ->
-                                    val newCalendar = Calendar.getInstance()
-                                    newCalendar.set(year, month, day)
-                                    viewModel.updateDueDate(newCalendar.timeInMillis)
-                                },
-                                calendar.get(Calendar.YEAR),
-                                calendar.get(Calendar.MONTH),
-                                calendar.get(Calendar.DAY_OF_MONTH)
-                            ).show()
-                        },
+                        .clickable { showStatusMenu = true },
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                Icons.Default.CalendarMonth,
+                                Icons.Default.Info,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                text = dateFormat.format(Date(addEditState.dueDate)),
-                                style = Typography.bodyLarge,
+                                text = addEditState.status.replaceFirstChar { it.uppercase() },
+                                style = Typography.bodyMedium,
                                 fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                         Icon(
-                            Icons.Default.Edit,
+                            Icons.Default.ArrowDropDown,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
                         )
                     }
                 }
-            }
 
-            // Status
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "Status",
-                    style = Typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showStatusMenu = true },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    Icons.Default.Info,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
+                DropdownMenu(
+                    expanded = showStatusMenu,
+                    onDismissRequest = { showStatusMenu = false }
+                ) {
+                    listOf("pending", "partial", "settled", "overdue").forEach { status ->
+                        DropdownMenuItem(
+                            text = {
                                 Text(
-                                    text = addEditState.status.replaceFirstChar { it.uppercase() },
-                                    style = Typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    status.replaceFirstChar { it.uppercase() },
+                                    style = Typography.bodyMedium
                                 )
+                            },
+                            onClick = {
+                                viewModel.updateStatus(status)
+                                showStatusMenu = false
                             }
-                            Icon(
-                                Icons.Default.ArrowDropDown,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    DropdownMenu(
-                        expanded = showStatusMenu,
-                        onDismissRequest = { showStatusMenu = false }
-                    ) {
-                        listOf("pending", "partial", "settled", "overdue").forEach { status ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        status.replaceFirstChar { it.uppercase() },
-                                        style = Typography.bodyMedium
-                                    )
-                                },
-                                onClick = {
-                                    viewModel.updateStatus(status)
-                                    showStatusMenu = false
-                                }
-                            )
-                        }
+                        )
                     }
                 }
             }
@@ -384,13 +399,15 @@ fun AddEditDebtScreen(
                 value = addEditState.description,
                 onValueChange = { viewModel.updateDescription(it) },
                 label = { Text("Description") },
+                placeholder = { Text("Add details...") },
                 leadingIcon = {
-                    Icon(Icons.Default.Description, contentDescription = null)
+                    Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(20.dp))
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp),
-                maxLines = 4,
+                    .height(100.dp)
+                    .padding(bottom = 12.dp),
+                maxLines = 3,
                 enabled = !addEditState.isLoading,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -403,13 +420,16 @@ fun AddEditDebtScreen(
 
             // Reminder Settings
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(12.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -419,12 +439,13 @@ fun AddEditDebtScreen(
                             Icon(
                                 Icons.Default.Notifications,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 "Enable Reminders",
-                                style = Typography.bodyLarge,
+                                style = Typography.bodyMedium,
                                 fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -442,6 +463,7 @@ fun AddEditDebtScreen(
                             value = addEditState.reminderDays,
                             onValueChange = { viewModel.updateReminderDays(it) },
                             label = { Text("Days before due date") },
+                            placeholder = { Text("7") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             enabled = !addEditState.isLoading,
@@ -460,13 +482,15 @@ fun AddEditDebtScreen(
                 value = addEditState.notes,
                 onValueChange = { viewModel.updateNotes(it) },
                 label = { Text("Notes (Optional)") },
+                placeholder = { Text("Additional notes...") },
                 leadingIcon = {
-                    Icon(Icons.Default.Note, contentDescription = null)
+                    Icon(Icons.Default.Note, contentDescription = null, modifier = Modifier.size(20.dp))
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp),
-                maxLines = 4,
+                    .height(100.dp)
+                    .padding(bottom = 12.dp),
+                maxLines = 3,
                 enabled = !addEditState.isLoading,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -477,41 +501,40 @@ fun AddEditDebtScreen(
                 shape = RoundedCornerShape(12.dp)
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-
             // Save Button
             Button(
                 onClick = { viewModel.saveDebt() },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
+                    .height(48.dp),
                 enabled = !addEditState.isLoading,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(12.dp)
             ) {
                 if (addEditState.isLoading) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
+                        modifier = Modifier.size(20.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
                     )
                 } else {
                     Icon(
                         Icons.Default.Save,
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (addEditState.isEditMode) "Update Debt" else "Add Debt",
+                        text = if (addEditState.isEditMode) "Update" else "Save",
                         style = Typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }
@@ -527,20 +550,18 @@ fun DebtTypeCard(
     isDebt: Boolean
 ) {
     val backgroundColor = when {
-        isSelected && isDebt -> if (isDarkTheme) Color(0xFF5C1C1C) else Color(0xFFFFEBEE)
-        isSelected && !isDebt -> if (isDarkTheme) Color(0xFF1B3A1B) else Color(0xFFE8F5E9)
-        else -> MaterialTheme.colorScheme.surfaceVariant
+        isSelected -> MaterialTheme.colorScheme.primaryContainer
+        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
     }
 
     val borderColor = when {
-        isSelected && isDebt -> MaterialTheme.colorScheme.error
-        isSelected && !isDebt -> MaterialTheme.colorScheme.primary
-        else -> Color.Transparent
+        isSelected -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
     }
 
     Card(
         modifier = modifier
-            .height(100.dp)
+            .height(80.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
@@ -548,7 +569,7 @@ fun DebtTypeCard(
             androidx.compose.foundation.BorderStroke(2.dp, borderColor)
         } else null,
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 4.dp else 1.dp
+            defaultElevation = if (isSelected) 2.dp else 1.dp
         )
     ) {
         Box(
