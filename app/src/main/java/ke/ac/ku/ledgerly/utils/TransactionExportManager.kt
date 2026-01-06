@@ -224,8 +224,13 @@ object TransactionExportManager {
             encryptionMethod = EncryptionMethod.AES
         }
 
-        ZipFile(zipFile, password.toCharArray()).addFile(csvFile, params)
-        csvFile.delete()
+        ZipFile(zipFile, password.toCharArray()).use { zip ->
+            zip.addFile(csvFile, params)
+        }
+        if (!csvFile.delete()) {
+            // Security: ensure unencrypted file is removed
+            csvFile.deleteOnExit()
+        }
 
         return zipFile
     }
