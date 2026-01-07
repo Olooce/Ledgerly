@@ -51,10 +51,10 @@ class BillReminderWorker @AssistedInject constructor(
                     billId = billId,
                     billName = bill.billName,
                     amount = formatCurrency(bill.amount),
-                    daysPastDue = TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - bill.dueDate).toInt()
-
+                    daysPastDue = TimeUnit.MILLISECONDS
+                        .toDays(System.currentTimeMillis() - bill.dueDate)
+                        .toInt()
                 )
-                true
             } else {
                 notificationService.sendBillReminderNotification(
                     billId = billId,
@@ -65,10 +65,10 @@ class BillReminderWorker @AssistedInject constructor(
                 )
             }
 
-            // Mark reminder as sent if notification was successful
             if (sent) {
                 billReminderRepository.markReminderSent(billId)
             }
+
         }
     }
 

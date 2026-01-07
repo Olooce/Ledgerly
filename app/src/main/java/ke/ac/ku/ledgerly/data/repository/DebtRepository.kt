@@ -39,6 +39,8 @@ class DebtRepository @Inject constructor(
 
     suspend fun deleteDebt(id: Long) = debtDao.softDeleteDebt(id)
 
+    suspend fun markReminderSent(id: Long) = debtDao.markReminderSent(id)
+
     suspend fun updateDebtStatus(id: Long, status: String) = debtDao.updateDebtStatus(id, status)
 
     suspend fun permanentlyDeleteOldDebts() = debtDao.permanentlyDeleteOldDebts()

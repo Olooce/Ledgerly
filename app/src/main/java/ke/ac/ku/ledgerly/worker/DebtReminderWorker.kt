@@ -59,6 +59,7 @@ class DebtReminderWorker @AssistedInject constructor(
                     daysPastDue = TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - debt.dueDate).toInt(),
                     debtType = debt.debtType
                 )
+                debtRepository.markReminderSent(debtId)
             } else {
 
                 notificationService.sendDebtReminderNotification(
@@ -69,6 +70,7 @@ class DebtReminderWorker @AssistedInject constructor(
                     debtType = debt.debtType,
                     daysUntilDue = daysUntilDue
                 )
+                debtRepository.markReminderSent(debtId)
             }
         }
     }
