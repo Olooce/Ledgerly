@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -70,6 +71,7 @@ import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.enums.TimePeriod
 import ke.ac.ku.ledgerly.data.model.CategorySummary
 import ke.ac.ku.ledgerly.data.model.MonthlyComparison
+import ke.ac.ku.ledgerly.ui.components.LedgerlyTopBar
 import ke.ac.ku.ledgerly.ui.components.TransactionList
 import ke.ac.ku.ledgerly.ui.theme.White
 import ke.ac.ku.ledgerly.utils.FormatingUtils
@@ -87,18 +89,17 @@ fun StatsScreen(
     val tabs = listOf("Comparison", "Trends", "Categories")
 
     Box(modifier = Modifier.fillMaxSize()) {
-//        ConstraintLayout(modifier = Modifier.fillMaxSize()) {
-//            val (topBar) = createRefs()
-        Image(
-            painter = painterResource(R.drawable.ic_topbar),
-            contentDescription = "TopBar",
-//                modifier = Modifier.constrainAs(topBar) {
-//                    top.linkTo(parent.top)
-//                    start.linkTo(parent.start)
-//                    end.linkTo(parent.end)
-
-//                }
-        )
+        LedgerlyTopBar(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_ledgerly),
+                contentDescription = "Ledgerly logo",
+                modifier = Modifier
+                    .size(48.dp)
+                    .align(Alignment.Center)
+            )
+        }
 
         Scaffold(
             modifier = Modifier.fillMaxSize(),

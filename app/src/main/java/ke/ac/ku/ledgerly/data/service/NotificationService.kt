@@ -8,33 +8,25 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ke.ac.ku.ledgerly.MainActivity
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.NotificationEntity
+import ke.ac.ku.ledgerly.data.model.NotificationType
 import ke.ac.ku.ledgerly.data.repository.NotificationRepository
+import java.util.Calendar
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Centralized notification service to manage all app notifications
- */
 @Singleton
 class NotificationService @Inject constructor(
     @ApplicationContext private val context: Context,
     private val notificationRepository: NotificationRepository
 ) {
     companion object {
-        // Notification Channels
-        const val CHANNEL_BILL_REMINDERS = "bill_reminders"
-        const val CHANNEL_DEBT_REMINDERS = "debt_reminders"
-        const val CHANNEL_BUDGET_ALERTS = "budget_alerts"
-        const val CHANNEL_SAVINGS_GOALS = "savings_goals"
-        const val CHANNEL_GENERAL = "general_notifications"
-
-        // Notification ID bases for different types
         private const val NOTIFICATION_ID_BILLS = 2000
         private const val NOTIFICATION_ID_DEBTS = 1000
         private const val NOTIFICATION_ID_BUDGET = 3000
@@ -49,7 +41,7 @@ class NotificationService @Inject constructor(
     private fun createNotificationChannels() {
         val channels = listOf(
             NotificationChannel(
-                CHANNEL_BILL_REMINDERS,
+                NotificationType.Bill.value,
                 "Bill Reminders",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
@@ -58,28 +50,28 @@ class NotificationService @Inject constructor(
                 enableLights(true)
             },
             NotificationChannel(
-                CHANNEL_DEBT_REMINDERS,
+                NotificationType.Debt.value,
                 "Debt Reminders",
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "Reminders for upcoming debt payments"
             },
             NotificationChannel(
-                CHANNEL_BUDGET_ALERTS,
+                NotificationType.Budget.value,
                 "Budget Alerts",
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "Alerts when you're approaching budget limits"
             },
             NotificationChannel(
-                CHANNEL_SAVINGS_GOALS,
+                NotificationType.Savings.value,
                 "Savings Goals",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
                 description = "Updates on your savings goals progress"
             },
             NotificationChannel(
-                CHANNEL_GENERAL,
+                NotificationType.General.value,
                 "General Notifications",
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
@@ -117,10 +109,10 @@ class NotificationService @Inject constructor(
             else -> "$billName - $amount (Due: $dueDate)"
         }
         val notificationEntity = NotificationEntity(
-            type = "bill_reminder",
+            type = NotificationType.Bill.value,
             title = title,
             message = message,
-            relatedId = billId,
+            relatedId = billId.toString(),
             relatedType = "BillReminder",
             actionUrl = "ledgerly://billReminders/$billId"
         )
@@ -137,7 +129,7 @@ class NotificationService @Inject constructor(
         }
 
         return sendSystemNotification(
-            channelId = CHANNEL_BILL_REMINDERS,
+            channelId = NotificationType.Bill.value,
             notificationId = NOTIFICATION_ID_BILLS + (billId % Int.MAX_VALUE).toInt(),
             title = title,
             message = message,
@@ -170,10 +162,10 @@ class NotificationService @Inject constructor(
         }
 
         val notificationEntity = NotificationEntity(
-            type = "debt_reminder",
+            type = NotificationType.Debt.value,
             title = title,
             message = message,
-            relatedId = debtId,
+            relatedId = debtId.toString(),
             relatedType = "Debt",
             actionUrl = "ledgerly://debtTracker/$debtId"
         )
@@ -185,7 +177,7 @@ class NotificationService @Inject constructor(
         }
 
         return sendSystemNotification(
-            channelId = CHANNEL_DEBT_REMINDERS,
+            channelId = NotificationType.Debt.value,
             notificationId = NOTIFICATION_ID_DEBTS + (debtId % Int.MAX_VALUE).toInt(),
             title = title,
             message = message,
@@ -205,15 +197,17 @@ class NotificationService @Inject constructor(
         val title = "Budget Alert: $category"
         val message = "You've spent ${String.format("%.0f", percentageUsed)}% of your budget"
         val bigText = "You've spent $spent out of $limit for $category this month."
+        val key = budgetNotificationKey(category)
 
-        val notificationEntity = NotificationEntity(
-            type = "budget_alert",
+        val notificationEntity =  NotificationEntity(
+            type = NotificationType.Budget.value,
             title = title,
             message = message,
-            relatedId = budgetId.hashCode().toLong(),
+            relatedId = key,
             relatedType = "Budget",
             actionUrl = "ledgerly://budget/$budgetId"
         )
+
         notificationRepository.insertNotification(notificationEntity)
 
         if (!hasNotificationPermission()) {
@@ -221,7 +215,7 @@ class NotificationService @Inject constructor(
         }
 
         return sendSystemNotification(
-            channelId = CHANNEL_BUDGET_ALERTS,
+            channelId = NotificationType.Budget.value,
             notificationId = NOTIFICATION_ID_BUDGET + budgetId.hashCode(),
             title = title,
             message = message,
@@ -231,6 +225,14 @@ class NotificationService @Inject constructor(
             extras = mapOf("budgetId" to budgetId)
         )
     }
+
+    fun budgetNotificationKey(category: String): String {
+        val cal = Calendar.getInstance()
+        val month = cal.get(Calendar.MONTH)
+        val year = cal.get(Calendar.YEAR)
+        return "$category|$month|$year"
+    }
+
 
     suspend fun sendSavingsGoalNotification(
         goalId: Long,
@@ -244,10 +246,10 @@ class NotificationService @Inject constructor(
         val bigText = "You've saved $currentAmount out of $targetAmount for $goalName!"
 
         val notificationEntity = NotificationEntity(
-            type = "savings_goal",
+            type = NotificationType.Savings.value,
             title = title,
             message = message,
-            relatedId = goalId,
+            relatedId = goalId.toString(),
             relatedType = "SavingsGoal",
             actionUrl = "ledgerly://savingsGoals/$goalId"
         )
@@ -258,8 +260,9 @@ class NotificationService @Inject constructor(
         }
 
         return sendSystemNotification(
-            channelId = CHANNEL_SAVINGS_GOALS,
-            notificationId = NOTIFICATION_ID_SAVINGS + goalId.toInt(),
+            channelId = NotificationType.Savings.value,
+            notificationId = NOTIFICATION_ID_SAVINGS +
+                    (goalId % Int.MAX_VALUE).toInt(),
             title = title,
             message = message,
             bigText = bigText,
@@ -275,7 +278,7 @@ class NotificationService @Inject constructor(
         bigText: String? = null
     ): Boolean {
         val notificationEntity = NotificationEntity(
-            type = "general",
+            type = NotificationType.General.value,
             title = title,
             message = message,
             relatedId = null,
@@ -289,8 +292,8 @@ class NotificationService @Inject constructor(
         }
 
         return sendSystemNotification(
-            channelId = CHANNEL_GENERAL,
-            notificationId = NOTIFICATION_ID_GENERAL + System.currentTimeMillis().toInt(),
+            channelId = NotificationType.General.value,
+            notificationId = NOTIFICATION_ID_GENERAL + (System.currentTimeMillis() % 10000).toInt(),
             title = title,
             message = message,
             bigText = bigText ?: message,
@@ -342,25 +345,17 @@ class NotificationService @Inject constructor(
 
             val notificationManager =
                 context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.notify(notificationId, notification)
 
-            return true
+            if (hasNotificationPermission()) {
+                notificationManager.notify(notificationId, notification)
+                return true
+            }
+
+            return false
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("NotificationService", "Failed to send notification", e)
             return false
         }
     }
 
-    fun cancelNotification(notificationId: Int) {
-        val notificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancel(notificationId)
-    }
-
-
-    fun cancelAllNotifications() {
-        val notificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancelAll()
-    }
 }

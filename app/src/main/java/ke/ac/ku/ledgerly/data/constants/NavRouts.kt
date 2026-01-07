@@ -6,7 +6,6 @@ object NavRouts {
     const val onboarding = "onboarding"
     const val home = "/home"
     const val profile = "/profile"
-    const val profileDetail = "/profile"
     const val notifications = "/notifications"
     const val stats = "/stats"
     const val addIncome = "/add_income"

@@ -28,6 +28,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -74,6 +75,7 @@ import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.presentation.home.HomeUiEvent
 import ke.ac.ku.ledgerly.presentation.home.HomeViewModel
+import ke.ac.ku.ledgerly.ui.components.LedgerlyTopBar
 import ke.ac.ku.ledgerly.ui.components.RecurringTransactionItem
 import ke.ac.ku.ledgerly.ui.components.TransactionItem
 import ke.ac.ku.ledgerly.ui.theme.Typography
@@ -202,16 +204,21 @@ fun TransactionsScreen(
                 ConstraintLayout(modifier = Modifier.fillMaxSize()) {
                     val (topBar, header, tabRow, content, add) = createRefs()
 
-                    // Top Bar
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_topbar),
-                        contentDescription = null,
+                    LedgerlyTopBar(
                         modifier = Modifier.constrainAs(topBar) {
                             top.linkTo(parent.top)
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
                         }
-                    )
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_ledgerly),
+                            contentDescription = "Ledgerly logo",
+                            modifier = Modifier
+                                .size(48.dp)
+                                .align(Alignment.Center)
+                        )
+                    }
 
                     // Header
                     Box(

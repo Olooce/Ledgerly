@@ -19,17 +19,19 @@ data class NotificationEntity(
     val type: String, // "bill_reminder", "budget_alert", "savings_goal", "debt_reminder", "general"
     val title: String,
     val message: String,
-    val relatedId: Long? = null, // ID of related entity (bill, budget, etc.)
+    val relatedId: String? = null, // ID of related entity (bill, budget, etc.)
     val relatedType: String? = null, // Type of related entity
 
     val isRead: Boolean = false,
     val isDeleted: Boolean = false,
 
-    val createdDate: Long,
     val readDate: Long? = null,
-    val lastModified: Long,
+
     val icon: Int? = null,
-    val actionUrl: String? = null
+    val actionUrl: String? = null,
+
+    val createdDate: Long = System.currentTimeMillis(),
+    val lastModified: Long = System.currentTimeMillis()
 ) {
     val isUnread: Boolean get() = !isRead && !isDeleted
 }

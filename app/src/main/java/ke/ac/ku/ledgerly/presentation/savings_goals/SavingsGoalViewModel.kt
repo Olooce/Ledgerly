@@ -6,6 +6,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.SavingsGoalEntity
 import ke.ac.ku.ledgerly.data.repository.SavingsGoalRepository
+import ke.ac.ku.ledgerly.data.service.NotificationService
+import ke.ac.ku.ledgerly.utils.FormatingUtils.formatCurrency
+import ke.ac.ku.ledgerly.utils.sendSavingsMilestone
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,7 +17,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SavingsGoalViewModel @Inject constructor(
-    private val repository: SavingsGoalRepository
+    private val repository: SavingsGoalRepository,
+    private val notificationService: NotificationService
 ) : ViewModel() {
 
     private val _allGoals = MutableStateFlow<List<SavingsGoalEntity>>(emptyList())
@@ -120,7 +124,28 @@ class SavingsGoalViewModel @Inject constructor(
     fun updateGoalProgress(goalId: Long, newAmount: Double) {
         viewModelScope.launch {
             try {
-                repository.updateGoalAmount(goalId, newAmount)
+                val goal = repository.getGoalByIdOnce(goalId)
+                    ?: throw IllegalStateException("Goal not found")
+
+                if (goal.targetAmount <= 0.0) {
+                    _errorMessage.value = "Invalid target amount"
+                    return@launch
+                }
+
+                val crossedMilestones =
+                    repository.updateGoalAmountWithMilestones(goalId, newAmount)
+
+                crossedMilestones.forEach { milestone ->
+                    notificationService.sendSavingsMilestone(
+                        goalId = goalId,
+                        goalName = goal.name,
+                        percentageComplete = milestone,
+                        currentAmount = formatCurrency(newAmount),
+                        targetAmount = formatCurrency(goal.targetAmount)
+                    )
+                }
+
+
                 loadAllGoals()
                 _errorMessage.value = null
             } catch (e: Exception) {
@@ -128,6 +153,7 @@ class SavingsGoalViewModel @Inject constructor(
             }
         }
     }
+
 
     fun completeGoal(goalId: Long) {
         viewModelScope.launch {
@@ -181,6 +207,4 @@ class SavingsGoalViewModel @Inject constructor(
             R.drawable.ic_target
         )
     }
-
-
 }

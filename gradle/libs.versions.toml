@@ -1,5 +1,5 @@
 [versions]
-agp = "8.13.1"
+agp = "8.13.2"
 constraintlayoutCompose = "1.1.1"
 foundation = "1.9.4"
 kotlin = "2.2.21"
@@ -47,6 +47,7 @@ itext7 = "8.0.2"
 apachePoi = "5.4.0"
 opencsv = "5.10"
 zip4j = "2.11.5"
+remoteCreationCompose = "1.0.0-alpha01"
 
 
 [libraries]
@@ -105,6 +106,7 @@ itext7-core = { module = "com.itextpdf:itext7-core", version.ref = "itext7" }
 apache-poi = { module = "org.apache.poi:poi-ooxml", version.ref = "apachePoi" }
 opencsv = { module = "com.opencsv:opencsv", version.ref = "opencsv" }
 zip4j = { module = "net.lingala.zip4j:zip4j", version.ref = "zip4j" }
+androidx-compose-remote-creation-compose = { group = "androidx.compose.remote", name = "remote-creation-compose", version.ref = "remoteCreationCompose" }
 
 
 [plugins]

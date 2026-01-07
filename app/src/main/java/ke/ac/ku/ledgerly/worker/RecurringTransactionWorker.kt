@@ -10,6 +10,8 @@ import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.model.RecurrenceFrequency
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
+import ke.ac.ku.ledgerly.data.service.NotificationService
+import ke.ac.ku.ledgerly.utils.sendRecurringTransactionNotification
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -19,7 +21,8 @@ class RecurringTransactionWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted params: WorkerParameters,
     private val dao: RecurringTransactionDao,
-    private val transDao: TransactionDao
+    private val transDao: TransactionDao,
+    private val notificationService: NotificationService
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
@@ -48,7 +51,13 @@ class RecurringTransactionWorker @AssistedInject constructor(
 
             // Generate next transactions until current date
             var currentDate = calculateNextDueDate(lastGenerated, recurring.frequency)
-            while (!currentDate.isAfter(today) && (endDate == null || !currentDate.isAfter(endDate))) {
+
+            var notificationSent = false
+            var lastGeneratedDate: LocalDate? = null
+
+            while (!currentDate.isAfter(today) &&
+                (endDate == null || !currentDate.isAfter(endDate))
+            ) {
                 val transaction = TransactionEntity(
                     id = null,
                     category = recurring.category,
@@ -61,11 +70,24 @@ class RecurringTransactionWorker @AssistedInject constructor(
                 )
 
                 transDao.insertTransaction(transaction)
-                dao.updateRecurringTransaction(
-                    recurring.copy(lastGeneratedDate = currentDate.toEpochMillis())
-                )
+                lastGeneratedDate = currentDate
+
+                if (!notificationSent) {
+                    notificationService.sendRecurringTransactionNotification(
+                        transactionName = recurring.notes,
+                        amount = recurring.amount.toString(),
+                        type = recurring.type.lowercase()
+                    )
+                    notificationSent = true
+                }
 
                 currentDate = calculateNextDueDate(currentDate, recurring.frequency)
+            }
+
+            if (lastGeneratedDate != null) {
+                dao.updateRecurringTransaction(
+                    recurring.copy(lastGeneratedDate = lastGeneratedDate.toEpochMillis())
+                )
             }
         }
     }

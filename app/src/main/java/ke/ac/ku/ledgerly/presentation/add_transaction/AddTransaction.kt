@@ -64,6 +64,7 @@ import ke.ac.ku.ledgerly.base.NavigationEvent
 import ke.ac.ku.ledgerly.data.model.RecurrenceFrequency
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
+import ke.ac.ku.ledgerly.ui.components.LedgerlyTopBar
 import ke.ac.ku.ledgerly.ui.theme.LightGrey
 import ke.ac.ku.ledgerly.ui.theme.Typography
 import ke.ac.ku.ledgerly.ui.widget.DropDown
@@ -94,16 +95,21 @@ fun AddTransaction(
     Surface(modifier = Modifier.fillMaxSize()) {
         ConstraintLayout(modifier = Modifier.fillMaxSize()) {
             val (nameRow, card, topBar) = createRefs()
-
-            Image(
-                painter = painterResource(id = R.drawable.ic_topbar),
-                contentDescription = null,
+            LedgerlyTopBar(
                 modifier = Modifier.constrainAs(topBar) {
                     top.linkTo(parent.top)
                     start.linkTo(parent.start)
                     end.linkTo(parent.end)
                 }
-            )
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_ledgerly),
+                    contentDescription = "Ledgerly logo",
+                    modifier = Modifier
+                        .size(48.dp)
+                        .align(Alignment.Center)
+                )
+            }
 
             Box(
                 modifier = Modifier

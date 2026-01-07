@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import ke.ac.ku.ledgerly.data.model.SavingsGoalEntity
 import ke.ac.ku.ledgerly.data.model.SavingsSummary
@@ -47,6 +48,37 @@ interface SavingsGoalDao {
 
     @Update
     suspend fun updateGoal(goal: SavingsGoalEntity)
+
+    @Transaction
+    suspend fun updateGoalAmountWithMilestones(
+        goalId: Long,
+        newAmount: Double
+    ): List<Double> {
+        val goal = getGoalById(goalId) ?: return emptyList()
+
+        if (goal.targetAmount <= 0.0) return emptyList()
+
+        val oldPercentage = (goal.currentAmount / goal.targetAmount) * 100
+        val newPercentage = (newAmount / goal.targetAmount) * 100
+
+        val milestones = listOf(25.0, 50.0, 75.0, 100.0)
+
+        val crossed = milestones.filter {
+            it > goal.lastMilestoneReached &&
+                    oldPercentage < it &&
+                    newPercentage >= it
+        }
+
+        updateGoal(
+            goal.copy(
+                currentAmount = newAmount,
+                lastMilestoneReached = crossed.maxOrNull()
+                    ?: goal.lastMilestoneReached
+            )
+        )
+
+        return crossed
+    }
 
     @Query("UPDATE savings_goals SET isDeleted = 1, lastModified = :timestamp WHERE id = :id")
     suspend fun softDeleteGoal(id: Long, timestamp: Long = System.currentTimeMillis())

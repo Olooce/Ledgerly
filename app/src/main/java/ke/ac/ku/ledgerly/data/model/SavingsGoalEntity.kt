@@ -14,6 +14,7 @@ data class SavingsGoalEntity(
     val icon: Int,
     val color: String = "#4CAF50",
     val targetDate: Long? = null,
+    val lastMilestoneReached: Double = 0.0,
     val createdDate: Long = System.currentTimeMillis(),
     val lastModified: Long = System.currentTimeMillis(),
     val isCompleted: Boolean = false,

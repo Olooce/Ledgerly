@@ -73,6 +73,7 @@ interface DebtDao {
         AND (dueDate - reminderDays * :dayMs) <= :reminderTime 
         AND dueDate > :reminderTime
         AND status != 'settled'
+        AND lastReminderSent < (dueDate - reminderDays * :dayMs)
     """
     )
     suspend fun getDebtsNeedingReminder(
@@ -110,6 +111,9 @@ interface DebtDao {
         status: String,
         timestamp: Long = System.currentTimeMillis()
     )
+
+    @Query("UPDATE debts SET lastReminderSent = :timestamp WHERE id = :id")
+    suspend fun markReminderSent(id: Long, timestamp: Long = System.currentTimeMillis())
 
     @Query("DELETE FROM debts WHERE isDeleted = 1")
     suspend fun permanentlyDeleteOldDebts()

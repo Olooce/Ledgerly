@@ -1,5 +1,6 @@
 package ke.ac.ku.ledgerly.data.repository
 
+import androidx.room.Transaction
 import ke.ac.ku.ledgerly.data.dao.SavingsGoalDao
 import ke.ac.ku.ledgerly.data.model.SavingsGoalEntity
 import ke.ac.ku.ledgerly.data.model.SavingsSummary
@@ -16,6 +17,10 @@ class SavingsGoalRepository @Inject constructor(
     fun getCompletedGoals(): Flow<List<SavingsGoalEntity>> = savingsGoalDao.getCompletedGoals()
 
     fun getGoalById(id: Long): Flow<SavingsGoalEntity?> = savingsGoalDao.getGoalByIdFlow(id)
+
+    suspend fun getGoalByIdOnce(id: Long): SavingsGoalEntity? =
+        savingsGoalDao.getGoalById(id)
+
 
     fun getSavingsSummary(): Flow<SavingsSummary> =
         savingsGoalDao.getSavingsSummary()
@@ -34,4 +39,13 @@ class SavingsGoalRepository @Inject constructor(
     suspend fun permanentlyDeleteOldGoals() = savingsGoalDao.permanentlyDeleteOldGoals()
 
     suspend fun getAllGoalsSync(): List<SavingsGoalEntity> = savingsGoalDao.getAllGoalsSync()
+
+
+    suspend fun updateGoalAmountWithMilestones(
+        goalId: Long,
+        newAmount: Double
+    ): List<Double> {
+        return savingsGoalDao.updateGoalAmountWithMilestones(goalId, newAmount)
+    }
+
 }

@@ -49,6 +49,7 @@ import androidx.navigation.compose.rememberNavController
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.data.repository.CategoryRepository
+import ke.ac.ku.ledgerly.ui.components.LedgerlyTopBar
 import ke.ac.ku.ledgerly.ui.theme.LightGrey
 import ke.ac.ku.ledgerly.ui.theme.Typography
 import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
@@ -65,15 +66,21 @@ fun AddBudgetScreen(
         ConstraintLayout(modifier = Modifier.fillMaxSize()) {
             val (nameRow, formCard, topBar) = createRefs()
 
-            Image(
-                painter = painterResource(id = R.drawable.ic_topbar),
-                contentDescription = null,
+            LedgerlyTopBar(
                 modifier = Modifier.constrainAs(topBar) {
                     top.linkTo(parent.top)
                     start.linkTo(parent.start)
                     end.linkTo(parent.end)
                 }
-            )
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_ledgerly),
+                    contentDescription = "Ledgerly logo",
+                    modifier = Modifier
+                        .size(48.dp)
+                        .align(Alignment.Center)
+                )
+            }
 
             // Top Row
             Box(

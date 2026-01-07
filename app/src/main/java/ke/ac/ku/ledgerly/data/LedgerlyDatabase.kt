@@ -39,7 +39,7 @@ import javax.inject.Singleton
         BillReminderEntity::class,
         NotificationEntity::class
     ],
-    version = 14,
+    version = 17,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -82,7 +82,11 @@ abstract class LedgerlyDatabase : RoomDatabase() {
                         MIGRATION_10_11,
                         MIGRATION_11_12,
                         MIGRATION_12_13,
-                        MIGRATION_13_14
+                        MIGRATION_13_14,
+                        MIGRATION_14_15,
+                        MIGRATION_15_16,
+                        MIGRATION_16_17
+
                     )
 //                    .fallbackToDestructiveMigration(true) //  Delete and recreate the database: For Dev
                     .build()
@@ -541,9 +545,85 @@ val MIGRATION_13_14 = object : Migration(13, 14) {
                 ${R.drawable.ic_goal_plane},
                 ${R.drawable.ic_goal_school}
             )
-            """
+            """.trimIndent()
         )
     }
 }
+
+val MIGRATION_14_15 = object : Migration(14, 15) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+
+
+        db.execSQL(
+            """
+            CREATE TABLE notifications_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                type TEXT NOT NULL,
+                title TEXT NOT NULL,
+                message TEXT NOT NULL,
+                relatedId TEXT,                -- ✅ FIXED
+                relatedType TEXT,
+                isRead INTEGER NOT NULL DEFAULT 0,
+                isDeleted INTEGER NOT NULL DEFAULT 0,
+                createdDate INTEGER NOT NULL,
+                readDate INTEGER,
+                lastModified INTEGER NOT NULL,
+                icon INTEGER,
+                actionUrl TEXT
+            )
+            """.trimIndent()
+        )
+
+
+        db.execSQL(
+            """
+            INSERT INTO notifications_new (
+                id, type, title, message, relatedId, relatedType,
+                isRead, isDeleted, createdDate, readDate,
+                lastModified, icon, actionUrl
+            )
+            SELECT
+                id, type, title, message,
+                CASE
+                    WHEN relatedId IS NULL THEN NULL
+                    ELSE relatedId || ''
+                END,
+                relatedType,
+                isRead, isDeleted, createdDate, readDate,
+                lastModified, icon, actionUrl
+            FROM notifications
+            """.trimIndent()
+        )
+
+
+        db.execSQL("DROP TABLE notifications")
+
+        db.execSQL("ALTER TABLE notifications_new RENAME TO notifications")
+
+
+        db.execSQL("CREATE INDEX index_notifications_isRead ON notifications(isRead)")
+        db.execSQL("CREATE INDEX index_notifications_createdDate ON notifications(createdDate)")
+        db.execSQL("CREATE INDEX index_notifications_isDeleted ON notifications(isDeleted)")
+    }
+}
+
+val MIGRATION_15_16 = object : Migration(15, 16) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            ALTER TABLE savings_goals
+            ADD COLUMN lastMilestoneReached REAL NOT NULL DEFAULT 0.0
+            """.trimIndent()
+        )
+    }
+}
+
+val MIGRATION_16_17 = object : Migration(16, 17) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE debts ADD COLUMN lastReminderSent INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+
 
 

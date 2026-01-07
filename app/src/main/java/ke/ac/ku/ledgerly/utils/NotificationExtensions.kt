@@ -1,15 +1,12 @@
 package ke.ac.ku.ledgerly.utils
 
+import ke.ac.ku.ledgerly.data.repository.NotificationRepository
 import ke.ac.ku.ledgerly.data.service.NotificationService
-
-
-/**
- * Extension functions for common notification scenarios
- */
+import java.util.Calendar
 
 //Send budget warning when spending reaches threshold
-
 suspend fun NotificationService.sendBudgetWarning(
+    notificationRepository: NotificationRepository,
     budgetId: String,
     category: String,
     percentageUsed: Double,
@@ -17,13 +14,22 @@ suspend fun NotificationService.sendBudgetWarning(
     limit: String
 ) {
     if (percentageUsed >= 80.0) {
-        sendBudgetAlertNotification(
-            budgetId = budgetId,
-            category = category,
-            percentageUsed = percentageUsed,
-            spent = spent,
-            limit = limit
+        val key = budgetNotificationKey(category)
+
+        val existingNotifications = notificationRepository.getNotificationsByRelatedEntity(
+            relatedId = key,
+            relatedType = "Budget"
         )
+
+        if (existingNotifications.isEmpty()) {
+            sendBudgetAlertNotification(
+                budgetId = budgetId,
+                category = category,
+                percentageUsed = percentageUsed,
+                spent = spent,
+                limit = limit
+            )
+        }
     }
 }
 
@@ -56,9 +62,10 @@ suspend fun NotificationService.sendOverdueDebtNotification(
     amount: String,
     daysPastDue: Int,
     debtType: String
-) {
+): Boolean {
     val dueDate = "OVERDUE by $daysPastDue days"
-    sendDebtReminderNotification(
+
+    return sendDebtReminderNotification(
         debtId = debtId,
         personName = personName,
         amount = amount,
@@ -68,6 +75,7 @@ suspend fun NotificationService.sendOverdueDebtNotification(
     )
 }
 
+
 //Send overdue bill notification
 
 suspend fun NotificationService.sendOverdueBillNotification(
@@ -75,8 +83,9 @@ suspend fun NotificationService.sendOverdueBillNotification(
     billName: String,
     amount: String,
     daysPastDue: Int
-) {
+) : Boolean {
     val dueDate = "OVERDUE by $daysPastDue days"
+    return try {
     sendBillReminderNotification(
         billId = billId,
         billName = billName,
@@ -84,6 +93,9 @@ suspend fun NotificationService.sendOverdueBillNotification(
         dueDate = dueDate,
         daysUntilDue = -daysPastDue
     )
+    } catch (e: Exception) {
+        false
+    }
 }
 
 //Send welcome notification for new users

@@ -19,7 +19,8 @@ data class DebtEntity(
     val notes: String = "",
     val createdAt: Long = System.currentTimeMillis(),
     val lastModified: Long = System.currentTimeMillis(),
-    val isDeleted: Boolean = false
+    val isDeleted: Boolean = false,
+    val lastReminderSent: Long = 0
 )
 
 data class DebtSummary(

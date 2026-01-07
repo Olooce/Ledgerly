@@ -9,9 +9,11 @@ import dagger.assisted.AssistedInject
 import ke.ac.ku.ledgerly.data.repository.DebtRepository
 import ke.ac.ku.ledgerly.data.service.NotificationService
 import ke.ac.ku.ledgerly.utils.FormatingUtils.formatCurrency
+import ke.ac.ku.ledgerly.utils.sendOverdueDebtNotification
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 @HiltWorker
 class DebtReminderWorker @AssistedInject constructor(
@@ -44,23 +46,40 @@ class DebtReminderWorker @AssistedInject constructor(
         debtsNeedingReminder.forEach { debt ->
             val daysUntilDue =
                 ((debt.dueDate - System.currentTimeMillis()) / (1000 * 60 * 60 * 24)).toInt()
+
             val debtId = debt.id ?: return@forEach
 
-            val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-            val dueDate = dateFormat.format(Date(debt.dueDate))
+            val dueDate = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                .format(Date(debt.dueDate))
 
-            notificationService.sendDebtReminderNotification(
-                debtId = debtId,
-                personName = debt.personName,
-                amount = formatCurrency(debt.amount),
-                dueDate = dueDate,
-                debtType = debt.debtType,
-                daysUntilDue = daysUntilDue
-            )
+            val sent = if (daysUntilDue < 0) {
+                notificationService.sendOverdueDebtNotification(
+                    debtId = debtId,
+                    personName = debt.personName,
+                    amount = formatCurrency(debt.amount),
+                    daysPastDue = TimeUnit.MILLISECONDS
+                        .toDays(System.currentTimeMillis() - debt.dueDate)
+                        .toInt(),
+                    debtType = debt.debtType
+                )
+            } else {
+                notificationService.sendDebtReminderNotification(
+                    debtId = debtId,
+                    personName = debt.personName,
+                    amount = formatCurrency(debt.amount),
+                    dueDate = dueDate,
+                    debtType = debt.debtType,
+                    daysUntilDue = daysUntilDue
+                )
+            }
+
+            if (sent) {
+                debtRepository.markReminderSent(debtId)
+            }
         }
     }
 
-    private fun isRecoverable(e: Exception): Boolean {
+        private fun isRecoverable(e: Exception): Boolean {
         return when (e) {
             is java.io.IOException -> true
             is android.database.sqlite.SQLiteException -> false
