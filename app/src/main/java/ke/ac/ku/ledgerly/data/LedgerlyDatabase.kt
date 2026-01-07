@@ -39,7 +39,7 @@ import javax.inject.Singleton
         BillReminderEntity::class,
         NotificationEntity::class
     ],
-    version = 15,
+    version = 16,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -83,7 +83,8 @@ abstract class LedgerlyDatabase : RoomDatabase() {
                         MIGRATION_11_12,
                         MIGRATION_12_13,
                         MIGRATION_13_14,
-                        MIGRATION_14_15
+                        MIGRATION_14_15,
+                        MIGRATION_15_16
 
                     )
 //                    .fallbackToDestructiveMigration(true) //  Delete and recreate the database: For Dev
@@ -604,6 +605,18 @@ val MIGRATION_14_15 = object : Migration(14, 15) {
         db.execSQL("CREATE INDEX index_notifications_isDeleted ON notifications(isDeleted)")
     }
 }
+
+val MIGRATION_15_16 = object : Migration(15, 16) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            ALTER TABLE savings_goals
+            ADD COLUMN lastMilestoneReached REAL NOT NULL DEFAULT 0.0
+            """.trimIndent()
+        )
+    }
+}
+
 
 
 

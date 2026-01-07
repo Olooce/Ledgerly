@@ -140,19 +140,19 @@ class SavingsGoalViewModel @Inject constructor(
                 val newPercentage =
                     (newAmount / goal.targetAmount) * 100
 
-                val milestones = listOf(25.0, 50.0, 75.0, 100.0)
+                val crossedMilestones =
+                    repository.updateGoalAmountWithMilestones(goalId, newAmount)
 
-                milestones.forEach { milestone ->
-                    if (oldPercentage < milestone && newPercentage >= milestone) {
-                        notificationService.sendSavingsMilestone(
-                            goalId = goalId,
-                            goalName = goal.name,
-                            percentageComplete = milestone,
-                            currentAmount = formatCurrency(newAmount),
-                            targetAmount = formatCurrency(goal.targetAmount)
-                        )
-                    }
+                crossedMilestones.forEach { milestone ->
+                    notificationService.sendSavingsMilestone(
+                        goalId = goalId,
+                        goalName = goal.name,
+                        percentageComplete = milestone,
+                        currentAmount = formatCurrency(newAmount),
+                        targetAmount = formatCurrency(goal.targetAmount)
+                    )
                 }
+
 
                 loadAllGoals()
                 _errorMessage.value = null

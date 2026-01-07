@@ -1,5 +1,6 @@
 package ke.ac.ku.ledgerly.data.repository
 
+import androidx.room.Transaction
 import ke.ac.ku.ledgerly.data.dao.SavingsGoalDao
 import ke.ac.ku.ledgerly.data.model.SavingsGoalEntity
 import ke.ac.ku.ledgerly.data.model.SavingsSummary
@@ -38,4 +39,34 @@ class SavingsGoalRepository @Inject constructor(
     suspend fun permanentlyDeleteOldGoals() = savingsGoalDao.permanentlyDeleteOldGoals()
 
     suspend fun getAllGoalsSync(): List<SavingsGoalEntity> = savingsGoalDao.getAllGoalsSync()
+
+
+    @Transaction
+    suspend fun updateGoalAmountWithMilestones(
+        goalId: Long,
+        newAmount: Double
+    ): List<Double> {
+        val goal = getGoalByIdOnce(goalId) ?: return emptyList()
+
+        val oldPercentage = (goal.currentAmount / goal.targetAmount) * 100
+        val newPercentage = (newAmount / goal.targetAmount) * 100
+
+        val milestones = listOf(25.0, 50.0, 75.0, 100.0)
+
+        val crossed = milestones.filter {
+            it > goal.lastMilestoneReached &&
+                    oldPercentage < it &&
+                    newPercentage >= it
+        }
+
+        updateGoal(
+            goal.copy(
+                currentAmount = newAmount,
+                lastMilestoneReached = crossed.maxOrNull() ?: goal.lastMilestoneReached
+            )
+        )
+
+        return crossed
+    }
+
 }
