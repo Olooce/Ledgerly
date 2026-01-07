@@ -289,7 +289,7 @@ class NotificationService @Inject constructor(
 
         return sendSystemNotification(
             channelId = NotificationType.General.value,
-            notificationId = NOTIFICATION_ID_GENERAL + System.currentTimeMillis().toInt(),
+            notificationId = NOTIFICATION_ID_GENERAL + (System.currentTimeMillis() % 10000).toInt(),
             title = title,
             message = message,
             bigText = bigText ?: message,
