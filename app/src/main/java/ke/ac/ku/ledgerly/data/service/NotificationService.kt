@@ -225,7 +225,7 @@ class NotificationService @Inject constructor(
         )
     }
 
-    private fun budgetNotificationKey(category: String): String {
+    fun budgetNotificationKey(category: String): String {
         val cal = Calendar.getInstance()
         val month = cal.get(Calendar.MONTH)
         val year = cal.get(Calendar.YEAR)

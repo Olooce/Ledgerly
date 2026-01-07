@@ -14,12 +14,7 @@ suspend fun NotificationService.sendBudgetWarning(
     limit: String
 ) {
     if (percentageUsed >= 80.0) {
-        // Check if a notification has been sent this month
-        val cal = Calendar.getInstance()
-        val month = cal.get(Calendar.MONTH)
-        val year = cal.get(Calendar.YEAR)
-        val monthYear = "$month|$year"
-        val key = "$budgetId|$monthYear"
+        val key = budgetNotificationKey(category)
 
         val existingNotifications = notificationRepository.getNotificationsByRelatedEntity(
             relatedId = key,
