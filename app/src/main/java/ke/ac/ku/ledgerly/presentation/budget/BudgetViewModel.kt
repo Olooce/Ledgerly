@@ -6,6 +6,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.data.repository.BudgetRepository
 import ke.ac.ku.ledgerly.data.repository.CategoryRepository
+import ke.ac.ku.ledgerly.data.service.NotificationService
+import ke.ac.ku.ledgerly.utils.FormatingUtils.formatCurrency
+import ke.ac.ku.ledgerly.utils.sendBudgetWarning
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,7 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class BudgetViewModel @Inject constructor(
     private val budgetRepository: BudgetRepository,
-    val categoryRepository: CategoryRepository
+    val categoryRepository: CategoryRepository,
+    private val notificationService: NotificationService
 ) : ViewModel() {
 
     private val _budgets = MutableStateFlow<List<BudgetEntity>>(emptyList())
@@ -47,7 +51,17 @@ class BudgetViewModel @Inject constructor(
 
     fun loadAlerts() {
         viewModelScope.launch {
-            _alerts.value = budgetRepository.getBudgetsExceedingThreshold(80)
+            val budgetsExceedingThreshold = budgetRepository.getBudgetsExceedingThreshold(80)
+            _alerts.value = budgetsExceedingThreshold
+            budgetsExceedingThreshold.forEach {
+                notificationService.sendBudgetWarning(
+                    budgetId = it.category,
+                    category = it.category,
+                    percentageUsed = it.percentageUsed,
+                    spent = formatCurrency(it.currentSpending),
+                    limit = formatCurrency(it.monthlyBudget)
+                )
+            }
         }
     }
 

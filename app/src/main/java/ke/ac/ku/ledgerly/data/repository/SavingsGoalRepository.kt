@@ -17,6 +17,10 @@ class SavingsGoalRepository @Inject constructor(
 
     fun getGoalById(id: Long): Flow<SavingsGoalEntity?> = savingsGoalDao.getGoalByIdFlow(id)
 
+    suspend fun getGoalByIdOnce(id: Long): SavingsGoalEntity? =
+        savingsGoalDao.getGoalById(id)
+
+
     fun getSavingsSummary(): Flow<SavingsSummary> =
         savingsGoalDao.getSavingsSummary()
 

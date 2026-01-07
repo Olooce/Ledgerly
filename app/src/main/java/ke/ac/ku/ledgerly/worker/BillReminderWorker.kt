@@ -9,6 +9,8 @@ import dagger.assisted.AssistedInject
 import ke.ac.ku.ledgerly.data.repository.BillReminderRepository
 import ke.ac.ku.ledgerly.data.service.NotificationService
 import ke.ac.ku.ledgerly.utils.FormatingUtils.formatCurrency
+import ke.ac.ku.ledgerly.utils.sendOverdueBillNotification
+import java.util.concurrent.TimeUnit
 
 @HiltWorker
 class BillReminderWorker @AssistedInject constructor(
@@ -41,15 +43,27 @@ class BillReminderWorker @AssistedInject constructor(
         billsNeedingReminder.forEach { bill ->
             val daysUntilDue = bill.daysUntilDue
             val billId = bill.id ?: return@forEach
+            val dueDate = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
+                .format(java.util.Date(bill.dueDate))
 
-            val sent = notificationService.sendBillReminderNotification(
-                billId = billId,
-                billName = bill.billName,
-                amount = formatCurrency(bill.amount),
-                dueDate = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
-                    .format(java.util.Date(bill.dueDate)),
-                daysUntilDue = daysUntilDue
-            )
+            val sent = if (daysUntilDue < 0) {
+                notificationService.sendOverdueBillNotification(
+                    billId = billId,
+                    billName = bill.billName,
+                    amount = formatCurrency(bill.amount),
+                    daysPastDue = TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - bill.dueDate).toInt()
+
+                )
+                true
+            } else {
+                notificationService.sendBillReminderNotification(
+                    billId = billId,
+                    billName = bill.billName,
+                    amount = formatCurrency(bill.amount),
+                    dueDate = dueDate,
+                    daysUntilDue = daysUntilDue
+                )
+            }
 
             // Mark reminder as sent if notification was successful
             if (sent) {

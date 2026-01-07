@@ -9,6 +9,8 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import dagger.hilt.android.qualifiers.ApplicationContext
+import ke.ac.ku.ledgerly.worker.BillReminderWorker
+import ke.ac.ku.ledgerly.worker.BudgetWorker
 import ke.ac.ku.ledgerly.worker.CleanupWorker
 import ke.ac.ku.ledgerly.worker.DebtReminderWorker
 import ke.ac.ku.ledgerly.worker.RecurringTransactionWorker
@@ -30,6 +32,8 @@ class WorkManagerSetup @Inject constructor(
         private const val SYNC_WORK_NAME = "full_sync_work"
         private const val RECURRING_WORK_NAME = "recurring_transactions_work"
         private const val DEBT_REMINDER_WORK_NAME = "debt_reminder_work"
+        private const val BILL_REMINDER_WORK_NAME = "bill_reminder_work"
+        private const val BUDGET_CHECK_WORK_NAME = "budget_check_work"
         private const val CLEANUP_WORK_NAME = "cleanup_deleted_items"
         private const val MIN_INTERVAL_MINUTES = 15L
     }
@@ -143,6 +147,56 @@ class WorkManagerSetup @Inject constructor(
         )
 
         Log.d(TAG, "Debt reminder work scheduled")
+    }
+
+    fun scheduleBillReminders() {
+        Log.d(TAG, "Setting up bill reminder work")
+
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
+            .setRequiresBatteryNotLow(false)
+            .build()
+
+        val billReminderRequest = PeriodicWorkRequestBuilder<BillReminderWorker>(
+            1, TimeUnit.DAYS
+        )
+            .setConstraints(constraints)
+            .setInitialDelay(1, TimeUnit.HOURS)
+            .addTag(BILL_REMINDER_WORK_NAME)
+            .build()
+
+        workManager.enqueueUniquePeriodicWork(
+            BILL_REMINDER_WORK_NAME,
+            ExistingPeriodicWorkPolicy.KEEP,
+            billReminderRequest
+        )
+
+        Log.d(TAG, "Bill reminder work scheduled")
+    }
+
+    fun scheduleBudgetChecks() {
+        Log.d(TAG, "Setting up budget check work")
+
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
+            .setRequiresBatteryNotLow(false)
+            .build()
+
+        val budgetCheckRequest = PeriodicWorkRequestBuilder<BudgetWorker>(
+            1, TimeUnit.DAYS
+        )
+            .setConstraints(constraints)
+            .setInitialDelay(1, TimeUnit.HOURS)
+            .addTag(BUDGET_CHECK_WORK_NAME)
+            .build()
+
+        workManager.enqueueUniquePeriodicWork(
+            BUDGET_CHECK_WORK_NAME,
+            ExistingPeriodicWorkPolicy.KEEP,
+            budgetCheckRequest
+        )
+
+        Log.d(TAG, "Budget check work scheduled")
     }
 
     fun cancelDebtReminderWork() {

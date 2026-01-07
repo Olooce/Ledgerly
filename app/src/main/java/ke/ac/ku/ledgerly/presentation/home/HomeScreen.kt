@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
@@ -48,6 +49,7 @@ import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.base.HomeNavigationEvent
 import ke.ac.ku.ledgerly.base.NavigationEvent
 import ke.ac.ku.ledgerly.data.constants.NavRouts
+import ke.ac.ku.ledgerly.ui.components.LedgerlyTopBar
 import ke.ac.ku.ledgerly.ui.components.TransactionList
 import ke.ac.ku.ledgerly.ui.theme.Typography
 import ke.ac.ku.ledgerly.ui.widget.MultiFloatingActionButton
@@ -95,7 +97,7 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                 HomeNavigationEvent.NavigateToAddIncome -> navController.navigate(NavRouts.addIncome)
                 HomeNavigationEvent.NavigateToAddExpense -> navController.navigate(NavRouts.addExpense)
                 HomeNavigationEvent.NavigateToNotifications -> navController.navigate(NavRouts.notifications)
-                HomeNavigationEvent.NavigateToProfile -> navController.navigate(NavRouts.profileDetail)
+                HomeNavigationEvent.NavigateToProfile -> navController.navigate(NavRouts.profile)
                 else -> {}
             }
         }
@@ -107,15 +109,21 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
         ConstraintLayout(modifier = Modifier.fillMaxSize()) {
             val (nameRow, list, card, topBar, add) = createRefs()
 
-            Image(
-                painter = painterResource(id = R.drawable.ic_topbar),
-                contentDescription = null,
+            LedgerlyTopBar(
                 modifier = Modifier.constrainAs(topBar) {
                     top.linkTo(parent.top)
                     start.linkTo(parent.start)
                     end.linkTo(parent.end)
                 }
-            )
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_ledgerly),
+                    contentDescription = "Ledgerly logo",
+                    modifier = Modifier
+                        .size(48.dp)
+                        .align(Alignment.Center)
+                )
+            }
 
             Box(
                 modifier = Modifier

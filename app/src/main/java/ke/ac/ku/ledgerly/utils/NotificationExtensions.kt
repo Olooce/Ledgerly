@@ -3,10 +3,6 @@ package ke.ac.ku.ledgerly.utils
 import ke.ac.ku.ledgerly.data.service.NotificationService
 
 
-/**
- * Extension functions for common notification scenarios
- */
-
 //Send budget warning when spending reaches threshold
 
 suspend fun NotificationService.sendBudgetWarning(

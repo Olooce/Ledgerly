@@ -25,11 +25,13 @@ data class NotificationEntity(
     val isRead: Boolean = false,
     val isDeleted: Boolean = false,
 
-    val createdDate: Long,
     val readDate: Long? = null,
-    val lastModified: Long,
+
     val icon: Int? = null,
-    val actionUrl: String? = null
+    val actionUrl: String? = null,
+
+    val createdDate: Long = System.currentTimeMillis(),
+    val lastModified: Long = System.currentTimeMillis()
 ) {
     val isUnread: Boolean get() = !isRead && !isDeleted
 }

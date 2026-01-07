@@ -1,5 +1,6 @@
 package ke.ac.ku.ledgerly.ui.components
 
+import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -333,8 +334,19 @@ fun rememberSafeIconPainter(
 
     val safeIconRes = remember(iconRes) {
         try {
-            context.resources.getResourceName(iconRes)
-            iconRes
+            val res = context.resources
+            val type = res.getResourceTypeName(iconRes)
+
+            when (type) {
+                "drawable" -> iconRes
+                else -> {
+                    Log.w(
+                        "SafeIconPainter",
+                        "Invalid icon resource type: $type (id=$iconRes)"
+                    )
+                    defaultIconRes
+                }
+            }
         } catch (e: Exception) {
             defaultIconRes
         }
@@ -342,5 +354,7 @@ fun rememberSafeIconPainter(
 
     return painterResource(id = safeIconRes)
 }
+
+
 
 

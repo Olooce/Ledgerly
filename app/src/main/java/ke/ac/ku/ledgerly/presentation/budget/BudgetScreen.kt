@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
@@ -41,6 +42,7 @@ import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.presentation.add_transaction.AddTransactionViewModel
 import ke.ac.ku.ledgerly.ui.components.BudgetItem
+import ke.ac.ku.ledgerly.ui.components.LedgerlyTopBar
 import ke.ac.ku.ledgerly.ui.theme.ErrorRed
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyAccent
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyBlue
@@ -89,11 +91,17 @@ fun BudgetScreen(
                         end.linkTo(parent.end)
                     }
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_topbar),
-                    contentDescription = "Top Bar",
+                LedgerlyTopBar(
                     modifier = Modifier.fillMaxWidth()
-                )
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_ledgerly),
+                        contentDescription = "Ledgerly logo",
+                        modifier = Modifier
+                            .size(48.dp)
+                            .align(Alignment.Center)
+                    )
+                }
             }
 
             Box(

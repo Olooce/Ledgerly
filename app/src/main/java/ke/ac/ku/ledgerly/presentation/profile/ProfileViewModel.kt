@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -42,7 +43,6 @@ sealed class ProfileUiEvent {
     data class OnNotificationToggled(val enabled: Boolean) : ProfileUiEvent()
     data class OnDarkModeToggled(val enabled: Boolean) : ProfileUiEvent()
 }
-
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository
@@ -51,91 +51,52 @@ class ProfileViewModel @Inject constructor(
     private val _navigationEvent = MutableSharedFlow<NavigationEvent>()
     val navigationEvent = _navigationEvent.asSharedFlow()
 
-    private val _profileState = MutableStateFlow(ProfileState())
-    val profileState: StateFlow<ProfileState> = _profileState.asStateFlow()
+      private val uiState = MutableStateFlow(
+        ProfileState()
+    )
 
-    val userName: StateFlow<String> = userPreferencesRepository.userName
-        .stateIn(
+    private val repoProfileState: StateFlow<ProfileState> =
+        combine(
+            userPreferencesRepository.userName,
+            userPreferencesRepository.currency,
+            userPreferencesRepository.monthlyBudget,
+            userPreferencesRepository.notificationEnabled,
+            userPreferencesRepository.darkMode
+        ) { name, currency, budget, notifications, darkMode ->
+            ProfileState(
+                userName = name,
+                currency = currency,
+                monthlyBudget = budget,
+                notificationEnabled = notifications,
+                darkMode = darkMode
+            )
+        }.stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = ""
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = ProfileState()
         )
 
-    val currency: StateFlow<String> = userPreferencesRepository.currency
-        .stateIn(
+    val profileState: StateFlow<ProfileState> =
+        combine(repoProfileState, uiState) { repo, ui ->
+            ui.copy(
+                userName = repo.userName,
+                currency = repo.currency,
+                monthlyBudget = repo.monthlyBudget,
+                notificationEnabled = repo.notificationEnabled,
+                darkMode = repo.darkMode,
+                editedUserName = if (ui.isEditing) ui.editedUserName else repo.userName,
+                editedCurrency = if (ui.isEditing) ui.editedCurrency else repo.currency,
+                editedMonthlyBudget = if (ui.isEditing) ui.editedMonthlyBudget else repo.monthlyBudget
+            )
+        }.stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = "KES"
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = ProfileState()
         )
-
-    val monthlyBudget: StateFlow<String> = userPreferencesRepository.monthlyBudget
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = "0"
-        )
-
-    val notificationEnabled: StateFlow<Boolean> = userPreferencesRepository.notificationEnabled
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = true
-        )
-
-    val darkMode: StateFlow<Boolean> = userPreferencesRepository.darkMode
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = false
-        )
-
-    init {
-        loadProfileData()
-    }
-
-    private fun loadProfileData() {
-        viewModelScope.launch {
-            try {
-                userName.collect { name ->
-                    _profileState.update { it.copy(userName = name, editedUserName = name) }
-                }
-            } catch (e: Exception) {
-                _profileState.update { it.copy(error = "Failed to load profile data") }
-            }
-        }
-
-        viewModelScope.launch {
-            currency.collect { curr ->
-                _profileState.update { it.copy(currency = curr, editedCurrency = curr) }
-            }
-        }
-
-        viewModelScope.launch {
-            monthlyBudget.collect { budget ->
-                _profileState.update {
-                    it.copy(
-                        monthlyBudget = budget,
-                        editedMonthlyBudget = budget
-                    )
-                }
-            }
-        }
-
-        viewModelScope.launch {
-            notificationEnabled.collect { enabled ->
-                _profileState.update { it.copy(notificationEnabled = enabled) }
-            }
-        }
-
-        viewModelScope.launch {
-            darkMode.collect { dark ->
-                _profileState.update { it.copy(darkMode = dark) }
-            }
-        }
-    }
 
     fun onEvent(event: ProfileUiEvent) {
         when (event) {
+
             ProfileUiEvent.OnBackClicked -> {
                 viewModelScope.launch {
                     _navigationEvent.emit(NavigationEvent.NavigateBack)
@@ -143,13 +104,9 @@ class ProfileViewModel @Inject constructor(
             }
 
             ProfileUiEvent.OnEditClicked -> {
-                _profileState.update { it.copy(isEditing = true) }
-            }
-
-            ProfileUiEvent.OnCancelClicked -> {
-                _profileState.update {
+                uiState.update {
                     it.copy(
-                        isEditing = false,
+                        isEditing = true,
                         editedUserName = it.userName,
                         editedCurrency = it.currency,
                         editedMonthlyBudget = it.monthlyBudget
@@ -157,40 +114,44 @@ class ProfileViewModel @Inject constructor(
                 }
             }
 
-            ProfileUiEvent.OnSaveClicked -> {
-                saveProfileChanges()
+            ProfileUiEvent.OnCancelClicked -> {
+                uiState.update {
+                    it.copy(
+                        isEditing = false,
+                        editedUserName = it.userName,
+                        editedCurrency = it.currency,
+                        editedMonthlyBudget = it.monthlyBudget,
+                        error = null
+                    )
+                }
             }
 
-            is ProfileUiEvent.OnUserNameChanged -> {
-                _profileState.update { it.copy(editedUserName = event.newName) }
-            }
+            ProfileUiEvent.OnSaveClicked -> saveProfileChanges()
 
-            is ProfileUiEvent.OnCurrencyChanged -> {
-                _profileState.update { it.copy(editedCurrency = event.newCurrency) }
-            }
+            is ProfileUiEvent.OnUserNameChanged ->
+                uiState.update { it.copy(editedUserName = event.newName) }
 
-            is ProfileUiEvent.OnMonthlyBudgetChanged -> {
-                _profileState.update { it.copy(editedMonthlyBudget = event.newBudget) }
-            }
+            is ProfileUiEvent.OnCurrencyChanged ->
+                uiState.update { it.copy(editedCurrency = event.newCurrency) }
 
-            is ProfileUiEvent.OnNotificationToggled -> {
+            is ProfileUiEvent.OnMonthlyBudgetChanged ->
+                uiState.update { it.copy(editedMonthlyBudget = event.newBudget) }
+
+            is ProfileUiEvent.OnNotificationToggled ->
                 toggleNotifications(event.enabled)
-            }
 
-            is ProfileUiEvent.OnDarkModeToggled -> {
+            is ProfileUiEvent.OnDarkModeToggled ->
                 toggleDarkMode(event.enabled)
-            }
         }
     }
 
     private fun saveProfileChanges() {
-        val state = _profileState.value
+        val state = profileState.value
 
         viewModelScope.launch {
             try {
-                _profileState.update { it.copy(isLoading = true) }
+                uiState.update { it.copy(isLoading = true) }
 
-                // Save all changes
                 if (state.editedUserName != state.userName) {
                     userPreferencesRepository.saveUserName(state.editedUserName)
                 }
@@ -203,22 +164,19 @@ class ProfileViewModel @Inject constructor(
                     userPreferencesRepository.saveMonthlyBudget(state.editedMonthlyBudget)
                 }
 
-                _profileState.update {
+                uiState.update {
                     it.copy(
                         isEditing = false,
                         isLoading = false,
-                        successMessage = "Profile updated successfully",
-                        userName = state.editedUserName,
-                        currency = state.editedCurrency,
-                        monthlyBudget = state.editedMonthlyBudget
+                        successMessage = "Profile updated successfully"
                     )
                 }
 
-                // Clear success message after 2 seconds
-                kotlinx.coroutines.delay(2000)
-                _profileState.update { it.copy(successMessage = null) }
+                kotlinx.coroutines.delay(2_000)
+                uiState.update { it.copy(successMessage = null) }
+
             } catch (e: Exception) {
-                _profileState.update {
+                uiState.update {
                     it.copy(
                         isLoading = false,
                         error = "Failed to save profile changes: ${e.message}"
@@ -232,9 +190,8 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 userPreferencesRepository.saveNotificationEnabled(enabled)
-                _profileState.update { it.copy(notificationEnabled = enabled) }
             } catch (e: Exception) {
-                _profileState.update { it.copy(error = "Failed to update notification settings") }
+                uiState.update { it.copy(error = "Failed to update notification settings") }
             }
         }
     }
@@ -243,10 +200,10 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 userPreferencesRepository.saveDarkMode(enabled)
-                _profileState.update { it.copy(darkMode = enabled) }
             } catch (e: Exception) {
-                _profileState.update { it.copy(error = "Failed to update dark mode") }
+                uiState.update { it.copy(error = "Failed to update dark mode") }
             }
         }
     }
 }
+

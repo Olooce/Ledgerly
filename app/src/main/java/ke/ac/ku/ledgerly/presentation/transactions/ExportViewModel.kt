@@ -9,7 +9,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.data.repository.TransactionRepository
+import ke.ac.ku.ledgerly.data.service.NotificationService
 import ke.ac.ku.ledgerly.utils.TransactionExportManager
+import ke.ac.ku.ledgerly.utils.sendExportSuccessNotification
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,7 +39,8 @@ data class ExportState(
 @HiltViewModel
 class ExportViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val notificationService: NotificationService
 ) : ViewModel() {
 
     private val _exportState = MutableStateFlow(ExportState())
@@ -102,6 +105,8 @@ class ExportViewModel @Inject constructor(
                         )
                     }
                 }
+
+                notificationService.sendExportSuccessNotification(file.name)
 
                 _exportState.update {
                     it.copy(
