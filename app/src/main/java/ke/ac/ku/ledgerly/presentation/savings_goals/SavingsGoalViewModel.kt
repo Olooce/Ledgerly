@@ -127,6 +127,11 @@ class SavingsGoalViewModel @Inject constructor(
                 val goal = repository.getGoalByIdOnce(goalId)
                     ?: throw IllegalStateException("Goal not found")
 
+                if (goal.targetAmount <= 0.0) {
+                    _errorMessage.value = "Invalid target amount"
+                    return@launch
+                }
+
                 val oldPercentage =
                     (goal.currentAmount / goal.targetAmount) * 100
 
