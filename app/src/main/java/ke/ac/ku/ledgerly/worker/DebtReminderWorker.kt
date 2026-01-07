@@ -46,22 +46,23 @@ class DebtReminderWorker @AssistedInject constructor(
         debtsNeedingReminder.forEach { debt ->
             val daysUntilDue =
                 ((debt.dueDate - System.currentTimeMillis()) / (1000 * 60 * 60 * 24)).toInt()
+
             val debtId = debt.id ?: return@forEach
 
-            val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-            val dueDate = dateFormat.format(Date(debt.dueDate))
+            val dueDate = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                .format(Date(debt.dueDate))
 
-            if (daysUntilDue < 0) {
+            val sent = if (daysUntilDue < 0) {
                 notificationService.sendOverdueDebtNotification(
                     debtId = debtId,
                     personName = debt.personName,
                     amount = formatCurrency(debt.amount),
-                    daysPastDue = TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - debt.dueDate).toInt(),
+                    daysPastDue = TimeUnit.MILLISECONDS
+                        .toDays(System.currentTimeMillis() - debt.dueDate)
+                        .toInt(),
                     debtType = debt.debtType
                 )
-                debtRepository.markReminderSent(debtId)
             } else {
-
                 notificationService.sendDebtReminderNotification(
                     debtId = debtId,
                     personName = debt.personName,
@@ -70,12 +71,15 @@ class DebtReminderWorker @AssistedInject constructor(
                     debtType = debt.debtType,
                     daysUntilDue = daysUntilDue
                 )
+            }
+
+            if (sent) {
                 debtRepository.markReminderSent(debtId)
             }
         }
     }
 
-    private fun isRecoverable(e: Exception): Boolean {
+        private fun isRecoverable(e: Exception): Boolean {
         return when (e) {
             is java.io.IOException -> true
             is android.database.sqlite.SQLiteException -> false
