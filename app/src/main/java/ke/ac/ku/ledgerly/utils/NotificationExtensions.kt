@@ -1,11 +1,12 @@
 package ke.ac.ku.ledgerly.utils
 
+import ke.ac.ku.ledgerly.data.repository.NotificationRepository
 import ke.ac.ku.ledgerly.data.service.NotificationService
-
+import java.util.Calendar
 
 //Send budget warning when spending reaches threshold
-
 suspend fun NotificationService.sendBudgetWarning(
+    notificationRepository: NotificationRepository,
     budgetId: String,
     category: String,
     percentageUsed: Double,
@@ -13,13 +14,27 @@ suspend fun NotificationService.sendBudgetWarning(
     limit: String
 ) {
     if (percentageUsed >= 80.0) {
-        sendBudgetAlertNotification(
-            budgetId = budgetId,
-            category = category,
-            percentageUsed = percentageUsed,
-            spent = spent,
-            limit = limit
+        // Check if a notification has been sent this month
+        val cal = Calendar.getInstance()
+        val month = cal.get(Calendar.MONTH)
+        val year = cal.get(Calendar.YEAR)
+        val monthYear = "$month|$year"
+        val key = "$budgetId|$monthYear"
+
+        val existingNotifications = notificationRepository.getNotificationsByRelatedEntity(
+            relatedId = key,
+            relatedType = "Budget"
         )
+
+        if (existingNotifications.isEmpty()) {
+            sendBudgetAlertNotification(
+                budgetId = budgetId,
+                category = category,
+                percentageUsed = percentageUsed,
+                spent = spent,
+                limit = limit
+            )
+        }
     }
 }
 

@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.data.repository.BudgetRepository
 import ke.ac.ku.ledgerly.data.repository.CategoryRepository
+import ke.ac.ku.ledgerly.data.repository.NotificationRepository
 import ke.ac.ku.ledgerly.data.service.NotificationService
 import ke.ac.ku.ledgerly.utils.FormatingUtils.formatCurrency
 import ke.ac.ku.ledgerly.utils.sendBudgetWarning
@@ -19,7 +20,8 @@ import javax.inject.Inject
 class BudgetViewModel @Inject constructor(
     private val budgetRepository: BudgetRepository,
     val categoryRepository: CategoryRepository,
-    private val notificationService: NotificationService
+    private val notificationService: NotificationService,
+    private val notificationRepository: NotificationRepository
 ) : ViewModel() {
 
     private val _budgets = MutableStateFlow<List<BudgetEntity>>(emptyList())
@@ -55,6 +57,7 @@ class BudgetViewModel @Inject constructor(
             _alerts.value = budgetsExceedingThreshold
             budgetsExceedingThreshold.forEach {
                 notificationService.sendBudgetWarning(
+                    notificationRepository = notificationRepository,
                     budgetId = it.category,
                     category = it.category,
                     percentageUsed = it.percentageUsed,

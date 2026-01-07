@@ -55,7 +55,7 @@ interface NotificationDao {
 
     @Query("SELECT * FROM notifications WHERE relatedId = :relatedId AND relatedType = :relatedType AND isDeleted = 0")
     suspend fun getNotificationsByRelatedEntity(
-        relatedId: Long,
+        relatedId: String,
         relatedType: String
     ): List<NotificationEntity>
 

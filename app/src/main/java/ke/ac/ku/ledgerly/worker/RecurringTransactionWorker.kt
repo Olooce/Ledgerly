@@ -51,7 +51,13 @@ class RecurringTransactionWorker @AssistedInject constructor(
 
             // Generate next transactions until current date
             var currentDate = calculateNextDueDate(lastGenerated, recurring.frequency)
-            while (!currentDate.isAfter(today) && (endDate == null || !currentDate.isAfter(endDate))) {
+
+            var notificationSent = false
+            var lastGeneratedDate: LocalDate? = null
+
+            while (!currentDate.isAfter(today) &&
+                (endDate == null || !currentDate.isAfter(endDate))
+            ) {
                 val transaction = TransactionEntity(
                     id = null,
                     category = recurring.category,
@@ -64,16 +70,24 @@ class RecurringTransactionWorker @AssistedInject constructor(
                 )
 
                 transDao.insertTransaction(transaction)
-                notificationService.sendRecurringTransactionNotification(
-                    transactionName = recurring.notes,
-                    amount = recurring.amount.toString(),
-                    type = recurring.type.lowercase()
-                )
-                dao.updateRecurringTransaction(
-                    recurring.copy(lastGeneratedDate = currentDate.toEpochMillis())
-                )
+                lastGeneratedDate = currentDate
+
+                if (!notificationSent) {
+                    notificationService.sendRecurringTransactionNotification(
+                        transactionName = recurring.notes,
+                        amount = recurring.amount.toString(),
+                        type = recurring.type.lowercase()
+                    )
+                    notificationSent = true
+                }
 
                 currentDate = calculateNextDueDate(currentDate, recurring.frequency)
+            }
+
+            if (lastGeneratedDate != null) {
+                dao.updateRecurringTransaction(
+                    recurring.copy(lastGeneratedDate = lastGeneratedDate.toEpochMillis())
+                )
             }
         }
     }

@@ -104,27 +104,34 @@ class ProfileViewModel @Inject constructor(
             }
 
             ProfileUiEvent.OnEditClicked -> {
+                val state = profileState.value
+
                 uiState.update {
                     it.copy(
                         isEditing = true,
-                        editedUserName = it.userName,
-                        editedCurrency = it.currency,
-                        editedMonthlyBudget = it.monthlyBudget
-                    )
-                }
-            }
-
-            ProfileUiEvent.OnCancelClicked -> {
-                uiState.update {
-                    it.copy(
-                        isEditing = false,
-                        editedUserName = it.userName,
-                        editedCurrency = it.currency,
-                        editedMonthlyBudget = it.monthlyBudget,
+                        editedUserName = state.userName,
+                        editedCurrency = state.currency,
+                        editedMonthlyBudget = state.monthlyBudget,
                         error = null
                     )
                 }
             }
+
+
+            ProfileUiEvent.OnCancelClicked -> {
+                val state = profileState.value
+
+                uiState.update {
+                    it.copy(
+                        isEditing = false,
+                        editedUserName = state.userName,
+                        editedCurrency = state.currency,
+                        editedMonthlyBudget = state.monthlyBudget,
+                        error = null
+                    )
+                }
+            }
+
 
             ProfileUiEvent.OnSaveClicked -> saveProfileChanges()
 

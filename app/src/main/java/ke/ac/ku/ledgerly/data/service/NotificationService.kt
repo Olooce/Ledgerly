@@ -16,6 +16,7 @@ import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.NotificationEntity
 import ke.ac.ku.ledgerly.data.model.NotificationType
 import ke.ac.ku.ledgerly.data.repository.NotificationRepository
+import java.util.Calendar
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -110,7 +111,7 @@ class NotificationService @Inject constructor(
             type = NotificationType.Bill.value,
             title = title,
             message = message,
-            relatedId = billId,
+            relatedId = billId.toString(),
             relatedType = "BillReminder",
             actionUrl = "ledgerly://billReminders/$billId"
         )
@@ -163,7 +164,7 @@ class NotificationService @Inject constructor(
             type = NotificationType.Debt.value,
             title = title,
             message = message,
-            relatedId = debtId,
+            relatedId = debtId.toString(),
             relatedType = "Debt",
             actionUrl = "ledgerly://debtTracker/$debtId"
         )
@@ -195,7 +196,7 @@ class NotificationService @Inject constructor(
         val title = "Budget Alert: $category"
         val message = "You've spent ${String.format("%.0f", percentageUsed)}% of your budget"
         val bigText = "You've spent $spent out of $limit for $category this month."
-        val key = budgetNotificationKey(category, budgetId)
+        val key = budgetNotificationKey(category)
 
         val notificationEntity =  NotificationEntity(
             type = NotificationType.Budget.value,
@@ -224,9 +225,11 @@ class NotificationService @Inject constructor(
         )
     }
 
-    private fun budgetNotificationKey(category: String, monthYear: String): Long {
-        return "$category|$monthYear".toByteArray()
-            .fold(0L) { acc, byte -> acc * 31 + byte }
+    private fun budgetNotificationKey(category: String): String {
+        val cal = Calendar.getInstance()
+        val month = cal.get(Calendar.MONTH)
+        val year = cal.get(Calendar.YEAR)
+        return "$category|$month|$year"
     }
 
 
@@ -245,7 +248,7 @@ class NotificationService @Inject constructor(
             type = NotificationType.Savings.value,
             title = title,
             message = message,
-            relatedId = goalId,
+            relatedId = goalId.toString(),
             relatedType = "SavingsGoal",
             actionUrl = "ledgerly://savingsGoals/$goalId"
         )
@@ -341,25 +344,16 @@ class NotificationService @Inject constructor(
 
             val notificationManager =
                 context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.notify(notificationId, notification)
 
-            return true
+            if (hasNotificationPermission()) {
+                notificationManager.notify(notificationId, notification)
+                return true
+            }
+
+            return false
         } catch (e: Exception) {
-            e.printStackTrace()
             return false
         }
     }
 
-    fun cancelNotification(notificationId: Int) {
-        val notificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancel(notificationId)
-    }
-
-
-    fun cancelAllNotifications() {
-        val notificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancelAll()
-    }
 }

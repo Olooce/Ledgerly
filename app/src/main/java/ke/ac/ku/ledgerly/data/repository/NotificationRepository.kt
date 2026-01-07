@@ -55,7 +55,7 @@ class NotificationRepository @Inject constructor(
     }
 
     suspend fun getNotificationsByRelatedEntity(
-        relatedId: Long,
+        relatedId: String,
         relatedType: String
     ): List<NotificationEntity> {
         return notificationDao.getNotificationsByRelatedEntity(relatedId, relatedType)

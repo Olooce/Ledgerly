@@ -101,7 +101,6 @@ dependencies {
     implementation(libs.androidx.foundation)
     implementation(libs.androidx.lifecycle.process)
     implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.remote.creation.compose)
     testImplementation(libs.junit)
 
     ksp(libs.androidx.hilt.compiler)
