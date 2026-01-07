@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -352,6 +353,7 @@ class NotificationService @Inject constructor(
 
             return false
         } catch (e: Exception) {
+            Log.e("NotificationService", "Failed to send notification", e)
             return false
         }
     }
