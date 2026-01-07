@@ -32,8 +32,27 @@ class BudgetWorker @AssistedInject constructor(
                 )
             }
             Result.success()
+import android.util.Log
+
+@HiltWorker
+class BudgetWorker @AssistedInject constructor(
+    // ... constructor parameters
+) {
+    // ... other code
+    
+    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+        try {
+            // ... work logic
+            Result.success()
         } catch (e: Exception) {
-            Result.retry()
+            Log.e("BudgetWorker", "Failed to check budgets", e)
+            if (runAttemptCount < 3) {
+                Result.retry()
+            } else {
+                Result.failure()
+            }
         }
+    }
+}
     }
 }
