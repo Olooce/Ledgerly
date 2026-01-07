@@ -132,14 +132,6 @@ class SavingsGoalViewModel @Inject constructor(
                     return@launch
                 }
 
-                val oldPercentage =
-                    (goal.currentAmount / goal.targetAmount) * 100
-
-                repository.updateGoalAmount(goalId, newAmount)
-
-                val newPercentage =
-                    (newAmount / goal.targetAmount) * 100
-
                 val crossedMilestones =
                     repository.updateGoalAmountWithMilestones(goalId, newAmount)
 
