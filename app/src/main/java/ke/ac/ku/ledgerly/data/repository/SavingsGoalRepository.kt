@@ -41,32 +41,11 @@ class SavingsGoalRepository @Inject constructor(
     suspend fun getAllGoalsSync(): List<SavingsGoalEntity> = savingsGoalDao.getAllGoalsSync()
 
 
-    @Transaction
     suspend fun updateGoalAmountWithMilestones(
         goalId: Long,
         newAmount: Double
     ): List<Double> {
-        val goal = getGoalByIdOnce(goalId) ?: return emptyList()
-
-        val oldPercentage = (goal.currentAmount / goal.targetAmount) * 100
-        val newPercentage = (newAmount / goal.targetAmount) * 100
-
-        val milestones = listOf(25.0, 50.0, 75.0, 100.0)
-
-        val crossed = milestones.filter {
-            it > goal.lastMilestoneReached &&
-                    oldPercentage < it &&
-                    newPercentage >= it
-        }
-
-        updateGoal(
-            goal.copy(
-                currentAmount = newAmount,
-                lastMilestoneReached = crossed.maxOrNull() ?: goal.lastMilestoneReached
-            )
-        )
-
-        return crossed
+        return savingsGoalDao.updateGoalAmountWithMilestones(goalId, newAmount)
     }
 
 }
