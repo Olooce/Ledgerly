@@ -13,6 +13,7 @@ import ke.ac.ku.ledgerly.data.dao.BillReminderDao
 import ke.ac.ku.ledgerly.data.dao.BudgetDao
 import ke.ac.ku.ledgerly.data.dao.CategoryDao
 import ke.ac.ku.ledgerly.data.dao.DebtDao
+import ke.ac.ku.ledgerly.data.dao.NotificationDao
 import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
 import ke.ac.ku.ledgerly.data.dao.SavingsGoalDao
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
@@ -21,6 +22,7 @@ import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.data.model.CategoryEntity
 import ke.ac.ku.ledgerly.data.model.Converters
 import ke.ac.ku.ledgerly.data.model.DebtEntity
+import ke.ac.ku.ledgerly.data.model.NotificationEntity
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.SavingsGoalEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
@@ -34,9 +36,10 @@ import javax.inject.Singleton
         CategoryEntity::class,
         DebtEntity::class,
         SavingsGoalEntity::class,
-        BillReminderEntity::class
+        BillReminderEntity::class,
+        NotificationEntity::class
     ],
-    version = 12,
+    version = 14,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -50,6 +53,8 @@ abstract class LedgerlyDatabase : RoomDatabase() {
     abstract fun debtDao(): DebtDao
     abstract fun savingsGoalDao(): SavingsGoalDao
     abstract fun billReminderDao(): BillReminderDao
+    abstract fun notificationDao(): NotificationDao
+
 
     companion object {
         const val DATABASE_NAME = "ledgerly_db"
@@ -75,7 +80,9 @@ abstract class LedgerlyDatabase : RoomDatabase() {
                         MIGRATION_8_9,
                         MIGRATION_9_10,
                         MIGRATION_10_11,
-                        MIGRATION_11_12
+                        MIGRATION_11_12,
+                        MIGRATION_12_13,
+                        MIGRATION_13_14
                     )
 //                    .fallbackToDestructiveMigration(true) //  Delete and recreate the database: For Dev
                     .build()
@@ -488,6 +495,54 @@ val MIGRATION_11_12 = object : Migration(11, 12) {
 
         db.execSQL("DROP TABLE IF EXISTS bill_reminders")
         db.execSQL("ALTER TABLE bill_reminders_new RENAME TO bill_reminders")
+    }
+}
+
+val MIGRATION_12_13 = object : Migration(12, 13) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                type TEXT NOT NULL,
+                title TEXT NOT NULL,
+                message TEXT NOT NULL,
+                relatedId INTEGER,
+                relatedType TEXT,
+                isRead INTEGER NOT NULL DEFAULT 0,
+                isDeleted INTEGER NOT NULL DEFAULT 0,
+                createdDate INTEGER NOT NULL,
+                readDate INTEGER,
+                lastModified INTEGER NOT NULL,
+                icon INTEGER,
+                actionUrl TEXT
+            )
+            """.trimIndent()
+        )
+
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_notifications_isRead ON notifications(isRead)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_notifications_createdDate ON notifications(createdDate)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_notifications_isDeleted ON notifications(isDeleted)")
+    }
+}
+
+val MIGRATION_13_14 = object : Migration(13, 14) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+
+        db.execSQL(
+            """
+            UPDATE savings_goals
+            SET icon = ${R.drawable.ic_target}
+            WHERE icon NOT IN (
+                ${R.drawable.ic_target},
+                ${R.drawable.ic_goal_house},
+                ${R.drawable.ic_goal_car},
+                ${R.drawable.ic_goal_laptop},
+                ${R.drawable.ic_goal_plane},
+                ${R.drawable.ic_goal_school}
+            )
+            """
+        )
     }
 }
 

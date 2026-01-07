@@ -5,7 +5,9 @@ object NavRouts {
     const val biometricOptIn = "biometric_opt_in"
     const val onboarding = "onboarding"
     const val home = "/home"
-    const val profile = "profile"
+    const val profile = "/profile"
+    const val profileDetail = "/profile"
+    const val notifications = "/notifications"
     const val stats = "/stats"
     const val addIncome = "/add_income"
     const val addExpense = "/add_transaction"
@@ -21,6 +23,5 @@ object NavRouts {
     const val ADD_SAVINGS_GOAL = "/add_savings_goal"
     const val ADD_EDIT_BILL_REMINDER = "/add_edit_bill_reminder"
     const val billReminders = "/bill_reminders"
-
 
 }

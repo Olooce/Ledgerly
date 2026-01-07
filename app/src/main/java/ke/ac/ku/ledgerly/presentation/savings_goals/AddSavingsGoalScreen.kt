@@ -50,6 +50,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.SavingsGoalEntity
+import ke.ac.ku.ledgerly.ui.components.rememberSafeIconPainter
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -219,8 +220,10 @@ fun AddSavingsGoalScreen(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
+
+                        val iconPainter = rememberSafeIconPainter(iconRes, R.drawable.ic_target)
                         Icon(
-                            painter = painterResource(iconRes),
+                            painter = iconPainter,
                             contentDescription = null,
                             modifier = Modifier.size(24.dp),
                             tint = MaterialTheme.colorScheme.onSurface

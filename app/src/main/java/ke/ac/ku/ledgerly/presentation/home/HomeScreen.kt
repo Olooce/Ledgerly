@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -34,8 +35,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -55,6 +58,7 @@ import ke.ac.ku.ledgerly.utils.Utils
 fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltViewModel()) {
     val homeState by viewModel.homeState.collectAsState()
     val userName by viewModel.userName.collectAsState(initial = "User")
+    val unreadNotificationCount by viewModel.unreadNotificationCount.collectAsState()
 
     val lazyListState = rememberLazyListState()
 
@@ -90,6 +94,8 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
 
                 HomeNavigationEvent.NavigateToAddIncome -> navController.navigate(NavRouts.addIncome)
                 HomeNavigationEvent.NavigateToAddExpense -> navController.navigate(NavRouts.addExpense)
+                HomeNavigationEvent.NavigateToNotifications -> navController.navigate(NavRouts.notifications)
+                HomeNavigationEvent.NavigateToProfile -> navController.navigate(NavRouts.profileDetail)
                 else -> {}
             }
         }
@@ -130,7 +136,7 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                             .size(48.dp)
                             .clip(CircleShape)
                             .background(Color.White.copy(alpha = 0.1f))
-                            .clickable { },
+                            .clickable { viewModel.onEvent(HomeUiEvent.OnProfileClicked) },
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
@@ -157,15 +163,40 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                     }
                 }
 
-                Image(
-                    painter = painterResource(id = R.drawable.ic_notification),
-                    contentDescription = null,
+                Box(
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
-                        .size(26.dp)
-                        .clickable { },
-                    colorFilter = ColorFilter.tint(Color.White)
-                )
+                        .size(48.dp)
+                        .clickable { viewModel.onEvent(HomeUiEvent.OnNotificationsClicked) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_notification),
+                        contentDescription = "Notifications",
+                        modifier = Modifier.size(26.dp),
+                        colorFilter = ColorFilter.tint(Color.White)
+                    )
+
+                    // Notification badge
+                    if (unreadNotificationCount > 0) {
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFFF4B4B))
+                                .align(Alignment.TopEnd),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = if (unreadNotificationCount > 99) "99+" else unreadNotificationCount.toString(),
+                                color = Color.White,
+                                style = Typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
+                }
             }
 
             CardItem(

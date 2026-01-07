@@ -1,5 +1,6 @@
 package ke.ac.ku.ledgerly.ui.components
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,6 +35,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -65,6 +68,14 @@ fun SavingsGoalItem(
         LedgerlyGreen
     }
 
+    val context = LocalContext.current
+
+    // Safe icon loading
+    val iconPainter = rememberSafeIconPainter(
+        iconRes = goal.icon,
+        defaultIconRes = R.drawable.ic_target,
+    )
+
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
@@ -95,12 +106,22 @@ fun SavingsGoalItem(
                             .background(goalColor.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            painter = painterResource(goal.icon),
-                            contentDescription = null,
-                            tint = goalColor,
-                            modifier = Modifier.size(18.dp)
-                        )
+                        iconPainter?.let { painter ->
+                            Icon(
+                                painter = painter,
+                                contentDescription = null,
+                                tint = goalColor,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        } ?: run {
+                            // Fallback icon
+                            Icon(
+                                painter = painterResource(R.drawable.ic_target),
+                                contentDescription = null,
+                                tint = goalColor,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
 
                     Spacer(Modifier.width(12.dp))
@@ -302,4 +323,24 @@ fun SavingsGoalItem(
         )
     }
 }
+
+@Composable
+fun rememberSafeIconPainter(
+    @DrawableRes iconRes: Int,
+    @DrawableRes defaultIconRes: Int = R.drawable.ic_target
+): Painter {
+    val context = LocalContext.current
+
+    val safeIconRes = remember(iconRes) {
+        try {
+            context.resources.getResourceName(iconRes)
+            iconRes
+        } catch (e: Exception) {
+            defaultIconRes
+        }
+    }
+
+    return painterResource(id = safeIconRes)
+}
+
 

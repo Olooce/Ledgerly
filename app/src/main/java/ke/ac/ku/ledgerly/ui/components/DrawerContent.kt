@@ -9,17 +9,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -56,13 +57,17 @@ fun DrawerContent(
     themeViewModel: ThemeViewModel,
     authViewModel: AuthViewModel,
     onCloseDrawer: () -> Unit,
-    transactionData: List<TransactionEntity> = emptyList()
+    transactionData: List<TransactionEntity> = emptyList(),
+    drawerViewModel: DrawerViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val isDarkMode by themeViewModel.isDarkMode.collectAsState()
-    val authState by authViewModel.state.collectAsState()
+    val userName by drawerViewModel.userName.collectAsState()
+    val unreadCount by drawerViewModel.unreadCount.collectAsState()
     val exportViewModel: ExportViewModel = hiltViewModel()
     val exportState by exportViewModel.exportState.collectAsState()
+    val authState by authViewModel.state.collectAsState()
+
     var showExportDialog by remember { mutableStateOf(false) }
     var showExportSuccessDialog by remember { mutableStateOf(false) }
 
@@ -72,21 +77,131 @@ fun DrawerContent(
         }
     }
 
-    LaunchedEffect(authState.isAuthenticated, authState.isLoading) {
-        if (!authState.isAuthenticated && !authState.isLoading) {
-            navController.navigate(NavRouts.auth) {
-                popUpTo(0) { inclusive = true }
-            }
-        }
-    }
-
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            .width(320.dp)
+            .fillMaxHeight()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    )
+    {
+        // User Profile
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        onCloseDrawer()
+                        navController.navigate(NavRouts.profile)
+                    },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.primary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = userName
+                            .firstOrNull()
+                            ?.uppercaseChar()
+                            ?.toString() ?: "U",
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = userName,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "View & edit profile",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_chevron_right),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            HorizontalDivider()
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        onCloseDrawer()
+                        navController.navigate(NavRouts.notifications)
+                    },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.surface),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_notification),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Text(
+                    text = "Notifications",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.weight(1f)
+                )
+
+                if (unreadCount > 0) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.error)
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (unreadCount > 99) "99+" else unreadCount.toString(),
+                            color = MaterialTheme.colorScheme.onError,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+
+        // App Info & Menu Items
+        Column(
+            modifier = Modifier.padding(vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             // App Header
             Column(
                 modifier = Modifier
@@ -100,8 +215,8 @@ fun DrawerContent(
                     modifier = Modifier.size(72.dp)
                 )
 
+                Spacer(modifier = Modifier.height(8.dp))
 
-                Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "Ledgerly",
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
@@ -114,9 +229,8 @@ fun DrawerContent(
                 )
             }
 
-            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+            HorizontalDivider()
 
-            // Theme Switch
             // Theme Switch
             Row(
                 modifier = Modifier
@@ -138,9 +252,7 @@ fun DrawerContent(
                     ) {
                         Icon(
                             painter = painterResource(
-                                id = if (isDarkMode
-                                        ?: false
-                                ) R.drawable.ic_light_mode else R.drawable.ic_dark_mode
+                                id = if (isDarkMode == true) R.drawable.ic_light_mode else R.drawable.ic_dark_mode
                             ),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurface,
@@ -158,210 +270,71 @@ fun DrawerContent(
                 )
             }
 
+            HorizontalDivider()
 
-            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
-
-            // Debt Tracker Action
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        onCloseDrawer()
-                        navController.navigate(NavRouts.debtTracker)
-                    }
-                    .padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_default_category),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp)
-                    )
+            // Menu Items
+            DrawerMenuItem(
+                icon = R.drawable.ic_default_category,
+                title = "Debt Tracker",
+                onClick = {
+                    onCloseDrawer()
+                    navController.navigate(NavRouts.debtTracker)
                 }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Debt Tracker",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
+            )
 
-            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+            HorizontalDivider()
 
-            // Savings Goals Action
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        onCloseDrawer()
-                        navController.navigate(NavRouts.savingsGoals)
-                    }
-                    .padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_default_category),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp)
-                    )
+            DrawerMenuItem(
+                icon = R.drawable.ic_default_category,
+                title = "Savings Goals",
+                onClick = {
+                    onCloseDrawer()
+                    navController.navigate(NavRouts.savingsGoals)
                 }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Savings Goals",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
+            )
 
-            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+            HorizontalDivider()
 
-            // Bill Reminders Action
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        onCloseDrawer()
-                        navController.navigate(NavRouts.billReminders)
-                    }
-                    .padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_notification),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp)
-                    )
+            DrawerMenuItem(
+                icon = R.drawable.ic_reminder,
+                title = "Bill Reminders",
+                onClick = {
+                    onCloseDrawer()
+                    navController.navigate(NavRouts.billReminders)
                 }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Bill Reminders",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
+            )
 
-            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+            HorizontalDivider()
 
-            // Categories Action
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        onCloseDrawer()
-                        navController.navigate(NavRouts.categoryManagement)
-                    }
-                    .padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_default_category),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp)
-                    )
+            DrawerMenuItem(
+                icon = R.drawable.ic_default_category,
+                title = "Categories",
+                onClick = {
+                    onCloseDrawer()
+                    navController.navigate(NavRouts.categoryManagement)
                 }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Categories",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
+            )
 
-            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+            HorizontalDivider()
 
-            // Settings Action
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        onCloseDrawer()
-                        navController.navigate(NavRouts.settings)
-                    }
-                    .padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_settings),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp)
-                    )
+            DrawerMenuItem(
+                icon = R.drawable.ic_settings,
+                title = "Settings",
+                onClick = {
+                    onCloseDrawer()
+                    navController.navigate(NavRouts.settings)
                 }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Settings",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
+            )
 
-            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+            HorizontalDivider()
 
-            // Export Action
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showExportDialog = true }
-                    .padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_export),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Export Data",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
+            DrawerMenuItem(
+                icon = R.drawable.ic_export,
+                title = "Export Data",
+                onClick = { showExportDialog = true }
+            )
 
-
-            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+            HorizontalDivider()
 
             // Version Info
             Text(
@@ -372,7 +345,7 @@ fun DrawerContent(
             )
         }
 
-        // Footer section
+        // Bottom Section - Footer & Logout
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -461,6 +434,41 @@ fun DrawerContent(
             exportViewModel = exportViewModel,
             file = exportState.exportedFile,
             onDismiss = { showExportSuccessDialog = false }
+        )
+    }
+}
+
+@Composable
+private fun DrawerMenuItem(
+    icon: Int,
+    title: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(id = icon),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyLarge
         )
     }
 }
