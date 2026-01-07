@@ -88,4 +88,4 @@ class NotificationRepository @Inject constructor(
     fun getNotificationsPaged(limit: Int, offset: Int): Flow<List<NotificationEntity>> {
         return notificationDao.getNotificationsPaged(limit, offset)
     }
-    }
+}

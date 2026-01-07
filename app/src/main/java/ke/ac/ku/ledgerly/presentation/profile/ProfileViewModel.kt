@@ -180,7 +180,7 @@ class ProfileViewModel @Inject constructor(
                 }
 
                 kotlinx.coroutines.delay(2_000)
-                uiState.update { it.copy(successMessage = null) }
+                uiState.update { it.copy(successMessage = null, error = null) }
 
             } catch (e: Exception) {
                 uiState.update {
