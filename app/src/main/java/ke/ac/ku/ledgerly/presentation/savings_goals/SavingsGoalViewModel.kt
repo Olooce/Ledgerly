@@ -6,13 +6,14 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.SavingsGoalEntity
 import ke.ac.ku.ledgerly.data.repository.SavingsGoalRepository
-import ke.ac.ku.ledgerly.data.service.NotificationService
-import ke.ac.ku.ledgerly.utils.FormatingUtils.formatCurrency
+import ke.ac.ku.ledgerly.service.NotificationService
+import ke.ac.ku.ledgerly.utils.CurrencyFormatter.formatCurrency
 import ke.ac.ku.ledgerly.utils.sendSavingsMilestone
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 import javax.inject.Inject
 
 @HiltViewModel
@@ -54,9 +55,11 @@ class SavingsGoalViewModel @Inject constructor(
             try {
                 _isLoading.value = true
                 repository.getAllGoals().collect { goals ->
-                    _allGoals.value = goals
-                    _activeGoals.value = goals.filter { !it.isCompleted }
-                    _completedGoals.value = goals.filter { it.isCompleted }
+                    // Convert each goal to display currency
+                    val displayGoals = goals.map { it }
+                    _allGoals.value = displayGoals
+                    _activeGoals.value = displayGoals.filter { !it.isCompleted }
+                    _completedGoals.value = displayGoals.filter { it.isCompleted }
                 }
             } catch (e: Exception) {
                 _errorMessage.value = e.message
@@ -70,8 +73,8 @@ class SavingsGoalViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 repository.getSavingsSummary().collect { summary ->
-                    _totalSavings.value = summary.totalSaved ?: 0.0
-                    _totalTarget.value = summary.totalTarget ?: 0.0
+                    _totalSavings.value = (summary.totalSaved?.toDouble() ?: 0.0)
+                    _totalTarget.value = (summary.totalTarget?.toDouble() ?: 0.0)
                 }
             } catch (e: Exception) {
                 _errorMessage.value = e.message
@@ -127,21 +130,21 @@ class SavingsGoalViewModel @Inject constructor(
                 val goal = repository.getGoalByIdOnce(goalId)
                     ?: throw IllegalStateException("Goal not found")
 
-                if (goal.targetAmount <= 0.0) {
+                if (goal.targetAmount <= BigDecimal.ZERO) {
                     _errorMessage.value = "Invalid target amount"
                     return@launch
                 }
 
                 val crossedMilestones =
-                    repository.updateGoalAmountWithMilestones(goalId, newAmount)
+                    repository.updateGoalAmountWithMilestones(goalId, newAmount.toBigDecimal())
 
                 crossedMilestones.forEach { milestone ->
                     notificationService.sendSavingsMilestone(
                         goalId = goalId,
                         goalName = goal.name,
                         percentageComplete = milestone,
-                        currentAmount = formatCurrency(newAmount),
-                        targetAmount = formatCurrency(goal.targetAmount)
+                        currentAmount = newAmount.toBigDecimal(),
+                        targetAmount = goal.targetAmount
                     )
                 }
 

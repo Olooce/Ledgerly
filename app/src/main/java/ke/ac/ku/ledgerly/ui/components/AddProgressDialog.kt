@@ -18,6 +18,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import java.math.BigDecimal
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -84,7 +85,7 @@ fun AddProgressDialog(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = FormatingUtils.formatCurrency(goal.currentAmount),
+                            text = FormatingUtils.formatToDecimalValue(goal.currentAmount.toDouble()),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -97,7 +98,7 @@ fun AddProgressDialog(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = FormatingUtils.formatCurrency(goal.remainingAmount),
+                            text = FormatingUtils.formatToDecimalValue(goal.remainingAmount.toDouble()),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -155,7 +156,7 @@ fun AddProgressDialog(
                                     errorMessage = "Please enter a valid amount"
                                 }
 
-                                amount > goal.remainingAmount -> {
+                                amount.toBigDecimal() > goal.remainingAmount -> {
                                     errorMessage = "Amount exceeds remaining target"
                                 }
 

@@ -55,8 +55,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import ke.ac.ku.ledgerly.data.constants.NavRouts
 import ke.ac.ku.ledgerly.data.model.DebtEntity
+import ke.ac.ku.ledgerly.presentation.settings.SettingsViewModel
 import ke.ac.ku.ledgerly.ui.theme.Typography
-import ke.ac.ku.ledgerly.utils.FormatingUtils
+import ke.ac.ku.ledgerly.utils.CurrencyFormatter.formatCurrency
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -66,10 +67,12 @@ import java.util.Locale
 fun SharedTransitionScope.DebtListScreen(
     navController: NavController,
     animatedVisibilityScope: AnimatedVisibilityScope,
-    viewModel: DebtViewModel = hiltViewModel()
+    viewModel: DebtViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val debtListState by viewModel.debtListState.collectAsState()
     val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val displayCurrency by settingsViewModel.displayCurrency.collectAsState()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -106,14 +109,14 @@ fun SharedTransitionScope.DebtListScreen(
             ) {
                 SummaryCard(
                     title = "You Owe",
-                    amount = FormatingUtils.formatCurrency(debtListState.totalOwe),
+                    amount = formatCurrency(debtListState.totalOwe, displayCurrency),
                     isDarkTheme = isDarkTheme,
                     isDebt = true,
                     modifier = Modifier.weight(1f)
                 )
                 SummaryCard(
                     title = "Owed to You",
-                    amount = FormatingUtils.formatCurrency(debtListState.totalOwed),
+                    amount = formatCurrency(debtListState.totalOwed, displayCurrency),
                     isDarkTheme = isDarkTheme,
                     isDebt = false,
                     modifier = Modifier.weight(1f)
@@ -212,7 +215,6 @@ fun SharedTransitionScope.DebtListScreen(
                     items(displayDebts, key = { it.id ?: 0 }) { debt ->
                         DebtListItem(
                             debt = debt,
-                            isDarkTheme = isDarkTheme,
                             onClick = {
                                 navController.navigate("${NavRouts.DEBT_DETAIL}/${debt.id}")
                             },
@@ -221,8 +223,8 @@ fun SharedTransitionScope.DebtListScreen(
                             },
                             onDelete = { viewModel.deleteDebt(debt.id!!) },
                             onMarkSettled = { viewModel.markDebtAsSettled(debt.id!!) },
-                            sharedTransitionScope = this@DebtListScreen,
-                            animatedVisibilityScope = animatedVisibilityScope
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            currency = displayCurrency
                         )
                     }
                 }
@@ -255,13 +257,12 @@ fun SharedTransitionScope.DebtListScreen(
 @Composable
 fun SharedTransitionScope.DebtListItem(
     debt: DebtEntity,
-    isDarkTheme: Boolean,
     onClick: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onMarkSettled: () -> Unit,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    currency: String
 ) {
     val isOverdue = debt.dueDate < System.currentTimeMillis() && debt.status != "settled"
     val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
@@ -366,7 +367,7 @@ fun SharedTransitionScope.DebtListItem(
                 // Amount and Type
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = FormatingUtils.formatCurrency(debt.amount),
+                        text = formatCurrency(debt.amount, currency),
                         style = Typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = if (debt.debtType == "owe")

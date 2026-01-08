@@ -29,7 +29,7 @@ data class AddEditBillReminderState(
     val billName: String = "",
     val description: String = "",
     val amount: Double = 0.0,
-    val currency: String = "KES",
+    val currency: String = "USD",
     val dueDate: Long = System.currentTimeMillis(),
     val category: String = "Utilities",
     val frequency: String = "once",

@@ -54,6 +54,9 @@ class SettingsViewModel @Inject constructor(
     private val _sessionTimeoutMinutes = MutableStateFlow(15L)
     val sessionTimeoutMinutes: StateFlow<Long> = _sessionTimeoutMinutes.asStateFlow()
 
+    private val _displayCurrency = MutableStateFlow("USD")
+    val displayCurrency: StateFlow<String> = _displayCurrency.asStateFlow()
+
     init {
         loadPreferences()
         checkBiometricAvailability()
@@ -102,6 +105,11 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             userPreferencesRepository.sessionTimeoutMinutes.collect {
                 _sessionTimeoutMinutes.value = it
+            }
+        }
+        viewModelScope.launch {
+            userPreferencesRepository.currency.collect {
+                _displayCurrency.value = it
             }
         }
     }
@@ -256,5 +264,16 @@ class SettingsViewModel @Inject constructor(
 
     fun clearError() {
         _errorMessage.value = null
+    }
+
+    fun updateDisplayCurrency(currency: String) {
+        viewModelScope.launch {
+            val result = userPreferencesRepository.saveCurrency(currency)
+            if (result.isSuccess) {
+                _displayCurrency.value = currency
+            } else {
+                _errorMessage.value = "Failed to update display currency"
+            }
+        }
     }
 }

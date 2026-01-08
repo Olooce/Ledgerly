@@ -6,13 +6,13 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
+import java.math.BigDecimal
 
 @Dao
 interface BudgetDao {
     suspend fun insertBudgetWithTimestamp(budget: BudgetEntity) {
         insertBudget(budget.copy(lastModified = System.currentTimeMillis()))
     }
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBudget(budget: BudgetEntity)
 
@@ -34,7 +34,7 @@ interface BudgetDao {
 
     @Query(
         """
-    SELECT COALESCE(SUM(amount), 0)
+    SELECT COALESCE(SUM(amountUsd), 0.0)
     FROM transactions
     WHERE category = :category
       AND type = 'Expense'
@@ -42,7 +42,18 @@ interface BudgetDao {
       AND strftime('%Y-%m', datetime(date / 1000, 'unixepoch')) = :monthYear
 """
     )
-    suspend fun getCurrentSpendingForCategory(category: String, monthYear: String): Double
+    suspend fun getCurrentSpendingForCategoryUsd(category: String, monthYear: String): BigDecimal
+
+    @Query(
+        """
+    SELECT COALESCE(SUM(amountUsd), 0.0)
+    FROM transactions
+    WHERE type = 'Expense'
+      AND isDeleted = 0
+      AND strftime('%Y-%m', datetime(date / 1000, 'unixepoch')) = :monthYear
+"""
+    )
+    suspend fun getTotalSpendingUsdForMonth(monthYear: String): BigDecimal
 
     @Query("SELECT * FROM budgets WHERE isDeleted = 0 ORDER BY lastModified DESC")
     suspend fun getAllBudgetsSync(): List<BudgetEntity>

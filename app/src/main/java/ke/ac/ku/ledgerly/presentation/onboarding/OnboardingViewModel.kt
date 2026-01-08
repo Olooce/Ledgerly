@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
-import ke.ac.ku.ledgerly.domain.ExchangeRateService
+import ke.ac.ku.ledgerly.service.ExchangeRateService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +20,7 @@ import javax.inject.Inject
 data class OnboardingState(
     val currentStep: Int = 0,
     val userName: String = "",
-    val currency: String = "KES",
+    val currency: String = "USD",
     val monthlyBudget: String = "",
     val notificationEnabled: Boolean = true,
     val canProceed: Boolean = true,
@@ -30,7 +30,8 @@ data class OnboardingState(
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
     private val app: Application,
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val exchangeRateService: ExchangeRateService
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(OnboardingState())
@@ -48,7 +49,7 @@ class OnboardingViewModel @Inject constructor(
 
     private suspend fun loadAvailableCurrencies() = withContext(Dispatchers.IO) {
         try {
-            val rates = ExchangeRateService.getRates(app)
+            val rates = exchangeRateService.getRates()
             val codes = rates?.keys?.sorted() ?: emptyList()
 
             val localeCurrency = try {

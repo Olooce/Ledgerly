@@ -1,15 +1,23 @@
+
 package ke.ac.ku.ledgerly.data.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import androidx.room.TypeConverter
+import androidx.room.TypeConverters
+import ke.ac.ku.ledgerly.data.converters.Converters
+import ke.ac.ku.ledgerly.data.enums.RecurrenceFrequency
+import java.math.BigDecimal
 
 @Entity(tableName = "recurring_transactions")
+@TypeConverters(Converters::class)
 data class RecurringTransactionEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long? = null,
     val category: String,
-    val amount: Double,
+    val amountOriginal: BigDecimal,
+    val originalCurrency: String,
+    val exchangeRateToUsd: BigDecimal,
+    val amountUsd: BigDecimal,
     val type: String,
     val notes: String = "",
     val paymentMethod: String = "",
@@ -22,23 +30,3 @@ data class RecurringTransactionEntity(
     val isDeleted: Boolean = false,
     val lastModified: Long? = System.currentTimeMillis()
 )
-
-enum class RecurrenceFrequency {
-    DAILY,
-    WEEKLY,
-    MONTHLY,
-    YEARLY
-}
-
-
-class Converters {
-    @TypeConverter
-    fun fromRecurrenceFrequency(value: RecurrenceFrequency): String {
-        return value.name
-    }
-
-    @TypeConverter
-    fun toRecurrenceFrequency(value: String): RecurrenceFrequency {
-        return RecurrenceFrequency.valueOf(value)
-    }
-}

@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import java.math.BigDecimal
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -99,7 +100,7 @@ fun CompleteGoalDialog(
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Text(
-                                text = FormatingUtils.formatCurrency(goal.currentAmount),
+                                text = FormatingUtils.formatToDecimalValue(goal.currentAmount.toDouble()),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -116,7 +117,7 @@ fun CompleteGoalDialog(
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Text(
-                                text = FormatingUtils.formatCurrency(goal.targetAmount),
+                                text = FormatingUtils.formatToDecimalValue(goal.targetAmount.toDouble()),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -145,7 +146,7 @@ fun CompleteGoalDialog(
                 Spacer(Modifier.height(16.dp))
 
                 Text(
-                    text = if (goal.progressPercentage >= 100.0) {
+                    text = if (goal.progressPercentage >= BigDecimal(100)) {
                         "Congratulations! You've reached your goal!"
                     } else {
                         "Mark this goal as complete even though the target hasn't been fully reached?"

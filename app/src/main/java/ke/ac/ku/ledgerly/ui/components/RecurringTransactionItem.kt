@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.ui.widget.CircularIcon
 import ke.ac.ku.ledgerly.ui.widget.ItemSurface
+import ke.ac.ku.ledgerly.utils.CurrencyFormatter.formatCurrency
 import ke.ac.ku.ledgerly.utils.FormatingUtils
 
 @Composable
@@ -51,7 +52,7 @@ fun RecurringTransactionItem(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = FormatingUtils.formatCurrency(recurring.amount),
+                text = formatCurrency(recurring.amountOriginal.toDouble()),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,

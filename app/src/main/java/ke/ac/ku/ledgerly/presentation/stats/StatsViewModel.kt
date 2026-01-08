@@ -15,6 +15,7 @@ import ke.ac.ku.ledgerly.data.model.CategorySummary
 import ke.ac.ku.ledgerly.data.model.MonthlyComparison
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionSummary
+import ke.ac.ku.ledgerly.domain.CurrencyManager
 import ke.ac.ku.ledgerly.utils.FormatingUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -26,7 +27,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class StatsViewModel @Inject constructor(
-    val dao: TransactionDao
+    val dao: TransactionDao,
+    val currencyManager: CurrencyManager
 ) : BaseViewModel() {
 
     private fun getDateRangeForPeriod(period: TimePeriod): Pair<Long, Long> {

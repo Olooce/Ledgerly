@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 import javax.inject.Inject
 
 data class DebtListState(
@@ -83,8 +84,8 @@ class DebtViewModel @Inject constructor(
                         debt.dueDate >= System.currentTimeMillis() && debt.status != "settled"
                     }
 
-                    val totalOwed = debts.filter { it.debtType == "owed" }.sumOf { it.amount }
-                    val totalOwe = debts.filter { it.debtType == "owe" }.sumOf { it.amount }
+                    val totalOwed = debts.filter { it.debtType == "owed" }.sumOf { it.amount }.toDouble()
+                    val totalOwe = debts.filter { it.debtType == "owe" }.sumOf { it.amount }.toDouble()
 
                     _debtListState.update { state ->
                         state.copy(
@@ -231,10 +232,14 @@ class DebtViewModel @Inject constructor(
             _addEditState.update { it.copy(isLoading = true, error = null) }
 
             try {
+                val amount = state.amount.toBigDecimal()
                 val debt = DebtEntity(
                     id = if (state.isEditMode) state.editingDebtId else null,
                     personName = state.personName,
-                    amount = state.amount.toDouble(),
+                    amountOriginal = amount,
+                    originalCurrency = "USD",
+                    exchangeRateToUsd = BigDecimal.ONE,
+                    amount = amount,
                     debtType = state.debtType,
                     dueDate = state.dueDate,
                     status = state.status,

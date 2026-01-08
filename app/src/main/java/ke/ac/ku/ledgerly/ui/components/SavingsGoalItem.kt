@@ -60,7 +60,7 @@ fun SavingsGoalItem(
     var showAddProgressDialog by remember { mutableStateOf(false) }
     var showCompleteDialog by remember { mutableStateOf(false) }
 
-    val progress = goal.progressPercentage.coerceIn(0.0, 100.0)
+    val progress = goal.progressPercentage.toDouble().coerceIn(0.0, 100.0)
     val progressBarColor = progressColor(progress)
 
     val goalColor = try {
@@ -68,8 +68,6 @@ fun SavingsGoalItem(
     } catch (e: Exception) {
         LedgerlyGreen
     }
-
-    val context = LocalContext.current
 
     // Safe icon loading
     val iconPainter = rememberSafeIconPainter(
@@ -177,12 +175,12 @@ fun SavingsGoalItem(
             ) {
                 Column {
                     Text(
-                        text = "Saved: ${FormatingUtils.formatCurrency(goal.currentAmount)}",
+                        text = "Saved: ${FormatingUtils.formatToDecimalValue(goal.currentAmount.toDouble())}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "Target: ${FormatingUtils.formatCurrency(goal.targetAmount)}",
+                        text = "Target: ${FormatingUtils.formatToDecimalValue(goal.targetAmount.toDouble())}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 2.dp)
@@ -218,7 +216,7 @@ fun SavingsGoalItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${FormatingUtils.formatCurrency(goal.remainingAmount)} left",
+                    text = "${FormatingUtils.formatToDecimalValue(goal.remainingAmount.toDouble())} left",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Medium
                 )

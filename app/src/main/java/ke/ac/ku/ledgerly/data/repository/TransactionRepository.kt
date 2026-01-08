@@ -7,7 +7,10 @@ import ke.ac.ku.ledgerly.data.model.PageRequest
 import ke.ac.ku.ledgerly.data.model.PaginatedResult
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
+import ke.ac.ku.ledgerly.domain.CurrencyManager
 import kotlinx.coroutines.flow.Flow
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
@@ -17,14 +20,38 @@ import javax.inject.Singleton
 @Singleton
 class TransactionRepository @Inject constructor(
     private val transactionDao: TransactionDao,
-    private val recurringTransactionDao: RecurringTransactionDao
+    private val recurringTransactionDao: RecurringTransactionDao,
+    private val currencyManager: CurrencyManager
 ) {
+
+    suspend fun addTransaction(transaction: TransactionEntity) {
+        // Get the frozen exchange rate at transaction creation time
+        val rate = currencyManager.getFrozenExchangeRate(transaction.originalCurrency)
+        val amountUsd = transaction.amountOriginal
+            .divide(rate, 6, RoundingMode.HALF_UP)
+        val newTransaction = transaction.copy(
+            exchangeRateToUsd = rate,
+            amountUsd = amountUsd
+        )
+        transactionDao.insertTransaction(newTransaction)
+    }
+
+    suspend fun addRecurringTransaction(transaction: RecurringTransactionEntity){
+        val rate = currencyManager.getFrozenExchangeRate(transaction.originalCurrency)
+        val amountUsd = transaction.amountOriginal
+            .divide(rate, 6, RoundingMode.HALF_UP)
+        val newTransaction = transaction.copy(
+            exchangeRateToUsd = rate,
+            amountUsd = amountUsd
+        )
+        recurringTransactionDao.insertRecurringTransaction(newTransaction)
+    }
 
     suspend fun getFilteredTransactionsPaginated(
         filterType: String,
         searchQuery: String,
         dateRange: String,
-        amountRange: ClosedFloatingPointRange<Double>?,
+        amountRange: ClosedRange<BigDecimal>?,
         categories: List<String>,
         pageRequest: PageRequest
     ): PaginatedResult<TransactionEntity> {
@@ -33,8 +60,8 @@ class TransactionRepository @Inject constructor(
         val startDate = dateRangePair?.first ?: 0L
         val endDate = dateRangePair?.second ?: System.currentTimeMillis()
 
-        val minAmount = amountRange?.start ?: -1.0
-        val maxAmount = amountRange?.endInclusive ?: -1.0
+        val minAmount = amountRange?.start ?: BigDecimal(-1)
+        val maxAmount = amountRange?.endInclusive ?: BigDecimal(-1)
 
         val transactions = transactionDao.getFilteredTransactionsPaginated(
             filterType = filterType,
@@ -42,8 +69,8 @@ class TransactionRepository @Inject constructor(
             dateRange = dateRange,
             startDate = startDate,
             endDate = endDate,
-            minAmount = minAmount,
-            maxAmount = maxAmount,
+            minAmount = minAmount.toDouble(),
+            maxAmount = maxAmount.toDouble(),
             categoriesCount = categories.size,
             categories = categories,
             limit = pageRequest.pageSize,
@@ -60,14 +87,14 @@ class TransactionRepository @Inject constructor(
     suspend fun getFilteredRecurringTransactionsPaginated(
         filterType: String,
         searchQuery: String,
-        amountRange: ClosedFloatingPointRange<Double>?,
+        amountRange: ClosedRange<BigDecimal>?,
         categories: List<String>,
         statusFilter: String,
         pageRequest: PageRequest
     ): PaginatedResult<RecurringTransactionEntity> {
 
-        val minAmount = amountRange?.start ?: -1.0
-        val maxAmount = amountRange?.endInclusive ?: -1.0
+        val minAmount = amountRange?.start ?: BigDecimal(-1)
+        val maxAmount = amountRange?.endInclusive ?: BigDecimal(-1)
 
         val transactions = recurringTransactionDao.getFilteredRecurringTransactionsPaginated(
             filterType = filterType,
@@ -91,12 +118,12 @@ class TransactionRepository @Inject constructor(
     fun getFilteredRecurringTransactionsFlow(
         filterType: String,
         searchQuery: String,
-        amountRange: ClosedFloatingPointRange<Double>?,
+        amountRange: ClosedRange<BigDecimal>?,
         categories: List<String>,
         statusFilter: String
     ): Flow<List<RecurringTransactionEntity>> {
-        val minAmount = amountRange?.start ?: -1.0
-        val maxAmount = amountRange?.endInclusive ?: -1.0
+        val minAmount = amountRange?.start ?: BigDecimal(-1)
+        val maxAmount = amountRange?.endInclusive ?: BigDecimal(-1)
 
         return recurringTransactionDao.getFilteredRecurringTransactionsFlow(
             filterType = filterType,
@@ -246,6 +273,37 @@ class TransactionRepository @Inject constructor(
 
             "All Time" -> null
             else -> null
+        }
+    }
+
+    suspend fun getTransactionForDisplay(transactionId: Long): TransactionEntity? {
+        val transaction = transactionDao.getTransactionById(transactionId) ?: return null
+        return convertTransactionForDisplay(transaction)
+    }
+
+       private suspend fun convertTransactionForDisplay(transaction: TransactionEntity): TransactionEntity {
+        val displayCurrency = currencyManager.getDisplayCurrency()
+        if (displayCurrency == transaction.originalCurrency) {
+            return transaction
+        }
+
+        return transaction
+    }
+
+     suspend fun getTotalExpenseUsdForMonth(monthYear: String): BigDecimal {
+        val transactions = transactionDao.getTransactionsForMonth(monthYear)
+            .filter { it.type == "Expense" && !it.isDeleted }
+        
+        return transactions.fold(BigDecimal.ZERO) { acc, transaction ->
+            acc + transaction.amountUsd
+        }
+    }
+    suspend fun getTotalIncomeUsdForMonth(monthYear: String): BigDecimal {
+        val transactions = transactionDao.getTransactionsForMonth(monthYear)
+            .filter { it.type == "Income" && !it.isDeleted }
+        
+        return transactions.fold(BigDecimal.ZERO) { acc, transaction ->
+            acc + transaction.amountUsd
         }
     }
 

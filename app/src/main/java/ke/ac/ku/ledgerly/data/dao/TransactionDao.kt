@@ -1,3 +1,4 @@
+
 package ke.ac.ku.ledgerly.data.dao
 
 import androidx.room.Dao
@@ -24,10 +25,10 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions ORDER BY date DESC")
     suspend fun getAllTransactionsIncludingDeleted(): List<TransactionEntity>
 
-    @Query("SELECT * FROM transactions WHERE type = 'Expense' AND isDeleted = 0 ORDER BY amount DESC LIMIT 5")
+    @Query("SELECT * FROM transactions WHERE type = 'Expense' AND isDeleted = 0 ORDER BY amountOriginal DESC LIMIT 5")
     fun getTopExpenses(): Flow<List<TransactionEntity>>
 
-    @Query("SELECT type, date, SUM(amount) AS total_amount FROM transactions WHERE type = :type AND isDeleted = 0 GROUP BY type, date ORDER BY date")
+    @Query("SELECT type, date, SUM(amountOriginal) AS total_amount FROM transactions WHERE type = :type AND isDeleted = 0 GROUP BY type, date ORDER BY date")
     fun getAllExpenseByDate(type: String = "Expense"): Flow<List<TransactionSummary>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -45,7 +46,7 @@ interface TransactionDao {
 
     @Query(
         """
-SELECT category, SUM(amount) as total_amount 
+SELECT category, SUM(amountOriginal) as total_amount 
 FROM transactions 
 WHERE type = 'Expense' 
 AND isDeleted = 0
@@ -59,8 +60,8 @@ HAVING total_amount > 0
     @Query(
         """
 SELECT strftime('%Y-%m', datetime(date / 1000, 'unixepoch')) AS month,
-       SUM(CASE WHEN type = 'Income' THEN amount ELSE 0 END) AS income,
-       SUM(CASE WHEN type = 'Expense' THEN amount ELSE 0 END) AS expense
+       SUM(CASE WHEN type = 'Income' THEN amountOriginal ELSE 0 END) AS income,
+       SUM(CASE WHEN type = 'Expense' THEN amountOriginal ELSE 0 END) AS expense
 FROM transactions
 WHERE isDeleted = 0
 GROUP BY month
@@ -73,7 +74,7 @@ ORDER BY month
         """
 SELECT strftime('%Y-%m', datetime(date / 1000, 'unixepoch')) as month,
        category,
-       SUM(amount) as total_amount
+       SUM(amountOriginal) as total_amount
 FROM transactions 
 WHERE type = 'Expense' 
 AND isDeleted = 0
@@ -87,7 +88,7 @@ ORDER BY month
 
     @Query(
         """
-SELECT category, SUM(amount) as total_amount 
+SELECT category, SUM(amountOriginal) as total_amount 
 FROM transactions 
 WHERE type = 'Expense' 
 AND isDeleted = 0
@@ -101,7 +102,7 @@ ORDER BY total_amount DESC
 
     @Query(
         """
-SELECT type, date, SUM(amount) AS total_amount 
+SELECT type, date, SUM(amountOriginal) AS total_amount 
 FROM transactions 
 WHERE type = 'Expense' 
 AND isDeleted = 0
@@ -118,7 +119,7 @@ SELECT * FROM transactions
 WHERE type = 'Expense' 
 AND isDeleted = 0
 AND date BETWEEN :startDate AND :endDate
-ORDER BY amount DESC 
+ORDER BY amountOriginal DESC 
 LIMIT :limit
 """
     )
@@ -131,8 +132,8 @@ LIMIT :limit
     @Query(
         """
 SELECT strftime('%Y-%m-%d', datetime(date / 1000, 'unixepoch')) AS month,
-       SUM(CASE WHEN type = 'Income' THEN amount ELSE 0 END) AS income,
-       SUM(CASE WHEN type = 'Expense' THEN amount ELSE 0 END) AS expense
+       SUM(CASE WHEN type = 'Income' THEN amountOriginal ELSE 0 END) AS income,
+       SUM(CASE WHEN type = 'Expense' THEN amountOriginal ELSE 0 END) AS expense
 FROM transactions
 WHERE isDeleted = 0
 AND date BETWEEN :startDate AND :endDate
@@ -145,8 +146,8 @@ ORDER BY month
     @Query(
         """
 SELECT strftime('%Y-%m', datetime(date / 1000, 'unixepoch')) AS month,
-       SUM(CASE WHEN type = 'Income' THEN amount ELSE 0 END) AS income,
-       SUM(CASE WHEN type = 'Expense' THEN amount ELSE 0 END) AS expense
+       SUM(CASE WHEN type = 'Income' THEN amountOriginal ELSE 0 END) AS income,
+       SUM(CASE WHEN type = 'Expense' THEN amountOriginal ELSE 0 END) AS expense
 FROM transactions
 WHERE isDeleted = 0
 AND date BETWEEN :startDate AND :endDate
@@ -171,8 +172,8 @@ ORDER BY month
     WHERE isDeleted = 0 
     AND (:filterType = 'All' OR type = :filterType)
     AND (:searchQuery = '' OR category LIKE '%' || :searchQuery || '%' OR notes LIKE '%' || :searchQuery || '%')
-    AND (:minAmount = -1 OR amount >= :minAmount)
-    AND (:maxAmount = -1 OR amount <= :maxAmount)
+    AND (:minAmount = -1 OR amountOriginal >= :minAmount)
+    AND (:maxAmount = -1 OR amountOriginal <= :maxAmount)
     AND (:categoriesCount = 0 OR category IN (:categories))
     AND (:dateRange = 'All Time' OR date BETWEEN :startDate AND :endDate)
     ORDER BY date DESC 
@@ -199,8 +200,8 @@ ORDER BY month
     WHERE isDeleted = 0 
     AND (:filterType = 'All' OR type = :filterType)
     AND (:searchQuery = '' OR category LIKE '%' || :searchQuery || '%' OR notes LIKE '%' || :searchQuery || '%')
-    AND (:minAmount = -1 OR amount >= :minAmount)
-    AND (:maxAmount = -1 OR amount <= :maxAmount)
+    AND (:minAmount = -1 OR amountOriginal >= :minAmount)
+    AND (:maxAmount = -1 OR amountOriginal <= :maxAmount)
     AND (:categoriesCount = 0 OR category IN (:categories))
     AND (:dateRange = 'All Time' OR date BETWEEN :startDate AND :endDate)
 """
@@ -235,8 +236,8 @@ LIMIT :limit OFFSET :offset
     @Query(
         """
     SELECT 
-        SUM(CASE WHEN type = 'Income' THEN amount ELSE 0 END) AS totalIncome,
-        SUM(CASE WHEN type = 'Expense' THEN amount ELSE 0 END) AS totalExpense
+        SUM(CASE WHEN type = 'Income' THEN amountUsd ELSE 0 END) AS totalIncome,
+        SUM(CASE WHEN type = 'Expense' THEN amountUsd ELSE 0 END) AS totalExpense
     FROM transactions
     WHERE isDeleted = 0
       AND strftime('%Y-%m', datetime(date / 1000, 'unixepoch')) = :monthYear
@@ -246,7 +247,7 @@ LIMIT :limit OFFSET :offset
 
     @Query(
         """
-    SELECT date, SUM(amount) as total_amount, type
+    SELECT date, SUM(amountOriginal) as total_amount, type
     FROM transactions
     WHERE type = 'Income' 
     AND isDeleted = 0
@@ -256,4 +257,17 @@ LIMIT :limit OFFSET :offset
 """
     )
     fun getIncomeByDateForPeriod(startDate: Long, endDate: Long): Flow<List<TransactionSummary>>
+
+    @Query("SELECT * FROM transactions WHERE id = :id AND isDeleted = 0 LIMIT 1")
+    suspend fun getTransactionById(id: Long): TransactionEntity?
+
+    @Query(
+        """
+    SELECT * FROM transactions 
+    WHERE strftime('%Y-%m', datetime(date / 1000, 'unixepoch')) = :monthYear
+      AND isDeleted = 0
+    ORDER BY date DESC
+    """
+    )
+    suspend fun getTransactionsForMonth(monthYear: String): List<TransactionEntity>
 }

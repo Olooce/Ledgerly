@@ -1,5 +1,6 @@
 package ke.ac.ku.ledgerly.presentation.settings
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,8 +12,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -25,6 +30,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHost
@@ -44,9 +51,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.work.WorkInfo
@@ -57,6 +66,7 @@ import ke.ac.ku.ledgerly.presentation.transactions.TransactionViewModel
 import ke.ac.ku.ledgerly.ui.components.ExportDialog
 import ke.ac.ku.ledgerly.ui.components.ExportProgressDialog
 import ke.ac.ku.ledgerly.ui.components.ExportSuccessDialog
+import ke.ac.ku.ledgerly.ui.theme.LedgerlyGreen
 import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
 import kotlinx.coroutines.flow.Flow
 import java.text.SimpleDateFormat
@@ -84,11 +94,13 @@ fun SettingsScreen(
     val isBiometricEnabled by settingsViewModel.isBiometricEnabled.collectAsState()
     val isSessionTimeoutEnabled by settingsViewModel.isSessionTimeoutEnabled.collectAsState()
     val sessionTimeoutMinutes by settingsViewModel.sessionTimeoutMinutes.collectAsState()
+    val displayCurrency by settingsViewModel.displayCurrency.collectAsState()
 
     val transactionState by transactionViewModel.transactionsState.collectAsState()
     val exportState by exportViewModel.exportState.collectAsState()
     var showExportDialog by remember { mutableStateOf(false) }
     var showExportSuccessDialog by remember { mutableStateOf(false) }
+    var showCurrencyDialog by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -185,6 +197,14 @@ fun SettingsScreen(
                     description = "Switch between light and dark theme",
                     checked = isDarkMode ?: false,
                     onCheckedChange = { themeViewModel.setDarkMode(it) }
+                )
+            }
+
+            // Currency Section
+            SettingsSection(title = "Currency") {
+                CurrencySettingRow(
+                    selectedCurrency = displayCurrency,
+                    onClick = { showCurrencyDialog = true }
                 )
             }
 
@@ -461,6 +481,18 @@ fun SettingsScreen(
             onDismiss = { showExportSuccessDialog = false }
         )
     }
+
+    // Currency Dialog
+    if (showCurrencyDialog) {
+        CurrencySelectionDialog(
+            currentCurrency = displayCurrency,
+            onCurrencySelected = { newCurrency ->
+                settingsViewModel.updateDisplayCurrency(newCurrency)
+                showCurrencyDialog = false
+            },
+            onDismiss = { showCurrencyDialog = false }
+        )
+    }
 }
 
 @Composable
@@ -723,3 +755,293 @@ private fun SyncStatusIndicator(
         }
     }
 }
+@Composable
+fun CurrencySelectionDialog(
+    currentCurrency: String,
+    onCurrencySelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val currencies = remember {
+        listOf(
+            "USD" to "US Dollar",
+            "EUR" to "Euro",
+            "GBP" to "British Pound",
+            "JPY" to "Japanese Yen",
+            "KES" to "Kenyan Shilling",
+            "CAD" to "Canadian Dollar",
+            "AUD" to "Australian Dollar",
+            "CHF" to "Swiss Franc",
+            "CNY" to "Chinese Yuan",
+            "INR" to "Indian Rupee"
+        )
+    }
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filteredCurrencies = remember(searchQuery) {
+        if (searchQuery.isBlank()) {
+            currencies
+        } else {
+            currencies.filter { (code, name) ->
+                code.contains(searchQuery, ignoreCase = true) ||
+                        name.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp)
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Select Currency",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_close),
+                            contentDescription = "Close"
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Search Field
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = {
+                        Text(
+                            "Search currency...",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_search),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(
+                                onClick = { searchQuery = "" },
+                                modifier = Modifier.size(20.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_close),
+                                    contentDescription = "Clear",
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Currency List
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(filteredCurrencies) { (code, name) ->
+                        CurrencyItem(
+                            code = code,
+                            name = name,
+                            isSelected = currentCurrency == code,
+                            onClick = {
+                                onCurrencySelected(code)
+                                onDismiss()
+                            }
+                        )
+                    }
+
+                    if (filteredCurrencies.isEmpty()) {
+                        item {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_search),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(48.dp),
+                                    tint = MaterialTheme.colorScheme.outline
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    text = "No currencies found",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CurrencyItem(
+    code: String,
+    name: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = if (isSelected)
+            LedgerlyGreen.copy(alpha = 0.08f)
+        else
+            MaterialTheme.colorScheme.surfaceVariant,
+        border = if (isSelected)
+            BorderStroke(2.dp, LedgerlyGreen)
+        else null
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(
+                        if (isSelected) LedgerlyGreen
+                        else MaterialTheme.colorScheme.surface
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = code.take(1),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isSelected) Color.White
+                    else MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = code,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isSelected) LedgerlyGreen
+                    else MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (isSelected) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_check),
+                    contentDescription = "Selected",
+                    tint = LedgerlyGreen,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CurrencySettingRow(
+    selectedCurrency: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Currency Icon
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(LedgerlyGreen.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = selectedCurrency.take(1),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = LedgerlyGreen
+                )
+            }
+
+            Column {
+                Text(
+                    text = "Display Currency",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = selectedCurrency,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        Icon(
+            painter = painterResource(id = R.drawable.ic_arrow_right),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp)
+        )
+    }
+}
+

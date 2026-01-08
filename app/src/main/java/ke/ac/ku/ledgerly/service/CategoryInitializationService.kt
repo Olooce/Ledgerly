@@ -1,4 +1,4 @@
-package ke.ac.ku.ledgerly.data.service
+package ke.ac.ku.ledgerly.service
 
 import ke.ac.ku.ledgerly.data.dao.CategoryDao
 import ke.ac.ku.ledgerly.data.model.CategoryEntity

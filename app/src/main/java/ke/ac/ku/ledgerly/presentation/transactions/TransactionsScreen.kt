@@ -85,6 +85,7 @@ import ke.ac.ku.ledgerly.ui.widget.DropDown
 import ke.ac.ku.ledgerly.ui.widget.MultiFloatingActionButton
 import ke.ac.ku.ledgerly.ui.widget.SearchBar
 import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
+import ke.ac.ku.ledgerly.utils.CurrencyFormatter.formatCurrency
 import ke.ac.ku.ledgerly.utils.FormatingUtils
 import kotlinx.coroutines.delay
 
@@ -169,7 +170,7 @@ fun TransactionsScreen(
 
                 amountRange?.let { range ->
                     filtered = filtered.filter {
-                        it.amount in range.start..range.endInclusive
+                        it.amountOriginal.toDouble() in range.start..range.endInclusive
                     }
                 }
 
@@ -335,6 +336,7 @@ fun TransactionsScreen(
                                     selectedCategories = selectedCategories,
                                     filtersExpanded = filtersExpanded,
                                     lazyListState = lazyListState,
+                                    homeViewModel = homeViewModel,
                                     onFilterTypeChange = {
                                         transactionViewModel.updateFilter(it)
                                     },
@@ -442,6 +444,7 @@ fun SharedTransitionScope.AllTransactionsContent(
     selectedCategories: List<String>,
     filtersExpanded: Boolean,
     lazyListState: LazyListState,
+    homeViewModel: HomeViewModel,
     onFilterTypeChange: (String) -> Unit,
     onDateRangeChange: (String) -> Unit,
     onSearchQueryChange: (String) -> Unit,
@@ -663,14 +666,8 @@ fun SharedTransitionScope.AllTransactionsContent(
             ) {
                 items(transactions) { transaction ->
                     TransactionItem(
-                        title = transaction.category,
-                        paymentMethod = transaction.paymentMethod,
-                        amount = FormatingUtils.formatCurrency(transaction.amount),
-                        date = FormatingUtils.formatDateToHumanReadableForm(transaction.date),
-                        notes = transaction.notes,
-                        tags = transaction.tags,
-                        color = if (transaction.type.equals("Income", true))
-                            Color(0xFF2E7D32) else Color(0xFFC62828),
+                        transaction = transaction,
+                        currencyManager = homeViewModel.currencyManager,
                         modifier = Modifier
                             .animateItem()
                             .sharedBounds(
@@ -968,8 +965,8 @@ fun ActiveFiltersChips(
         if (dateRange != "All Time") add(FilterChipData("Date: $dateRange") { onDateRangeChange("All Time") })
         if (amountRange != null) add(
             FilterChipData(
-                "Amount: ${FormatingUtils.formatCurrency(amountRange.start)} - ${
-                    FormatingUtils.formatCurrency(
+                "Amount: ${formatCurrency(amountRange.start)} - ${
+                    formatCurrency(
                         amountRange.endInclusive
                     )
                 }"

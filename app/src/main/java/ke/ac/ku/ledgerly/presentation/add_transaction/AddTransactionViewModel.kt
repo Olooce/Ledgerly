@@ -7,13 +7,13 @@ import ke.ac.ku.ledgerly.base.AddTransactionNavigationEvent
 import ke.ac.ku.ledgerly.base.BaseViewModel
 import ke.ac.ku.ledgerly.base.NavigationEvent
 import ke.ac.ku.ledgerly.base.UiEvent
-import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
-import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.model.CategoryEntity
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.data.repository.BudgetRepository
 import ke.ac.ku.ledgerly.data.repository.CategoryRepository
+import ke.ac.ku.ledgerly.data.repository.TransactionRepository
+import ke.ac.ku.ledgerly.domain.CurrencyManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,14 +23,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.math.BigDecimal
+import java.math.RoundingMode
 import javax.inject.Inject
 
 @HiltViewModel
 class AddTransactionViewModel @Inject constructor(
-    val dao: TransactionDao,
-    val recurringDao: RecurringTransactionDao,
+    private val transactionRepository: TransactionRepository,
     private val budgetRepository: BudgetRepository,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    private val currencyManager: CurrencyManager
 ) : BaseViewModel() {
 
     private val _transactionAdded = MutableSharedFlow<Unit>()
@@ -39,8 +41,12 @@ class AddTransactionViewModel @Inject constructor(
     private val _categories = MutableStateFlow<List<CategoryEntity>>(emptyList())
     val categories: StateFlow<List<CategoryEntity>> = _categories.asStateFlow()
 
+    private val _userCurrency = MutableStateFlow("KES")
+    val userCurrency: StateFlow<String> = _userCurrency.asStateFlow()
+
     init {
         loadCategories()
+        loadUserCurrency()
     }
 
     private fun loadCategories() {
@@ -51,10 +57,29 @@ class AddTransactionViewModel @Inject constructor(
         }
     }
 
+    private fun loadUserCurrency() {
+        viewModelScope.launch {
+            currencyManager.getDisplayCurrencyFlow().collectLatest { currency ->
+                _userCurrency.value = currency
+            }
+        }
+    }
+
     suspend fun addTransaction(transactionEntity: TransactionEntity): Boolean {
         return try {
-            dao.insertTransactionWithTimestamp(transactionEntity)
-            updateBudgetSpending(transactionEntity)
+            val exchangeRate = currencyManager.getFrozenExchangeRate(transactionEntity.originalCurrency)
+            val amountUsd = currencyManager.convertToUsd(
+                transactionEntity.amountOriginal,
+                transactionEntity.originalCurrency
+            )
+
+            val transactionWithConversion = transactionEntity.copy(
+                exchangeRateToUsd = exchangeRate,
+                amountUsd = amountUsd
+            )
+
+            transactionRepository.addTransaction(transactionWithConversion)
+            updateBudgetSpending(transactionWithConversion)
             true
         } catch (ex: Throwable) {
             Log.e("AddTransactionVM", "Failed to add transaction", ex)
@@ -64,30 +89,10 @@ class AddTransactionViewModel @Inject constructor(
 
     suspend fun addRecurringTransaction(recurringTransaction: RecurringTransactionEntity): Boolean {
         return try {
-            val recurringId: Long = recurringDao.insertRecurringTransaction(recurringTransaction)
-
-            val firstTransaction = TransactionEntity(
-                id = null,
-                category = recurringTransaction.category,
-                amount = recurringTransaction.amount,
-                date = recurringTransaction.startDate,
-                type = recurringTransaction.type,
-                notes = recurringTransaction.notes + " (Recurring)",
-                paymentMethod = recurringTransaction.paymentMethod,
-                tags = recurringTransaction.tags
-            )
-            dao.insertTransaction(firstTransaction)
-
-            recurringDao.updateRecurringTransaction(
-                recurringTransaction.copy(
-                    id = recurringId,
-                    lastGeneratedDate = recurringTransaction.startDate
-                )
-            )
-
-            updateBudgetSpending(firstTransaction)
+            transactionRepository.addRecurringTransaction(recurringTransaction)
             true
         } catch (ex: Throwable) {
+            Log.e("AddTransactionVM", "Failed to add recurring transaction", ex)
             false
         }
     }
@@ -134,20 +139,17 @@ class AddTransactionViewModel @Inject constructor(
         if (transaction.type == "Expense") {
             val budget = budgetRepository.getBudgetForCategory(transaction.category)
             budget?.let {
-                val newSpending = it.currentSpending + transaction.amount
-                val newPercentage = (newSpending / it.monthlyBudget) * 100
+                val newSpending = it.currentSpending.add(transaction.amountOriginal)
+                val newPercentage =
+                    newSpending.divide(it.monthlyBudget, 2, RoundingMode.HALF_UP).multiply(BigDecimal(100))
 
                 return when {
                     newSpending > it.monthlyBudget ->
                         "Warning: This expense will exceed your ${transaction.category} budget!"
 
-                    newPercentage >= 80 ->
+                    newPercentage >= BigDecimal(80) ->
                         "Alert: This expense will use ${
-                            String.format(
-                                java.util.Locale.US,
-                                "%.1f",
-                                newPercentage
-                            )
+                            newPercentage.setScale(1, RoundingMode.HALF_UP)
                         }% of your ${transaction.category} budget"
 
                     else -> null

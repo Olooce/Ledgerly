@@ -88,7 +88,9 @@ class TransactionViewModel @Inject constructor(
                     filterType = currentState.filterType,
                     searchQuery = currentState.searchQuery,
                     dateRange = currentState.dateRange,
-                    amountRange = currentState.amountRange,
+                    amountRange = currentState.amountRange?.let { 
+                        it.start.toBigDecimal()..it.endInclusive.toBigDecimal() 
+                    },
                     categories = currentState.selectedCategories,
                     PageRequest(page = pageToLoad + 1, pageSize = paginationState.pageSize)
                 )
@@ -150,7 +152,9 @@ class TransactionViewModel @Inject constructor(
                 transactionRepository.getFilteredRecurringTransactionsFlow(
                     filterType = currentState.filterType,
                     searchQuery = currentState.searchQuery,
-                    amountRange = currentState.amountRange,
+                    amountRange = currentState.amountRange?.let { 
+                        it.start.toBigDecimal()..it.endInclusive.toBigDecimal() 
+                    },
                     categories = currentState.selectedCategories,
                     statusFilter = currentState.statusFilter
                 ).collect { transactions ->

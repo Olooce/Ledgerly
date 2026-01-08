@@ -54,6 +54,7 @@ import ke.ac.ku.ledgerly.ui.theme.LightGrey
 import ke.ac.ku.ledgerly.ui.theme.Typography
 import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
 import ke.ac.ku.ledgerly.utils.Utils
+import java.math.BigDecimal
 
 @Composable
 fun AddBudgetScreen(
@@ -156,6 +157,7 @@ fun AddBudgetForm(
 ) {
     val category = remember { mutableStateOf("") }
     val monthlyBudget = remember { mutableStateOf("") }
+    val budgetError = remember { mutableStateOf<String?>(null) }
 
     // Load expense categories
     val categories by categoryRepository.getCategoriesByTypeFlow("Expense")
@@ -228,20 +230,50 @@ fun AddBudgetForm(
             textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface),
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            placeholder = { TransactionTextView(text = "Enter amount") }
+            placeholder = { TransactionTextView(text = "Enter amount") },
+            isError = budgetError.value != null
         )
+
+        if (budgetError.value != null) {
+            TransactionTextView(
+                text = budgetError.value ?: "",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.size(32.dp))
 
         Button(
             onClick = {
-                val model = BudgetEntity(
-                    category = category.value,
-                    monthlyBudget = monthlyBudget.value.toDoubleOrNull() ?: 0.0,
-                    currentSpending = 0.0,
-                    monthYear = Utils.getCurrentMonthYear()
-                )
-                onAddBudget(model)
+                try {
+                    val budgetValue = monthlyBudget.value
+                    // Validate input: reject empty, single dot, or multiple dots
+                    if (budgetValue.isEmpty()) {
+                        budgetError.value = "Budget amount cannot be empty"
+                        return@Button
+                    }
+                    if (budgetValue == ".") {
+                        budgetError.value = "Please enter a valid budget amount"
+                        return@Button
+                    }
+                    if (budgetValue.count { it == '.' } > 1) {
+                        budgetError.value = "Budget amount cannot have multiple decimal points"
+                        return@Button
+                    }
+                    // Clear error on successful validation
+                    budgetError.value = null
+                    val model = BudgetEntity(
+                        category = category.value,
+                        monthlyBudget = BigDecimal(budgetValue),
+                        currentSpending = BigDecimal.ZERO,
+                        monthYear = Utils.getCurrentMonthYear()
+                    )
+                    onAddBudget(model)
+                } catch (e: NumberFormatException) {
+                    budgetError.value = "Invalid budget amount: ${e.message}"
+                }
             },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp),

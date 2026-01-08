@@ -119,7 +119,7 @@ object TransactionExportManager {
 
         transactions.forEach {
             table.addCell(it.category)
-            table.addCell(it.amount.toString())
+            table.addCell(it.amountOriginal.toPlainString())
             table.addCell(it.type)
             table.addCell(dateFormat.format(Date(it.date)))
         }
@@ -154,7 +154,7 @@ object TransactionExportManager {
             transactions.forEachIndexed { i, t ->
                 val row = sheet.createRow(i + 1)
                 row.createCell(0).setCellValue(t.category)
-                row.createCell(1).setCellValue(t.amount)
+                row.createCell(1).setCellValue(t.amountOriginal.toDouble())
                 row.createCell(2).setCellValue(t.type)
                 row.createCell(3).setCellValue(dateFormat.format(Date(t.date)))
             }
@@ -210,7 +210,7 @@ object TransactionExportManager {
                 it.writeNext(
                     arrayOf(
                         t.category,
-                        t.amount.toString(),
+                        t.amountOriginal.toPlainString(),
                         t.type,
                         dateFormat.format(Date(t.date))
                     )

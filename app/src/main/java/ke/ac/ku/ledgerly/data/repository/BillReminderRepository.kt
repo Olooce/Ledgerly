@@ -12,7 +12,6 @@ class BillReminderRepository @Inject constructor(
     private val billReminderDao: BillReminderDao
 ) {
 
-    // Get all bill reminders
     fun getAllBillReminders(): Flow<List<BillReminderEntity>> =
         billReminderDao.getAllBillReminders()
 

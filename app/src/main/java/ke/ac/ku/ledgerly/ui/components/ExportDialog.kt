@@ -224,8 +224,8 @@ fun ExportDialog(
 
                 ExportSummary(
                     transactionCount = transactions.size,
-                    totalExpense = transactions.filter { it.type == "Expense" }.sumOf { it.amount },
-                    totalIncome = transactions.filter { it.type == "Income" }.sumOf { it.amount }
+                    totalExpense = transactions.filter { it.type == "Expense" }.sumOf { it.amountUsd }.toDouble(),
+                    totalIncome = transactions.filter { it.type == "Income" }.sumOf { it.amountUsd }.toDouble()
                 )
 
                 Row(

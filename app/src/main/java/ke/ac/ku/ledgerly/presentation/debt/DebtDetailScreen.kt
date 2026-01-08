@@ -51,8 +51,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import ke.ac.ku.ledgerly.data.constants.NavRouts
+import ke.ac.ku.ledgerly.presentation.settings.SettingsViewModel
 import ke.ac.ku.ledgerly.ui.theme.Typography
-import ke.ac.ku.ledgerly.utils.FormatingUtils
+import ke.ac.ku.ledgerly.utils.CurrencyFormatter.formatCurrency
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -63,10 +64,12 @@ fun SharedTransitionScope.DebtDetailScreen(
     debtId: Long?,
     navController: NavController,
     animatedVisibilityScope: AnimatedVisibilityScope,
-    viewModel: DebtViewModel = hiltViewModel()
+    viewModel: DebtViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val detailState by viewModel.debtDetailState.collectAsState()
     val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val displayCurrency by settingsViewModel.displayCurrency.collectAsState()
 
     LaunchedEffect(debtId) {
         viewModel.loadDebtDetail(debtId)
@@ -260,7 +263,7 @@ fun SharedTransitionScope.DebtDetailScreen(
 
                             // Amount
                             Text(
-                                text = FormatingUtils.formatCurrency(debt.amount),
+                                text = formatCurrency(debt.amount, displayCurrency),
                                 style = Typography.displaySmall,
                                 fontWeight = FontWeight.Bold,
                                 color = if (debt.debtType == "owe")

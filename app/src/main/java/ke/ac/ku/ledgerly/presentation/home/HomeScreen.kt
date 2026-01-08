@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
@@ -49,6 +48,8 @@ import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.base.HomeNavigationEvent
 import ke.ac.ku.ledgerly.base.NavigationEvent
 import ke.ac.ku.ledgerly.data.constants.NavRouts
+import ke.ac.ku.ledgerly.domain.CurrencyManager
+import ke.ac.ku.ledgerly.presentation.settings.SettingsViewModel
 import ke.ac.ku.ledgerly.ui.components.LedgerlyTopBar
 import ke.ac.ku.ledgerly.ui.components.TransactionList
 import ke.ac.ku.ledgerly.ui.theme.Typography
@@ -57,10 +58,17 @@ import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
 import ke.ac.ku.ledgerly.utils.Utils
 
 @Composable
-fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltViewModel()) {
+fun HomeScreen(
+    navController: NavController,
+    viewModel: HomeViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
+) {
     val homeState by viewModel.homeState.collectAsState()
     val userName by viewModel.userName.collectAsState(initial = "User")
     val unreadNotificationCount by viewModel.unreadNotificationCount.collectAsState()
+    val displayCurrency by settingsViewModel.displayCurrency.collectAsState()
+    val currencyManager = viewModel.currencyManager
+
 
     val lazyListState = rememberLazyListState()
 
@@ -217,7 +225,8 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                 income = homeState.totalIncome,
                 expense = homeState.totalExpense,
                 currentMonth = homeState.currentMonth,
-                isNegative = homeState.isBalanceNegative
+                isNegative = homeState.isBalanceNegative,
+                currency = displayCurrency
             )
 
             TransactionList(
@@ -234,6 +243,8 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                 onSeeAllClicked = {
                     viewModel.onEvent(HomeUiEvent.OnSeeAllClicked)
                 },
+                currencyManager = currencyManager,
+                currency = displayCurrency
             )
 
             Box(
@@ -266,7 +277,8 @@ fun CardItem(
     income: String,
     expense: String,
     currentMonth: String,
-    isNegative: Boolean
+    isNegative: Boolean,
+    currency: String
 ) {
     Box(
         modifier = modifier
@@ -338,7 +350,7 @@ fun CardItem(
                 )
                 Spacer(modifier = Modifier.size(8.dp))
                 TransactionTextView(
-                    text = balance,
+                    text = "$currency $balance",
                     style = Typography.headlineLarge,
                     color = if (isNegative) Color(0xFFFF4B4B) else Color(0xFF10B981)
                 )
@@ -355,7 +367,7 @@ fun CardItem(
                 RowItem(
                     modifier = Modifier.weight(1f),
                     title = "Income",
-                    amount = income,
+                    amount = "$currency $income",
                     image = R.drawable.ic_income,
                     gradientColors = listOf(
                         Color(0xFF10B981).copy(alpha = 0.2f),
@@ -369,7 +381,7 @@ fun CardItem(
                 RowItem(
                     modifier = Modifier.weight(1f),
                     title = "Expense",
-                    amount = expense,
+                    amount = "$currency $expense",
                     image = R.drawable.ic_expense,
                     gradientColors = listOf(
                         Color(0xFFEF4444).copy(alpha = 0.2f),

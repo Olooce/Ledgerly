@@ -1,3 +1,4 @@
+
 package ke.ac.ku.ledgerly.ui.components
 
 import androidx.compose.foundation.Image
@@ -22,6 +23,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
+import ke.ac.ku.ledgerly.domain.CurrencyManager
 import ke.ac.ku.ledgerly.ui.theme.Typography
 import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
 import ke.ac.ku.ledgerly.utils.FormatingUtils
@@ -31,7 +33,9 @@ fun TransactionList(
     modifier: Modifier,
     list: List<TransactionEntity>,
     title: String = "Recent Transactions",
-    onSeeAllClicked: () -> Unit
+    onSeeAllClicked: () -> Unit,
+    currencyManager: CurrencyManager,
+    currency: String
 ) {
 
     if (list.isEmpty()) {
@@ -93,13 +97,8 @@ fun TransactionList(
                 items = list,
                 key = { item -> item.id ?: 0 }) { item ->
                 TransactionItem(
-                    title = item.category,
-                    amount = FormatingUtils.formatCurrency(item.amount),
-                    date = FormatingUtils.formatDateToHumanReadableForm(item.date),
-                    paymentMethod = item.paymentMethod,
-                    notes = item.notes,
-                    tags = item.tags,
-                    color = if (item.type == "Income") Color(0xFF2E7D32) else Color(0xFFC62828),
+                    transaction = item,
+                    currencyManager = currencyManager,
                     modifier = Modifier
                 )
             }
