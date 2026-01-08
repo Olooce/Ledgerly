@@ -19,13 +19,13 @@ import javax.inject.Inject
 
 data class ProfileState(
     val userName: String = "",
-    val currency: String = "KES",
+    val currency: String = "USD",
     val monthlyBudget: String = "0",
     val notificationEnabled: Boolean = true,
     val darkMode: Boolean = false,
     val isEditing: Boolean = false,
     val editedUserName: String = "",
-    val editedCurrency: String = "KES",
+    val editedCurrency: String = "USD",
     val editedMonthlyBudget: String = "0",
     val isLoading: Boolean = false,
     val error: String? = null,

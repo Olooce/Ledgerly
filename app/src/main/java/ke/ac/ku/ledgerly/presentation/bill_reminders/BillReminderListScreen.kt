@@ -200,7 +200,7 @@ private fun SummarySection(summary: BillReminderSummary) {
             SummaryCard(
                 title = "Upcoming",
                 value = summary.totalUpcoming.toString(),
-                subtitle = "KES ${String.format("%.0f", summary.totalAmount)}",
+                subtitle = " ${String.format("%.0f", summary.totalAmount)}",
                 backgroundColor = Color(0xFF4CAF50).copy(alpha = 0.12f),
                 borderColor = Color(0xFF4CAF50).copy(alpha = 0.3f),
                 modifier = Modifier.weight(1f)

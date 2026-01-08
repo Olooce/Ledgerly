@@ -53,7 +53,7 @@ class UserPreferencesRepository @Inject constructor(
 
     val userName: Flow<String> = context.dataStore.data.map { it[PreferencesKeys.USER_NAME] ?: "" }
     val currency: Flow<String> =
-        context.dataStore.data.map { it[PreferencesKeys.CURRENCY] ?: "KES" }
+        context.dataStore.data.map { it[PreferencesKeys.CURRENCY] ?: "USD" }
     val onboardingCompleted: Flow<Boolean> =
         context.dataStore.data.map { it[PreferencesKeys.ONBOARDING_COMPLETED] ?: false }
     val monthlyBudget: Flow<String> =
@@ -290,7 +290,7 @@ class UserPreferencesRepository @Inject constructor(
         val preferences = context.dataStore.data.first()
         return UserPreferences(
             userName = preferences[PreferencesKeys.USER_NAME] ?: "",
-            currency = preferences[PreferencesKeys.CURRENCY] ?: "KES",
+            currency = preferences[PreferencesKeys.CURRENCY] ?: "USD",
             monthlyBudget = preferences[PreferencesKeys.MONTHLY_BUDGET] ?: "0",
             notificationEnabled = preferences[PreferencesKeys.NOTIFICATION_ENABLED] ?: true,
             onboardingCompleted = preferences[PreferencesKeys.ONBOARDING_COMPLETED] ?: false,

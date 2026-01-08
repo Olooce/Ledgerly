@@ -72,7 +72,7 @@ class HomeViewModel @Inject constructor(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = "KES"
+            initialValue = "USD"
         )
 
     val unreadNotificationCount: StateFlow<Int> =
