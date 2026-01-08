@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.TypeConverters
 import ke.ac.ku.ledgerly.data.converters.Converters
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 @Entity(tableName = "budgets", primaryKeys = ["category", "monthYear"])
 @TypeConverters(Converters::class)
@@ -20,7 +21,8 @@ data class BudgetEntity(
 
     val percentageUsed: BigDecimal
         get() = if (this@BudgetEntity.monthlyBudget > BigDecimal.ZERO)
-            (currentSpending / this@BudgetEntity.monthlyBudget) * BigDecimal(100)
+            currentSpending.multiply(BigDecimal(100))
+                .divide(this@BudgetEntity.monthlyBudget, 2, RoundingMode.HALF_UP)
             else BigDecimal.ZERO
 
     fun isNearLimit(threshold: Int = 80): Boolean {

@@ -236,13 +236,22 @@ fun AddBudgetForm(
 
         Button(
             onClick = {
-                val model = BudgetEntity(
-                    category = category.value,
-                    monthlyBudget = BigDecimal(monthlyBudget.value),
-                    currentSpending = BigDecimal.ZERO,
-                    monthYear = Utils.getCurrentMonthYear()
-                )
-                onAddBudget(model)
+                try {
+                    val budgetValue = monthlyBudget.value
+                    // Validate input: reject empty, single dot, or multiple dots
+                    if (budgetValue.isEmpty() || budgetValue == "." || budgetValue.count { it == '.' } > 1) {
+                        return@Button
+                    }
+                    val model = BudgetEntity(
+                        category = category.value,
+                        monthlyBudget = BigDecimal(budgetValue),
+                        currentSpending = BigDecimal.ZERO,
+                        monthYear = Utils.getCurrentMonthYear()
+                    )
+                    onAddBudget(model)
+                } catch (e: NumberFormatException) {
+                    return@Button
+                }
             },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp),

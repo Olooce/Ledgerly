@@ -64,14 +64,14 @@ class DebtRepository @Inject constructor(
     }
 
        suspend fun getTotalOwedUsd(): BigDecimal {
-        val debts = getAllDebtSync().filter { it.debtType == "owe" && !it.isDeleted }
+        val debts = getAllDebtSync().filter { it.debtType == "owed" && !it.isDeleted }
         return debts.fold(BigDecimal.ZERO) { acc, debt ->
             acc + debt.amount
         }
     }
 
     suspend fun getTotalOweUsd(): BigDecimal {
-        val debts = getAllDebtSync().filter { it.debtType == "owed" && !it.isDeleted }
+        val debts = getAllDebtSync().filter { it.debtType == "owe" && !it.isDeleted }
         return debts.fold(BigDecimal.ZERO) { acc, debt ->
             acc + debt.amount
         }

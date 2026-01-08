@@ -27,9 +27,11 @@ data class SavingsGoalEntity(
 ) {
     val progressPercentage: BigDecimal
         get() = if (targetAmount > BigDecimal.ZERO)
-            (currentAmount / targetAmount).setScale(2, RoundingMode.HALF_UP)
-                .coerceIn(BigDecimal.ZERO, BigDecimal.ONE) * BigDecimal(100)
-            else BigDecimal.ZERO
+            currentAmount.divide(targetAmount, 4, RoundingMode.HALF_UP)
+                .setScale(2, RoundingMode.HALF_UP)
+                .coerceIn(BigDecimal.ZERO, BigDecimal.ONE)
+                .multiply(BigDecimal(100))
+        else BigDecimal.ZERO
 
     val remainingAmount: BigDecimal
         get() = (targetAmount - currentAmount).coerceAtLeast(BigDecimal.ZERO)
@@ -40,7 +42,9 @@ data class SavingsGoalEntity(
                 val totalDays = (targetDate - createdDate) / (1000 * 60 * 60 * 24)
                 if (totalDays <= 0) return true  // Goal deadline is in the past or same as creation
                 val elapsedDays = (System.currentTimeMillis() - createdDate) / (1000 * 60 * 60 * 24)
-                val expectedProgress = (elapsedDays.toBigDecimal() / totalDays.toBigDecimal()) * BigDecimal(100)
+                val expectedProgress = elapsedDays.toBigDecimal()
+                    .divide(totalDays.toBigDecimal(), 4, RoundingMode.HALF_UP)
+                    .multiply(BigDecimal(100))
                 progressPercentage >= expectedProgress
             }
         }

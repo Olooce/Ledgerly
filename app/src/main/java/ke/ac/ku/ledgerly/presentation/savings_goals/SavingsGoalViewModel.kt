@@ -143,8 +143,8 @@ class SavingsGoalViewModel @Inject constructor(
                         goalId = goalId,
                         goalName = goal.name,
                         percentageComplete = milestone,
-                        currentAmount = formatCurrency(newAmount).toBigDecimal(),
-                        targetAmount = formatCurrency(goal.targetAmount.toDouble()).toBigDecimal()
+                        currentAmount = newAmount.toBigDecimal(),
+                        targetAmount = goal.targetAmount
                     )
                 }
 

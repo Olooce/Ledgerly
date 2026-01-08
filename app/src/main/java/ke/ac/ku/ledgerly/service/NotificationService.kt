@@ -260,7 +260,7 @@ class NotificationService @Inject constructor(
         val formattedTargetAmount = formatCurrency(displayTargetAmount.toDouble())
 
         val title = "Savings Goal Update: $goalName"
-        val message = "You've reached ${String.format("%.0f", percentageComplete)}% of your goal"
+        val message = "You've reached ${String.format("%.0f", percentageComplete.toDouble())}% of your goal"
         val bigText = "You've saved $formattedCurrentAmount out of $formattedTargetAmount for $goalName!"
 
         val notificationEntity = NotificationEntity(
