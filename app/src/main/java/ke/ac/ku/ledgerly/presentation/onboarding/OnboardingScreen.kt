@@ -16,9 +16,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -59,6 +62,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
@@ -353,100 +357,219 @@ private fun NameStep(
         )
     }
 }
-
 @Composable
 private fun CurrencyStep(
     selectedCurrency: String,
     onCurrencySelected: (String) -> Unit,
     viewModel: OnboardingViewModel
 ) {
-    val currencies by viewModel.availableCurrencies.collectAsState()
-    var query by remember { mutableStateOf("") }
+    val currencies = remember {
+        listOf(
+            "USD" to "US Dollar",
+            "EUR" to "Euro",
+            "GBP" to "British Pound",
+            "JPY" to "Japanese Yen",
+            "KES" to "Kenyan Shilling",
+            "CAD" to "Canadian Dollar",
+            "AUD" to "Australian Dollar",
+            "CHF" to "Swiss Franc"
+        )
+    }
+    var searchQuery by remember { mutableStateOf("") }
 
-    val filtered = if (query.isBlank()) currencies else
-        currencies.filter { it.contains(query, ignoreCase = true) }
+    val filteredCurrencies = remember(searchQuery) {
+        if (searchQuery.isBlank()) {
+            currencies
+        } else {
+            currencies.filter { (code, name) ->
+                code.contains(searchQuery, ignoreCase = true) ||
+                        name.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp),
+            .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
             imageVector = Icons.Default.AttachMoney,
             contentDescription = null,
-            modifier = Modifier.size(60.dp),
+            modifier = Modifier.size(64.dp),
             tint = Color.White
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Text(
             text = "Choose Your Currency",
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.headlineSmall,
             color = Color.White,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
+        Text(
+            text = "Select your preferred currency for transactions",
+            style = MaterialTheme.typography.bodyMedium,
+            color = LedgerlyAccent,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Compact Search Field
         OutlinedTextField(
-            value = query,
-            onValueChange = { query = it },
-            label = { Text("Search Currency") },
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = { Text("Search...") },
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_search),
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = Color.White.copy(alpha = 0.7f)
+                )
+            },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(
+                        onClick = { searchQuery = "" },
+                        modifier = Modifier.size(18.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Clear",
+                            modifier = Modifier.size(16.dp),
+                            tint = Color.White.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Color.White,
-                unfocusedBorderColor = Color.White.copy(alpha = 0.6f),
-                focusedLabelColor = Color.White,
-                unfocusedLabelColor = Color.White.copy(alpha = 0.6f),
-                cursorColor = Color.White,
+                unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
                 focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White
+                unfocusedTextColor = Color.White,
+                cursorColor = Color.White,
+                focusedPlaceholderColor = Color.White.copy(alpha = 0.6f),
+                unfocusedPlaceholderColor = Color.White.copy(alpha = 0.5f)
             )
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (currencies.isEmpty()) {
-            CircularProgressIndicator(
-                color = Color.White.copy(alpha = 0.7f),
-                strokeWidth = 3.dp,
-                modifier = Modifier.padding(top = 24.dp)
-            )
-        } else {
-            val availableCurrencies = Currency.getAvailableCurrencies()
+        // Compact Currency Grid
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 400.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(filteredCurrencies) { (code, name) ->
+                OnboardingCurrencyItem(
+                    code = code,
+                    name = name,
+                    isSelected = selectedCurrency == code,
+                    onClick = { onCurrencySelected(code) }
+                )
+            }
 
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                filtered.forEach { code ->
-                    val displayName = availableCurrencies
-                        .find { it.currencyCode == code }?.displayName ?: code
-                    CurrencyOption(
-                        code = code,
-                        name = displayName,
-                        isSelected = selectedCurrency == code,
-                        onClick = { onCurrencySelected(code) }
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                if (filtered.isEmpty()) {
+            if (filteredCurrencies.isEmpty()) {
+                item {
                     Text(
                         text = "No currencies found",
                         color = Color.White.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(16.dp)
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp)
                     )
                 }
             }
         }
     }
 }
+
+@Composable
+private fun OnboardingCurrencyItem(
+    code: String,
+    name: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected)
+                Color.White.copy(alpha = 0.25f)
+            else
+                Color.White.copy(alpha = 0.12f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Currency Icon
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(
+                        if (isSelected) Color.White
+                        else Color.White.copy(alpha = 0.2f)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = code.take(1),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isSelected) LedgerlyGreen else Color.White
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = code,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = LedgerlyAccent
+                )
+            }
+
+            if (isSelected) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_check),
+                    contentDescription = "Selected",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
 private fun BudgetStep(

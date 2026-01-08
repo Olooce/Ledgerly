@@ -1,6 +1,7 @@
 package ke.ac.ku.ledgerly.utils
 
 import ke.ac.ku.ledgerly.utils.Utils.getMillisFromDate
+import java.math.BigDecimal
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Currency
@@ -20,13 +21,6 @@ object FormatingUtils {
     fun formatDateForChart(dateInMillis: Long): String {
         val dateFormatter = SimpleDateFormat("dd-MMM", Locale.getDefault())
         return dateFormatter.format(dateInMillis)
-    }
-
-    fun formatCurrency(amount: Double): String {
-        val formatter = NumberFormat.getCurrencyInstance(Locale("en", "KE"))
-        formatter.currency = Currency.getInstance("KES")
-        val formatted = formatter.format(amount)
-        return formatted.replace("KSh", "KSh ")
     }
 
     fun formatDayMonthYear(dateInMillis: Long): String {

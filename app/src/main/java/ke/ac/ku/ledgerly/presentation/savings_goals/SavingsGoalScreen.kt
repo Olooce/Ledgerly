@@ -145,7 +145,7 @@ fun SavingsGoalScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                FormatingUtils.formatCurrency(totalSavings),
+                                FormatingUtils.formatToDecimalValue(totalSavings),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = LedgerlyGreen
@@ -163,7 +163,7 @@ fun SavingsGoalScreen(
                             )
 
                             Text(
-                                "of ${FormatingUtils.formatCurrency(totalTarget)}",
+                                "of ${FormatingUtils.formatToDecimalValue(totalTarget)}",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = LedgerlyGreen
@@ -279,8 +279,8 @@ fun SavingsGoalScreen(
                                 navController.navigate("${NavRouts.ADD_SAVINGS_GOAL}?goalId=${goal.id}")
                             },
                             onAddProgress = { amount ->
-                                val newAmount = goal.currentAmount + amount
-                                viewModel.updateGoalProgress(goal.id, newAmount)
+                                val newAmount = goal.currentAmount + amount.toBigDecimal()
+                                viewModel.updateGoalProgress(goal.id, newAmount.toDouble())
                             },
                             onComplete = {
                                 viewModel.completeGoal(goal.id)

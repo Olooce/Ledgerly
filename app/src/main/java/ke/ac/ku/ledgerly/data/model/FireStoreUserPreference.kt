@@ -8,7 +8,7 @@ data class FirestoreUserPreferences(
     @PropertyName("userName")
     val userName: String = "",
     @PropertyName("currency")
-    val currency: String = "KES",
+    val currency: String = "USD",
     @PropertyName("monthlyBudget")
     val monthlyBudget: Double = 0.0,
     @PropertyName("notificationEnabled")
@@ -41,7 +41,7 @@ data class FirestoreUserPreferences(
             syncWifiOnly: Boolean = true,
             syncChargingOnly: Boolean = false,
             syncInterval: Long = 6L,
-            currency: String = "KES",
+            currency: String = "USD",
             monthlyBudget: Double = 0.0,
             notificationEnabled: Boolean = true,
             onboardingCompleted: Boolean = false

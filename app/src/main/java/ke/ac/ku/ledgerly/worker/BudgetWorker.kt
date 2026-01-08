@@ -9,7 +9,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import ke.ac.ku.ledgerly.data.repository.BudgetRepository
 import ke.ac.ku.ledgerly.data.repository.NotificationRepository
-import ke.ac.ku.ledgerly.data.service.NotificationService
+import ke.ac.ku.ledgerly.service.NotificationService
 import ke.ac.ku.ledgerly.utils.FormatingUtils
 import ke.ac.ku.ledgerly.utils.sendBudgetWarning
 
@@ -30,9 +30,9 @@ class BudgetWorker @AssistedInject constructor(
                     notificationRepository = notificationRepository,
                     budgetId = budget.category + budget.monthYear,
                     category = budget.category,
-                    percentageUsed = budget.percentageUsed,
-                    spent = FormatingUtils.formatCurrency(budget.currentSpending),
-                    limit = FormatingUtils.formatCurrency(budget.monthlyBudget)
+                    percentageUsed = budget.percentageUsed.toDouble(),
+                    spent = FormatingUtils.formatToDecimalValue(budget.currentSpending.toDouble()),
+                    limit = FormatingUtils.formatToDecimalValue(budget.monthlyBudget.toDouble())
                 )
             }
            Result.success()

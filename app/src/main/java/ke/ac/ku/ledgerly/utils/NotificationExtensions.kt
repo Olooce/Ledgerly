@@ -1,8 +1,8 @@
 package ke.ac.ku.ledgerly.utils
 
 import ke.ac.ku.ledgerly.data.repository.NotificationRepository
-import ke.ac.ku.ledgerly.data.service.NotificationService
-import java.util.Calendar
+import ke.ac.ku.ledgerly.service.NotificationService
+import java.math.BigDecimal
 
 //Send budget warning when spending reaches threshold
 suspend fun NotificationService.sendBudgetWarning(
@@ -38,19 +38,19 @@ suspend fun NotificationService.sendBudgetWarning(
 suspend fun NotificationService.sendSavingsMilestone(
     goalId: Long,
     goalName: String,
-    percentageComplete: Double,
-    currentAmount: String,
-    targetAmount: String
+    percentageComplete: BigDecimal,
+    currentAmount: BigDecimal,
+    targetAmount: BigDecimal
 ) {
     val milestones = listOf(25.0, 50.0, 75.0, 100.0)
 
-    if (milestones.any { kotlin.math.abs(percentageComplete - it) < 1.0 }) {
+    if (milestones.any { (percentageComplete.subtract(BigDecimal.valueOf(it))).abs() < BigDecimal.ONE }) {
         sendSavingsGoalNotification(
             goalId = goalId,
             goalName = goalName,
             percentageComplete = percentageComplete,
-            currentAmount = currentAmount,
-            targetAmount = targetAmount
+            currentAmount = currentAmount.toString(),
+            targetAmount = targetAmount.toString()
         )
     }
 }

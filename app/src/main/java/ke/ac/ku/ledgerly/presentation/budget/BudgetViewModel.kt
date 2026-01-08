@@ -7,8 +7,8 @@ import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.data.repository.BudgetRepository
 import ke.ac.ku.ledgerly.data.repository.CategoryRepository
 import ke.ac.ku.ledgerly.data.repository.NotificationRepository
-import ke.ac.ku.ledgerly.data.service.NotificationService
-import ke.ac.ku.ledgerly.utils.FormatingUtils.formatCurrency
+import ke.ac.ku.ledgerly.service.NotificationService
+import ke.ac.ku.ledgerly.utils.CurrencyFormatter.formatCurrency
 import ke.ac.ku.ledgerly.utils.sendBudgetWarning
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,7 +43,7 @@ class BudgetViewModel @Inject constructor(
             _uiState.value = BudgetUiState.Loading
             try {
                 budgetRepository.refreshBudgetSpending()
-                _budgets.value = budgetRepository.getBudgetsForCurrentMonth()
+                _budgets.value = budgetRepository.getBudgetsForDisplayCurrentMonth()
                 _uiState.value = BudgetUiState.Success
             } catch (e: Exception) {
                 _uiState.value = BudgetUiState.Error(e.message ?: "Failed to load budgets")
@@ -60,9 +60,9 @@ class BudgetViewModel @Inject constructor(
                     notificationRepository = notificationRepository,
                     budgetId = it.category,
                     category = it.category,
-                    percentageUsed = it.percentageUsed,
-                    spent = formatCurrency(it.currentSpending),
-                    limit = formatCurrency(it.monthlyBudget)
+                    percentageUsed = it.percentageUsed.toDouble(),
+                    spent = formatCurrency(it.currentSpending.toDouble()),
+                    limit = formatCurrency(it.monthlyBudget.toDouble())
                 )
             }
         }

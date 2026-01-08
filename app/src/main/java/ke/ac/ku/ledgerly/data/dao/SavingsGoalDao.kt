@@ -10,6 +10,8 @@ import androidx.room.Update
 import ke.ac.ku.ledgerly.data.model.SavingsGoalEntity
 import ke.ac.ku.ledgerly.data.model.SavingsSummary
 import kotlinx.coroutines.flow.Flow
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 @Dao
 interface SavingsGoalDao {
@@ -52,16 +54,16 @@ interface SavingsGoalDao {
     @Transaction
     suspend fun updateGoalAmountWithMilestones(
         goalId: Long,
-        newAmount: Double
-    ): List<Double> {
+        newAmount: BigDecimal
+    ): List<BigDecimal> {
         val goal = getGoalById(goalId) ?: return emptyList()
 
-        if (goal.targetAmount <= 0.0) return emptyList()
+        if (goal.targetAmount <= BigDecimal.ZERO) return emptyList()
 
-        val oldPercentage = (goal.currentAmount / goal.targetAmount) * 100
-        val newPercentage = (newAmount / goal.targetAmount) * 100
+        val oldPercentage = goal.currentAmount.divide(goal.targetAmount, 4, RoundingMode.HALF_UP).multiply(BigDecimal(100))
+        val newPercentage = newAmount.divide(goal.targetAmount, 4, RoundingMode.HALF_UP).multiply(BigDecimal(100))
 
-        val milestones = listOf(25.0, 50.0, 75.0, 100.0)
+        val milestones = listOf(BigDecimal("25"), BigDecimal("50"), BigDecimal("75"), BigDecimal("100"))
 
         val crossed = milestones.filter {
             it > goal.lastMilestoneReached &&
@@ -73,7 +75,7 @@ interface SavingsGoalDao {
             goal.copy(
                 currentAmount = newAmount,
                 lastMilestoneReached = crossed.maxOrNull()
-                    ?: goal.lastMilestoneReached
+                    ?: goal.lastMilestoneReached,
             )
         )
 
@@ -89,7 +91,7 @@ interface SavingsGoalDao {
     @Query("UPDATE savings_goals SET currentAmount = :amount, lastModified = :timestamp WHERE id = :id")
     suspend fun updateGoalAmount(
         id: Long,
-        amount: Double,
+        amount: BigDecimal,
         timestamp: Long = System.currentTimeMillis()
     )
 

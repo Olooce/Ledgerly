@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import java.math.BigDecimal
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,8 +45,8 @@ fun BudgetItem(
     iconTint: Color = MaterialTheme.colorScheme.primary
 ) {
     val progress =
-        (budget.currentSpending / budget.monthlyBudget.coerceAtLeast(0.01)).coerceIn(0.0, 1.0)
-            .toFloat()
+        (budget.currentSpending / budget.monthlyBudget.coerceAtLeast(BigDecimal("0.01")))
+            .coerceIn(BigDecimal.ZERO, BigDecimal.ONE).toFloat()
     val progressColor = when {
         budget.isExceeded() -> LedgerlyBlue
         budget.isNearLimit() -> LedgerlyGreenLight
@@ -67,9 +68,9 @@ fun BudgetItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "${FormatingUtils.formatCurrency(budget.currentSpending)} / ${
-                        FormatingUtils.formatCurrency(
-                            budget.monthlyBudget
+                    text = "${FormatingUtils.formatToDecimalValue(budget.currentSpending.toDouble())} / ${
+                        FormatingUtils.formatToDecimalValue(
+                            budget.monthlyBudget.toDouble()
                         )
                     }",
                     style = MaterialTheme.typography.bodyMedium,
@@ -105,9 +106,9 @@ fun BudgetItem(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "${FormatingUtils.formatCurrency(budget.remainingBudget)} remaining",
+                    text = "${FormatingUtils.formatToDecimalValue(budget.remainingBudget.toDouble())} remaining",
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (budget.remainingBudget < 0) LedgerlyBlue else LedgerlyGreen
+                    color = if (budget.remainingBudget < BigDecimal.ZERO) LedgerlyBlue else LedgerlyGreen
                 )
             }
         }

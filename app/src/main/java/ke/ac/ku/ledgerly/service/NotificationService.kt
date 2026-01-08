@@ -1,4 +1,4 @@
-package ke.ac.ku.ledgerly.data.service
+package ke.ac.ku.ledgerly.service
 
 import android.Manifest
 import android.app.NotificationChannel
@@ -17,6 +17,9 @@ import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.NotificationEntity
 import ke.ac.ku.ledgerly.data.model.NotificationType
 import ke.ac.ku.ledgerly.data.repository.NotificationRepository
+import ke.ac.ku.ledgerly.domain.CurrencyManager
+import ke.ac.ku.ledgerly.utils.CurrencyFormatter.formatCurrency
+import java.math.BigDecimal
 import java.util.Calendar
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,7 +27,8 @@ import javax.inject.Singleton
 @Singleton
 class NotificationService @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val notificationRepository: NotificationRepository
+    private val notificationRepository: NotificationRepository,
+    private val currencyManager: CurrencyManager
 ) {
     companion object {
         private const val NOTIFICATION_ID_BILLS = 2000
@@ -102,11 +106,13 @@ class NotificationService @Inject constructor(
         dueDate: String,
         daysUntilDue: Int
     ): Boolean {
+        val displayAmount = currencyManager.convertToDisplayCurrency(amount.toBigDecimal())
+        val formattedAmount = formatCurrency(displayAmount.toDouble())
         val title = "Bill Reminder: $billName"
         val message = when {
-            daysUntilDue < 0 -> "$billName - $amount (OVERDUE)"
-            daysUntilDue == 0 -> "$billName - $amount (DUE TODAY)"
-            else -> "$billName - $amount (Due: $dueDate)"
+            daysUntilDue < 0 -> "$billName - $formattedAmount (OVERDUE)"
+            daysUntilDue == 0 -> "$billName - $formattedAmount (DUE TODAY)"
+            else -> "$billName - $formattedAmount (Due: $dueDate)"
         }
         val notificationEntity = NotificationEntity(
             type = NotificationType.Bill.value,
@@ -148,13 +154,15 @@ class NotificationService @Inject constructor(
         debtType: String,
         daysUntilDue: Int
     ): Boolean {
+        val displayAmount = currencyManager.convertToDisplayCurrency(amount.toBigDecimal())
+        val formattedAmount = formatCurrency(displayAmount.toDouble())
         val title = if (debtType == "owe") {
             "Debt Reminder: Payment Due Soon"
         } else {
             "Collection Reminder: Payment Due Soon"
         }
 
-        val message = "$personName - $amount (Due: $dueDate)"
+        val message = "$personName - $formattedAmount (Due: $dueDate)"
         val bigText = when {
             daysUntilDue < 0 -> "This debt is OVERDUE!"
             daysUntilDue == 0 -> "This debt is due TODAY!"
@@ -194,9 +202,14 @@ class NotificationService @Inject constructor(
         spent: String,
         limit: String
     ): Boolean {
+        val displaySpent = currencyManager.convertToDisplayCurrency(spent.toBigDecimal())
+        val displayLimit = currencyManager.convertToDisplayCurrency(limit.toBigDecimal())
+        val formattedSpent = formatCurrency(displaySpent.toDouble())
+        val formattedLimit = formatCurrency(displayLimit.toDouble())
+
         val title = "Budget Alert: $category"
         val message = "You've spent ${String.format("%.0f", percentageUsed)}% of your budget"
-        val bigText = "You've spent $spent out of $limit for $category this month."
+        val bigText = "You've spent $formattedSpent out of $formattedLimit for $category this month."
         val key = budgetNotificationKey(category)
 
         val notificationEntity =  NotificationEntity(
@@ -237,13 +250,18 @@ class NotificationService @Inject constructor(
     suspend fun sendSavingsGoalNotification(
         goalId: Long,
         goalName: String,
-        percentageComplete: Double,
+        percentageComplete: BigDecimal,
         currentAmount: String,
         targetAmount: String
     ): Boolean {
+        val displayCurrentAmount = currencyManager.convertToDisplayCurrency(currentAmount.toBigDecimal())
+        val displayTargetAmount = currencyManager.convertToDisplayCurrency(targetAmount.toBigDecimal())
+        val formattedCurrentAmount = formatCurrency(displayCurrentAmount.toDouble())
+        val formattedTargetAmount = formatCurrency(displayTargetAmount.toDouble())
+
         val title = "Savings Goal Update: $goalName"
         val message = "You've reached ${String.format("%.0f", percentageComplete)}% of your goal"
-        val bigText = "You've saved $currentAmount out of $targetAmount for $goalName!"
+        val bigText = "You've saved $formattedCurrentAmount out of $formattedTargetAmount for $goalName!"
 
         val notificationEntity = NotificationEntity(
             type = NotificationType.Savings.value,

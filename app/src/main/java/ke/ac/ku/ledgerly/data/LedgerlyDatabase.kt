@@ -20,12 +20,12 @@ import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.model.BillReminderEntity
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.data.model.CategoryEntity
-import ke.ac.ku.ledgerly.data.model.Converters
 import ke.ac.ku.ledgerly.data.model.DebtEntity
 import ke.ac.ku.ledgerly.data.model.NotificationEntity
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.SavingsGoalEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
+import ke.ac.ku.ledgerly.data.converters.Converters
 import javax.inject.Singleton
 
 @Database(
@@ -39,7 +39,7 @@ import javax.inject.Singleton
         BillReminderEntity::class,
         NotificationEntity::class
     ],
-    version = 17,
+    version = 18,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -85,10 +85,11 @@ abstract class LedgerlyDatabase : RoomDatabase() {
                         MIGRATION_13_14,
                         MIGRATION_14_15,
                         MIGRATION_15_16,
-                        MIGRATION_16_17
+                        MIGRATION_16_17,
+                        MIGRATION_17_18
 
                     )
-//                    .fallbackToDestructiveMigration(true) //  Delete and recreate the database: For Dev
+//                    .fallbackToDestructiveMigration() //  Delete and recreate the database: For Dev
                     .build()
 
                 INSTANCE = instance
@@ -415,7 +416,7 @@ val MIGRATION_10_11 = object : Migration(10, 11) {
 //                WHEN '🎮' THEN ${R.drawable.ic_goal_game}
 //                ELSE ${R.drawable.ic_target}
 //            END
-//            """.trimIndent()
+//            ""\"
 //        )
 
         // 3. Recreate table WITHOUT old icon column
@@ -621,6 +622,256 @@ val MIGRATION_15_16 = object : Migration(15, 16) {
 val MIGRATION_16_17 = object : Migration(16, 17) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE debts ADD COLUMN lastReminderSent INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+val MIGRATION_17_18 = object : Migration(17, 18) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+
+        db.execSQL("""
+            CREATE TABLE transactions_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                category TEXT NOT NULL,
+                amountOriginal TEXT NOT NULL,
+                originalCurrency TEXT NOT NULL,
+                exchangeRateToUsd TEXT NOT NULL,
+                amountUsd TEXT NOT NULL,
+                date INTEGER NOT NULL,
+                type TEXT NOT NULL,
+                notes TEXT NOT NULL,
+                paymentMethod TEXT NOT NULL,
+                tags TEXT NOT NULL,
+                isDeleted INTEGER NOT NULL DEFAULT 0,
+                lastModified INTEGER
+            )
+        """.trimIndent())
+
+        db.execSQL("""
+            INSERT INTO transactions_new (
+                id, category, amountOriginal, originalCurrency, 
+                exchangeRateToUsd, amountUsd, date, type, notes, 
+                paymentMethod, tags, isDeleted, lastModified
+            )
+            SELECT 
+                id, category, 
+                CAST(amount AS TEXT),
+                'KES',
+                '1.0',
+                CAST(amount AS TEXT),
+                date, type, notes, 
+                paymentMethod, tags, isDeleted, lastModified
+            FROM transactions
+        """.trimIndent())
+
+        db.execSQL("DROP TABLE transactions")
+        db.execSQL("ALTER TABLE transactions_new RENAME TO transactions")
+
+        db.execSQL("""
+            CREATE TABLE recurring_transactions_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                category TEXT NOT NULL,
+                amountOriginal TEXT NOT NULL,
+                originalCurrency TEXT NOT NULL,
+                exchangeRateToUsd TEXT NOT NULL,
+                amountUsd TEXT NOT NULL,
+                type TEXT NOT NULL,
+                notes TEXT NOT NULL,
+                paymentMethod TEXT NOT NULL,
+                tags TEXT NOT NULL,
+                frequency TEXT NOT NULL,
+                startDate INTEGER NOT NULL,
+                endDate INTEGER,
+                lastGeneratedDate INTEGER,
+                isActive INTEGER NOT NULL DEFAULT 1,
+                isDeleted INTEGER NOT NULL DEFAULT 0,
+                lastModified INTEGER
+            )
+        """.trimIndent())
+
+        db.execSQL("""
+            INSERT INTO recurring_transactions_new (
+                id, category, amountOriginal, originalCurrency, 
+                exchangeRateToUsd, amountUsd, type, notes, 
+                paymentMethod, tags, frequency, startDate, endDate, 
+                lastGeneratedDate, isActive, isDeleted, lastModified
+            )
+            SELECT 
+                id, category,
+                CAST(amount AS TEXT),
+                'KES',
+                '1.0',
+                CAST(amount AS TEXT),
+                type, notes, 
+                paymentMethod, tags, frequency, startDate, endDate, 
+                lastGeneratedDate, isActive, isDeleted, lastModified
+            FROM recurring_transactions
+        """.trimIndent())
+
+        db.execSQL("DROP TABLE recurring_transactions")
+        db.execSQL("ALTER TABLE recurring_transactions_new RENAME TO recurring_transactions")
+
+        db.execSQL("""
+            CREATE TABLE budgets_new (
+                category TEXT NOT NULL,
+                monthlyBudget TEXT NOT NULL,
+                currentSpending TEXT NOT NULL DEFAULT '0',
+                monthYear TEXT NOT NULL,
+                isDeleted INTEGER NOT NULL DEFAULT 0,
+                lastModified INTEGER,
+                PRIMARY KEY (category, monthYear)
+            )
+        """.trimIndent())
+
+        db.execSQL("""
+            INSERT INTO budgets_new (
+                category, monthlyBudget, currentSpending, 
+                monthYear, isDeleted, lastModified
+            )
+            SELECT 
+                category,
+                CAST(monthlyBudget AS TEXT),
+                CAST(currentSpending AS TEXT),
+                monthYear, isDeleted, lastModified
+            FROM budgets
+        """.trimIndent())
+
+        db.execSQL("DROP TABLE budgets")
+        db.execSQL("ALTER TABLE budgets_new RENAME TO budgets")
+
+        db.execSQL("""
+            CREATE TABLE debts_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                personName TEXT NOT NULL,
+                amountOriginal TEXT NOT NULL,
+                originalCurrency TEXT NOT NULL,
+                exchangeRateToUsd TEXT NOT NULL,
+                amount TEXT NOT NULL,
+                debtType TEXT NOT NULL,
+                dueDate INTEGER NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                description TEXT NOT NULL DEFAULT '',
+                reminderDays INTEGER NOT NULL DEFAULT 0,
+                reminderEnabled INTEGER NOT NULL DEFAULT 1,
+                reminderSent INTEGER NOT NULL DEFAULT 0,
+                notes TEXT NOT NULL DEFAULT '',
+                createdAt INTEGER NOT NULL,
+                lastModified INTEGER NOT NULL,
+                isDeleted INTEGER NOT NULL DEFAULT 0,
+                lastReminderSent INTEGER NOT NULL DEFAULT 0
+            )
+        """.trimIndent())
+
+        db.execSQL("""
+            INSERT INTO debts_new (
+                id, personName, amountOriginal, originalCurrency,
+                exchangeRateToUsd, amount, debtType, dueDate, status,
+                description, reminderDays, reminderEnabled, reminderSent,
+                notes, createdAt, lastModified, isDeleted, lastReminderSent
+            )
+            SELECT 
+                id, personName,
+                CAST(amount AS TEXT),
+                COALESCE(currency, 'KES'),
+                '1.0',
+                CAST(amount AS TEXT),
+                debtType, dueDate, status,
+                description, reminderDays, reminderEnabled, 0,
+                notes, createdAt, lastModified, isDeleted, lastReminderSent
+            FROM debts
+        """.trimIndent())
+
+        db.execSQL("DROP TABLE debts")
+        db.execSQL("ALTER TABLE debts_new RENAME TO debts")
+
+        // Bill reminders already have amount as REAL, just need to add currency if needed
+        db.execSQL("""
+            CREATE TABLE bill_reminders_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                billName TEXT NOT NULL,
+                description TEXT NOT NULL,
+                amount REAL NOT NULL,
+                currency TEXT NOT NULL DEFAULT 'KES',
+                dueDate INTEGER NOT NULL,
+                category TEXT NOT NULL,
+                frequency TEXT NOT NULL,
+                nextDueDate INTEGER,
+                reminderDays INTEGER NOT NULL,
+                reminderEnabled INTEGER NOT NULL,
+                notificationSent INTEGER NOT NULL,
+                isOverdue INTEGER NOT NULL,
+                status TEXT NOT NULL,
+                paymentMethod TEXT NOT NULL,
+                notes TEXT NOT NULL,
+                color INTEGER NOT NULL,
+                createdAt INTEGER NOT NULL,
+                lastModified INTEGER NOT NULL,
+                isDeleted INTEGER NOT NULL
+            )
+        """.trimIndent())
+
+        db.execSQL("""
+            INSERT INTO bill_reminders_new (
+                id, billName, description, amount, currency,
+                dueDate, category, frequency, nextDueDate,
+                reminderDays, reminderEnabled, notificationSent,
+                isOverdue, status, paymentMethod, notes, color,
+                createdAt, lastModified, isDeleted
+            )
+            SELECT 
+                id, billName, description, amount, 
+                COALESCE(currency, 'KES'),
+                dueDate, category, frequency, nextDueDate,
+                reminderDays, reminderEnabled, notificationSent,
+                isOverdue, status, paymentMethod, notes, color,
+                createdAt, lastModified, isDeleted
+            FROM bill_reminders
+        """.trimIndent())
+
+        db.execSQL("DROP TABLE bill_reminders")
+        db.execSQL("ALTER TABLE bill_reminders_new RENAME TO bill_reminders")
+
+        // Recreate indices for bill_reminders
+        db.execSQL("CREATE INDEX index_bill_reminders_status ON bill_reminders(status)")
+        db.execSQL("CREATE INDEX index_bill_reminders_dueDate ON bill_reminders(dueDate)")
+        db.execSQL("CREATE INDEX index_bill_reminders_isDeleted ON bill_reminders(isDeleted)")
+
+
+        db.execSQL("""
+            CREATE TABLE savings_goals_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                name TEXT NOT NULL,
+                description TEXT NOT NULL DEFAULT '',
+                targetAmount TEXT NOT NULL,
+                currentAmount TEXT NOT NULL DEFAULT '0',
+                icon INTEGER NOT NULL,
+                color TEXT NOT NULL DEFAULT '#4CAF50',
+                targetDate INTEGER,
+                lastMilestoneReached TEXT NOT NULL DEFAULT '0',
+                createdDate INTEGER NOT NULL,
+                lastModified INTEGER NOT NULL,
+                isCompleted INTEGER NOT NULL DEFAULT 0,
+                isDeleted INTEGER NOT NULL DEFAULT 0
+            )
+        """.trimIndent())
+
+        db.execSQL("""
+            INSERT INTO savings_goals_new (
+                id, name, description, targetAmount, currentAmount,
+                icon, color, targetDate, lastMilestoneReached,
+                createdDate, lastModified, isCompleted, isDeleted
+            )
+            SELECT 
+                id, name, description,
+                CAST(targetAmount AS TEXT),
+                CAST(currentAmount AS TEXT),
+                icon, color, targetDate,
+                CAST(COALESCE(lastMilestoneReached, 0.0) AS TEXT),
+                createdDate, lastModified, isCompleted, isDeleted
+            FROM savings_goals
+        """.trimIndent())
+
+        db.execSQL("DROP TABLE savings_goals")
+        db.execSQL("ALTER TABLE savings_goals_new RENAME TO savings_goals")
     }
 }
 

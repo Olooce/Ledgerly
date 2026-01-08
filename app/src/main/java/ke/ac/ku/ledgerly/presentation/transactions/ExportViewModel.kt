@@ -9,7 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.data.repository.TransactionRepository
-import ke.ac.ku.ledgerly.data.service.NotificationService
+import ke.ac.ku.ledgerly.service.NotificationService
 import ke.ac.ku.ledgerly.utils.TransactionExportManager
 import ke.ac.ku.ledgerly.utils.sendExportSuccessNotification
 import kotlinx.coroutines.Dispatchers
@@ -39,7 +39,6 @@ data class ExportState(
 @HiltViewModel
 class ExportViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val transactionRepository: TransactionRepository,
     private val notificationService: NotificationService
 ) : ViewModel() {
 

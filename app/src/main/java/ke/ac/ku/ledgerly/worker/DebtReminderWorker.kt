@@ -7,8 +7,8 @@ import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import ke.ac.ku.ledgerly.data.repository.DebtRepository
-import ke.ac.ku.ledgerly.data.service.NotificationService
-import ke.ac.ku.ledgerly.utils.FormatingUtils.formatCurrency
+import ke.ac.ku.ledgerly.service.NotificationService
+import ke.ac.ku.ledgerly.utils.CurrencyFormatter.formatCurrency
 import ke.ac.ku.ledgerly.utils.sendOverdueDebtNotification
 import java.text.SimpleDateFormat
 import java.util.Date

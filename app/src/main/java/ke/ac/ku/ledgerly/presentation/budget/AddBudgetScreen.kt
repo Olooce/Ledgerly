@@ -54,6 +54,7 @@ import ke.ac.ku.ledgerly.ui.theme.LightGrey
 import ke.ac.ku.ledgerly.ui.theme.Typography
 import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
 import ke.ac.ku.ledgerly.utils.Utils
+import java.math.BigDecimal
 
 @Composable
 fun AddBudgetScreen(
@@ -237,8 +238,8 @@ fun AddBudgetForm(
             onClick = {
                 val model = BudgetEntity(
                     category = category.value,
-                    monthlyBudget = monthlyBudget.value.toDoubleOrNull() ?: 0.0,
-                    currentSpending = 0.0,
+                    monthlyBudget = BigDecimal(monthlyBudget.value),
+                    currentSpending = BigDecimal.ZERO,
                     monthYear = Utils.getCurrentMonthYear()
                 )
                 onAddBudget(model)

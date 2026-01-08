@@ -10,6 +10,7 @@ import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.data.repository.NotificationRepository
 import ke.ac.ku.ledgerly.data.repository.TransactionRepository
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
+import ke.ac.ku.ledgerly.domain.CurrencyManager
 import ke.ac.ku.ledgerly.utils.FormatingUtils
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,8 +50,9 @@ data class HomeState(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
-    private val notificationRepository: NotificationRepository,
-    userPreferencesRepository: UserPreferencesRepository
+    notificationRepository: NotificationRepository,
+    userPreferencesRepository: UserPreferencesRepository,
+    val currencyManager: CurrencyManager
 ) : ViewModel() {
 
     private val _navigationEvent = MutableSharedFlow<NavigationEvent>()
@@ -107,16 +109,33 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val totals = runCatching { transactionRepository.getCurrentMonthTotals() }
                 .onSuccess { totals ->
-                    val income = totals.totalIncome ?: 0.0
-                    val expense = totals.totalExpense ?: 0.0
-                    val balanceValue = income - expense
+                    val incomeUsd = totals.totalIncome ?: 0.0
+                    val expenseUsd = totals.totalExpense ?: 0.0
+                    val balanceUsd = incomeUsd - expenseUsd
+
+                    // Get display currency and convert from USD
+                    val displayCurrency = currencyManager.getDisplayCurrency()
+                    
+                    // Convert USD to display currency
+                    val incomeDisplay = currencyManager.convertToDisplayCurrency(
+                        incomeUsd.toBigDecimal(),
+                        displayCurrency
+                    ).toDouble()
+                    val expenseDisplay = currencyManager.convertToDisplayCurrency(
+                        expenseUsd.toBigDecimal(),
+                        displayCurrency
+                    ).toDouble()
+                    val balanceDisplay = currencyManager.convertToDisplayCurrency(
+                        balanceUsd.toBigDecimal(),
+                        displayCurrency
+                    ).toDouble()
 
                     _homeState.update {
                         it.copy(
-                            totalIncome = FormatingUtils.formatCurrency(income),
-                            totalExpense = FormatingUtils.formatCurrency(expense),
-                            balance = FormatingUtils.formatCurrency(abs(balanceValue)),
-                            isBalanceNegative = balanceValue < 0,
+                            totalIncome = FormatingUtils.formatToDecimalValue(incomeDisplay),
+                            totalExpense = FormatingUtils.formatToDecimalValue(expenseDisplay),
+                            balance = FormatingUtils.formatToDecimalValue(abs(balanceDisplay)),
+                            isBalanceNegative = balanceUsd < 0,
                             error = null
                         )
                     }

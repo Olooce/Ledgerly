@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Update
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import kotlinx.coroutines.flow.Flow
+import java.math.BigDecimal
 
 @Dao
 interface RecurringTransactionDao {
@@ -65,8 +66,8 @@ interface RecurringTransactionDao {
     WHERE isDeleted = 0 
     AND (:filterType = 'All' OR type = :filterType)
     AND (:searchQuery = '' OR category LIKE '%' || :searchQuery || '%' OR notes LIKE '%' || :searchQuery || '%')
-    AND (:minAmount = -1 OR amount >= :minAmount)
-    AND (:maxAmount = -1 OR amount <= :maxAmount)
+    AND (:minAmount = -1 OR amountUsd >= :minAmount)
+    AND (:maxAmount = -1 OR amountUsd <= :maxAmount)
     AND (:categoriesCount = 0 OR category IN (:categories))
     AND (:statusFilter = 'All' OR 
          (:statusFilter = 'Active' AND isActive = 1) OR 
@@ -78,8 +79,8 @@ interface RecurringTransactionDao {
     suspend fun getFilteredRecurringTransactionsPaginated(
         filterType: String,
         searchQuery: String,
-        minAmount: Double,
-        maxAmount: Double,
+        minAmount: BigDecimal,
+        maxAmount: BigDecimal,
         categoriesCount: Int,
         categories: List<String>,
         statusFilter: String,
@@ -93,8 +94,8 @@ interface RecurringTransactionDao {
     WHERE isDeleted = 0 
     AND (:filterType = 'All' OR type = :filterType)
     AND (:searchQuery = '' OR category LIKE '%' || :searchQuery || '%' OR notes LIKE '%' || :searchQuery || '%')
-    AND (:minAmount = -1 OR amount >= :minAmount)
-    AND (:maxAmount = -1 OR amount <= :maxAmount)
+    AND (:minAmount = -1 OR amountUsd >= :minAmount)
+    AND (:maxAmount = -1 OR amountUsd <= :maxAmount)
     AND (:categoriesCount = 0 OR category IN (:categories))
     AND (:statusFilter = 'All' OR 
          (:statusFilter = 'Active' AND isActive = 1) OR 
@@ -104,8 +105,8 @@ interface RecurringTransactionDao {
     suspend fun getFilteredRecurringTransactionsCount(
         filterType: String,
         searchQuery: String,
-        minAmount: Double,
-        maxAmount: Double,
+        minAmount: BigDecimal,
+        maxAmount: BigDecimal,
         categoriesCount: Int,
         categories: List<String>,
         statusFilter: String
@@ -117,8 +118,8 @@ interface RecurringTransactionDao {
     WHERE isDeleted = 0 
     AND (:filterType = 'All' OR type = :filterType)
     AND (:searchQuery = '' OR category LIKE '%' || :searchQuery || '%' OR notes LIKE '%' || :searchQuery || '%')
-    AND (:minAmount = -1 OR amount >= :minAmount)
-    AND (:maxAmount = -1 OR amount <= :maxAmount)
+    AND (:minAmount = -1 OR amountUsd >= :minAmount)
+    AND (:maxAmount = -1 OR amountUsd <= :maxAmount)
     AND (:categoriesCount = 0 OR category IN (:categories))
     AND (:statusFilter = 'All' OR 
          (:statusFilter = 'Active' AND isActive = 1) OR 
@@ -129,8 +130,8 @@ interface RecurringTransactionDao {
     fun getFilteredRecurringTransactionsFlow(
         filterType: String,
         searchQuery: String,
-        minAmount: Double,
-        maxAmount: Double,
+        minAmount: BigDecimal,
+        maxAmount: BigDecimal,
         categoriesCount: Int,
         categories: List<String>,
         statusFilter: String

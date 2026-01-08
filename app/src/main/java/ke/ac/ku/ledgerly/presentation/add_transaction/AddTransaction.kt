@@ -58,10 +58,11 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import java.math.BigDecimal
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.base.AddTransactionNavigationEvent
 import ke.ac.ku.ledgerly.base.NavigationEvent
-import ke.ac.ku.ledgerly.data.model.RecurrenceFrequency
+import ke.ac.ku.ledgerly.data.enums.RecurrenceFrequency
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.ui.components.LedgerlyTopBar
@@ -213,6 +214,9 @@ fun DataForm(
     val endDate = remember { mutableLongStateOf(0L) }
     val endDateDialogVisibility = remember { mutableStateOf(false) }
 
+    // Get user's currency from ViewModel
+    val userCurrency by viewModel.userCurrency.collectAsState()
+
     val colors = MaterialTheme.colorScheme
 
     Column(
@@ -281,7 +285,7 @@ fun DataForm(
 
             Spacer(modifier = Modifier.size(24.dp))
 
-            // Amount Field
+            // Amount Field with dynamic currency
             TitleComponent("Amount")
             OutlinedTextField(
                 value = amount.value,
@@ -290,11 +294,12 @@ fun DataForm(
                 },
                 textStyle = TextStyle(color = colors.onSurface),
                 visualTransformation = { text ->
-                    val out = "Ksh " + text.text
+                    val currencyPrefix = "$userCurrency "
+                    val out = currencyPrefix + text.text
                     val currencyOffsetTranslator = object : OffsetMapping {
-                        override fun originalToTransformed(offset: Int) = offset + 4
+                        override fun originalToTransformed(offset: Int) = offset + currencyPrefix.length
                         override fun transformedToOriginal(offset: Int) =
-                            (offset - 4).coerceIn(0, text.text.length)
+                            (offset - currencyPrefix.length).coerceIn(0, text.text.length)
                     }
                     TransformedText(AnnotatedString(out), currencyOffsetTranslator)
                 },
@@ -431,10 +436,14 @@ fun DataForm(
         // Add Button
         Button(
             onClick = {
+                val amountBd = amount.value.toBigDecimalOrNull() ?: BigDecimal.ZERO
                 val transaction = TransactionEntity(
                     id = null,
                     category = category.value,
-                    amount = amount.value.toDoubleOrNull() ?: 0.0,
+                    amountOriginal = amountBd,
+                    originalCurrency = userCurrency,
+                    exchangeRateToUsd = BigDecimal.ONE,
+                    amountUsd = amountBd,
                     date = date.longValue,
                     type = type.value,
                     notes = notes.value,
@@ -446,7 +455,10 @@ fun DataForm(
                     RecurringTransactionEntity(
                         id = null,
                         category = category.value,
-                        amount = amount.value.toDoubleOrNull() ?: 0.0,
+                        amountOriginal = amountBd,
+                        originalCurrency = userCurrency,
+                        exchangeRateToUsd = BigDecimal.ONE,
+                        amountUsd = amountBd,
                         type = type.value,
                         notes = notes.value,
                         paymentMethod = paymentMethod.value,

@@ -8,9 +8,9 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
-import ke.ac.ku.ledgerly.data.model.RecurrenceFrequency
+import ke.ac.ku.ledgerly.data.enums.RecurrenceFrequency
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
-import ke.ac.ku.ledgerly.data.service.NotificationService
+import ke.ac.ku.ledgerly.service.NotificationService
 import ke.ac.ku.ledgerly.utils.sendRecurringTransactionNotification
 import java.time.Instant
 import java.time.LocalDate
@@ -61,7 +61,10 @@ class RecurringTransactionWorker @AssistedInject constructor(
                 val transaction = TransactionEntity(
                     id = null,
                     category = recurring.category,
-                    amount = recurring.amount,
+                    amountOriginal = recurring.amountOriginal,
+                    originalCurrency = recurring.originalCurrency,
+                    exchangeRateToUsd = recurring.exchangeRateToUsd,
+                    amountUsd = recurring.amountUsd,
                     date = currentDate.toEpochMillis(),
                     type = recurring.type,
                     notes = "${recurring.notes} (Recurring)",
@@ -75,7 +78,7 @@ class RecurringTransactionWorker @AssistedInject constructor(
                 if (!notificationSent) {
                     notificationService.sendRecurringTransactionNotification(
                         transactionName = recurring.notes,
-                        amount = recurring.amount.toString(),
+                        amount = recurring.amountOriginal.toPlainString(),
                         type = recurring.type.lowercase()
                     )
                     notificationSent = true

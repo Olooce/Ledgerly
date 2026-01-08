@@ -1,14 +1,16 @@
 package ke.ac.ku.ledgerly.data.repository
 
-import androidx.room.Transaction
 import ke.ac.ku.ledgerly.data.dao.SavingsGoalDao
 import ke.ac.ku.ledgerly.data.model.SavingsGoalEntity
 import ke.ac.ku.ledgerly.data.model.SavingsSummary
+import ke.ac.ku.ledgerly.domain.CurrencyManager
 import kotlinx.coroutines.flow.Flow
+import java.math.BigDecimal
 import javax.inject.Inject
 
 class SavingsGoalRepository @Inject constructor(
-    private val savingsGoalDao: SavingsGoalDao
+    private val savingsGoalDao: SavingsGoalDao,
+    private val currencyManager: CurrencyManager
 ) {
     fun getAllGoals(): Flow<List<SavingsGoalEntity>> = savingsGoalDao.getAllGoals()
 
@@ -29,8 +31,8 @@ class SavingsGoalRepository @Inject constructor(
 
     suspend fun updateGoal(goal: SavingsGoalEntity) = savingsGoalDao.updateGoal(goal)
 
-    suspend fun updateGoalAmount(id: Long, amount: Double) =
-        savingsGoalDao.updateGoalAmount(id, amount)
+    suspend fun updateGoalAmount(id: Long, amountUsd: BigDecimal) =
+        savingsGoalDao.updateGoalAmount(id, amountUsd)
 
     suspend fun completeGoal(id: Long) = savingsGoalDao.completeGoal(id)
 
@@ -43,9 +45,45 @@ class SavingsGoalRepository @Inject constructor(
 
     suspend fun updateGoalAmountWithMilestones(
         goalId: Long,
-        newAmount: Double
-    ): List<Double> {
-        return savingsGoalDao.updateGoalAmountWithMilestones(goalId, newAmount)
+        newAmountUsd: BigDecimal
+    ): List<BigDecimal> {
+        return savingsGoalDao.updateGoalAmountWithMilestones(goalId, newAmountUsd)
+    }
+
+    suspend fun getGoalForDisplay(id: Long): SavingsGoalEntity? {
+        val goal = getGoalByIdOnce(id) ?: return null
+        return convertGoalForDisplay(goal)
+    }
+
+    private suspend fun convertGoalForDisplay(goal: SavingsGoalEntity): SavingsGoalEntity {
+        val displayCurrency = currencyManager.getDisplayCurrency()
+        if (displayCurrency == "USD") {
+            return goal
+        }
+
+        // Convert amounts for display only
+        val displayTargetUsd = currencyManager.convertToDisplayCurrency(goal.targetAmount, displayCurrency)
+        val displayCurrentUsd = currencyManager.convertToDisplayCurrency(goal.currentAmount, displayCurrency)
+        val displayMilestoneUsd = currencyManager.convertToDisplayCurrency(goal.lastMilestoneReached, targetCurrency = displayCurrency)
+
+        return goal.copy(
+            targetAmount = displayTargetUsd.toBigDecimal(),
+            currentAmount = displayCurrentUsd.toBigDecimal(),
+            lastMilestoneReached = displayMilestoneUsd.toBigDecimal()
+        )
+    }
+    suspend fun getTotalTargetUsd(): BigDecimal {
+        val goals = getAllGoalsSync().filter { !it.isDeleted && !it.isCompleted }
+        return goals.fold(BigDecimal.ZERO) { acc, goal ->
+            acc + goal.targetAmount
+        }
+    }
+
+    suspend fun getTotalSavedUsd(): BigDecimal {
+        val goals = getAllGoalsSync().filter { !it.isDeleted && !it.isCompleted }
+        return goals.fold(BigDecimal.ZERO) { acc, goal ->
+            acc + goal.currentAmount
+        }
     }
 
 }
