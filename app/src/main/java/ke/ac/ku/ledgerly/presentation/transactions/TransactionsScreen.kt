@@ -383,8 +383,12 @@ fun TransactionsScreen(
                                     },
                                     onAmountRangeChange = { amountRange = it },
                                     onCategoriesChange = { selectedCategories = it },
-                                    onStatusFilterChange = { statusFilter = it },
-                                    onToggleActive = { id, isActive ->
+                                    onStatusFilterChange = {
+                                        statusFilter = it
+                                        transactionViewModel.updateStatusFilter(it)
+                                    },
+
+                                            onToggleActive = { id, isActive ->
                                         transactionViewModel.toggleRecurringTransactionStatus(
                                             id,
                                             isActive

@@ -49,7 +49,24 @@ class TransactionViewModel @Inject constructor(
 
     init {
         loadInitialTransactions()
-        loadRecurringTransactions()
+
+        viewModelScope.launch {
+            transactionsState.collect { state ->
+                transactionRepository
+                    .getFilteredRecurringTransactionsFlow(
+                        filterType = state.filterType,
+                        searchQuery = state.searchQuery,
+                        amountRange = state.amountRange?.let {
+                            it.start.toBigDecimal()..it.endInclusive.toBigDecimal()
+                        },
+                        categories = state.selectedCategories,
+                        statusFilter = state.statusFilter
+                    )
+                    .collect { list ->
+                        _recurringTransactions.value = list
+                    }
+            }
+        }
     }
 
     fun loadInitialTransactions() {
@@ -142,7 +159,7 @@ class TransactionViewModel @Inject constructor(
 
     fun updateStatusFilter(statusFilter: String) {
         _transactionsState.update { it.copy(statusFilter = statusFilter) }
-        loadRecurringTransactions()
+//        loadRecurringTransactions()
     }
 
     private fun loadRecurringTransactions() {
@@ -166,11 +183,12 @@ class TransactionViewModel @Inject constructor(
                 }
             }
         }
+
     }
 
     fun updateFilter(filterType: String) {
         _transactionsState.update { it.copy(filterType = filterType) }
-        loadInitialTransactions()
+//        loadInitialTransactions()
     }
 
     fun updateSearchQuery(query: String) {
@@ -195,14 +213,14 @@ class TransactionViewModel @Inject constructor(
     fun toggleRecurringTransactionStatus(id: Long, isActive: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             dao.updateRecurringTransactionStatus(id, isActive)
-            loadRecurringTransactions()
+//            loadRecurringTransactions()
         }
     }
 
     fun deleteRecurringTransaction(id: Long) {
         viewModelScope.launch(Dispatchers.IO) {
             dao.softDeleteRecurringTransaction(id)
-            loadRecurringTransactions()
+//            loadRecurringTransactions()
         }
     }
 

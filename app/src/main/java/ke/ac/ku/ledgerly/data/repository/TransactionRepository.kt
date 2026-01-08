@@ -93,8 +93,10 @@ class TransactionRepository @Inject constructor(
         pageRequest: PageRequest
     ): PaginatedResult<RecurringTransactionEntity> {
 
-        val minAmount = amountRange?.start ?: BigDecimal(-1)
-        val maxAmount = amountRange?.endInclusive ?: BigDecimal(-1)
+        val minAmount = amountRange?.start
+        val maxAmount = amountRange?.endInclusive
+
+        val resolvedStatus = statusFilter.takeUnless { it == "All" }
 
         val transactions = recurringTransactionDao.getFilteredRecurringTransactionsPaginated(
             filterType = filterType,
@@ -103,7 +105,7 @@ class TransactionRepository @Inject constructor(
             maxAmount = maxAmount,
             categoriesCount = categories.size,
             categories = categories,
-            statusFilter = statusFilter,
+            statusFilter = resolvedStatus,
             limit = pageRequest.pageSize,
             offset = (pageRequest.page - 1) * pageRequest.pageSize
         )
@@ -122,8 +124,10 @@ class TransactionRepository @Inject constructor(
         categories: List<String>,
         statusFilter: String
     ): Flow<List<RecurringTransactionEntity>> {
-        val minAmount = amountRange?.start ?: BigDecimal(-1)
-        val maxAmount = amountRange?.endInclusive ?: BigDecimal(-1)
+        val minAmount = amountRange?.start
+        val maxAmount = amountRange?.endInclusive
+
+        val resolvedStatus = statusFilter.takeUnless { it == "All" }
 
         return recurringTransactionDao.getFilteredRecurringTransactionsFlow(
             filterType = filterType,
@@ -132,7 +136,7 @@ class TransactionRepository @Inject constructor(
             maxAmount = maxAmount,
             categoriesCount = categories.size,
             categories = categories,
-            statusFilter = statusFilter
+            statusFilter = resolvedStatus
         )
     }
 

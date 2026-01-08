@@ -66,12 +66,15 @@ interface RecurringTransactionDao {
     WHERE isDeleted = 0 
     AND (:filterType = 'All' OR type = :filterType)
     AND (:searchQuery = '' OR category LIKE '%' || :searchQuery || '%' OR notes LIKE '%' || :searchQuery || '%')
-    AND (:minAmount = -1 OR amountUsd >= :minAmount)
-    AND (:maxAmount = -1 OR amountUsd <= :maxAmount)
     AND (:categoriesCount = 0 OR category IN (:categories))
-    AND (:statusFilter = 'All' OR 
-         (:statusFilter = 'Active' AND isActive = 1) OR 
-         (:statusFilter = 'Paused' AND isActive = 0))
+AND (:minAmount IS NULL OR amountUsd >= :minAmount)
+AND (:maxAmount IS NULL OR amountUsd <= :maxAmount)
+AND (
+    :statusFilter IS NULL
+    OR (:statusFilter = 'Active' AND isActive = 1)
+    OR (:statusFilter = 'Paused' AND isActive = 0)
+)
+
     ORDER BY startDate DESC
     LIMIT :limit OFFSET :offset
 """
@@ -79,14 +82,15 @@ interface RecurringTransactionDao {
     suspend fun getFilteredRecurringTransactionsPaginated(
         filterType: String,
         searchQuery: String,
-        minAmount: BigDecimal,
-        maxAmount: BigDecimal,
+        minAmount: BigDecimal?,
+        maxAmount: BigDecimal?,
         categoriesCount: Int,
         categories: List<String>,
-        statusFilter: String,
+        statusFilter: String?,
         limit: Int,
         offset: Int
     ): List<RecurringTransactionEntity>
+
 
     @Query(
         """
@@ -94,12 +98,15 @@ interface RecurringTransactionDao {
     WHERE isDeleted = 0 
     AND (:filterType = 'All' OR type = :filterType)
     AND (:searchQuery = '' OR category LIKE '%' || :searchQuery || '%' OR notes LIKE '%' || :searchQuery || '%')
-    AND (:minAmount = -1 OR amountUsd >= :minAmount)
-    AND (:maxAmount = -1 OR amountUsd <= :maxAmount)
     AND (:categoriesCount = 0 OR category IN (:categories))
-    AND (:statusFilter = 'All' OR 
-         (:statusFilter = 'Active' AND isActive = 1) OR 
-         (:statusFilter = 'Paused' AND isActive = 0))
+ AND (:minAmount IS NULL OR amountUsd >= :minAmount)
+AND (:maxAmount IS NULL OR amountUsd <= :maxAmount)
+AND (
+    :statusFilter IS NULL
+    OR (:statusFilter = 'Active' AND isActive = 1)
+    OR (:statusFilter = 'Paused' AND isActive = 0)
+)
+
 """
     )
     suspend fun getFilteredRecurringTransactionsCount(
@@ -121,20 +128,23 @@ interface RecurringTransactionDao {
     AND (:minAmount = -1 OR amountUsd >= :minAmount)
     AND (:maxAmount = -1 OR amountUsd <= :maxAmount)
     AND (:categoriesCount = 0 OR category IN (:categories))
-    AND (:statusFilter = 'All' OR 
-         (:statusFilter = 'Active' AND isActive = 1) OR 
-         (:statusFilter = 'Paused' AND isActive = 0))
+   AND (
+    :statusFilter IS NULL
+    OR (:statusFilter = 'Active' AND isActive = 1)
+    OR (:statusFilter = 'Paused' AND isActive = 0)
+)
     ORDER BY startDate DESC
 """
     )
     fun getFilteredRecurringTransactionsFlow(
         filterType: String,
         searchQuery: String,
-        minAmount: BigDecimal,
-        maxAmount: BigDecimal,
+        minAmount: BigDecimal?,
+        maxAmount: BigDecimal?,
+        statusFilter: String?,
         categoriesCount: Int,
         categories: List<String>,
-        statusFilter: String
     ): Flow<List<RecurringTransactionEntity>>
+
 
 }
