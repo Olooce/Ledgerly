@@ -144,6 +144,43 @@ AND (
         statusFilter: String?,
         categoriesCount: Int,
         categories: List<String>,
+    ): Flow<List<RecurringTransactionEntity>> {
+        return getFilteredRecurringTransactionsFlowImpl(
+            filterType = filterType,
+            searchQuery = searchQuery,
+            minAmount = minAmount ?: BigDecimal(-1),
+            maxAmount = maxAmount ?: BigDecimal(Double.MAX_VALUE),
+            statusFilter = statusFilter,
+            categoriesCount = categoriesCount,
+            categories = categories
+        )
+    }
+
+    @Query(
+        """
+    SELECT * FROM recurring_transactions 
+    WHERE isDeleted = 0 
+    AND (:filterType = 'All' OR type = :filterType)
+    AND (:searchQuery = '' OR category LIKE '%' || :searchQuery || '%' OR notes LIKE '%' || :searchQuery || '%')
+    AND (:minAmount = -1 OR amountUsd >= :minAmount)
+    AND (:maxAmount = -1 OR amountUsd <= :maxAmount)
+    AND (:categoriesCount = 0 OR category IN (:categories))
+   AND (
+    :statusFilter IS NULL
+    OR (:statusFilter = 'Active' AND isActive = 1)
+    OR (:statusFilter = 'Paused' AND isActive = 0)
+)
+    ORDER BY startDate DESC
+"""
+    )
+    fun getFilteredRecurringTransactionsFlowImpl(
+        filterType: String,
+        searchQuery: String,
+        minAmount: BigDecimal,
+        maxAmount: BigDecimal,
+        statusFilter: String?,
+        categoriesCount: Int,
+        categories: List<String>,
     ): Flow<List<RecurringTransactionEntity>>
 
 

@@ -25,7 +25,9 @@ import ke.ac.ku.ledgerly.data.model.NotificationEntity
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.SavingsGoalEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
+import ke.ac.ku.ledgerly.data.model.ExchangeRateEntity
 import ke.ac.ku.ledgerly.data.converters.Converters
+import ke.ac.ku.ledgerly.data.dao.ExchangeRateDao
 import javax.inject.Singleton
 
 @Database(
@@ -37,9 +39,10 @@ import javax.inject.Singleton
         DebtEntity::class,
         SavingsGoalEntity::class,
         BillReminderEntity::class,
-        NotificationEntity::class
+        NotificationEntity::class,
+        ExchangeRateEntity::class
     ],
-    version = 18,
+    version = 19,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -54,6 +57,7 @@ abstract class LedgerlyDatabase : RoomDatabase() {
     abstract fun savingsGoalDao(): SavingsGoalDao
     abstract fun billReminderDao(): BillReminderDao
     abstract fun notificationDao(): NotificationDao
+    abstract fun exchangeRateDao(): ExchangeRateDao
 
 
     companion object {
@@ -86,7 +90,8 @@ abstract class LedgerlyDatabase : RoomDatabase() {
                         MIGRATION_14_15,
                         MIGRATION_15_16,
                         MIGRATION_16_17,
-                        MIGRATION_17_18
+                        MIGRATION_17_18,
+                        MIGRATION_18_19
 
                     )
 //                    .fallbackToDestructiveMigration() //  Delete and recreate the database: For Dev
@@ -874,6 +879,22 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
         db.execSQL("ALTER TABLE savings_goals_new RENAME TO savings_goals")
     }
 }
+
+
+val MIGRATION_18_19 = object : Migration(18, 19) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS exchange_rates (
+                baseCurrency TEXT NOT NULL PRIMARY KEY,
+                ratesJson TEXT NOT NULL,
+                lastUpdated INTEGER NOT NULL
+            )
+            """
+        )
+    }
+}
+
 
 
 

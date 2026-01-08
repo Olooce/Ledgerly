@@ -13,12 +13,10 @@ class ExchangeRateService @Inject constructor(
 ) {
     private val TAG = "ExchangeRateService"
 
-
     suspend fun getRates(base: String = "USD"): Map<String, Double>? {
-
         return try {
             val cached = cache.getRates(base)
-            if (cached != null && !cache.isStale(base)) {
+            if (cached != null) {
                 Log.i(TAG, "Using cached rates for $base")
                 return cached.rates
             }
@@ -32,5 +30,4 @@ class ExchangeRateService @Inject constructor(
             cache.getRates(base)?.rates
         }
     }
-
 }
