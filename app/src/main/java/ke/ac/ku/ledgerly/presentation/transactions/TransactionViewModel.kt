@@ -5,12 +5,17 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
 import ke.ac.ku.ledgerly.data.model.PageRequest
+import ke.ac.ku.ledgerly.data.model.RecurringFilterParams
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.data.repository.TransactionRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -35,6 +40,7 @@ data class TransactionsState(
     val error: String? = null
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class TransactionViewModel @Inject constructor(
     private val dao: RecurringTransactionDao,
@@ -49,8 +55,36 @@ class TransactionViewModel @Inject constructor(
 
     init {
         loadInitialTransactions()
-        loadRecurringTransactions()
+
+        viewModelScope.launch {
+            transactionsState
+                .map { state ->
+                    RecurringFilterParams(
+                        filterType = state.filterType,
+                        searchQuery = state.searchQuery,
+                        amountRange = state.amountRange,
+                        categories = state.selectedCategories,
+                        statusFilter = state.statusFilter.takeUnless { it == "All" }
+                    )
+                }
+                .distinctUntilChanged()
+                .flatMapLatest { params ->
+                    transactionRepository.getFilteredRecurringTransactionsFlow(
+                        filterType = params.filterType,
+                        searchQuery = params.searchQuery,
+                        amountRange = params.amountRange?.let {
+                            it.start.toBigDecimal()..it.endInclusive.toBigDecimal()
+                        },
+                        categories = params.categories,
+                        statusFilter = params.statusFilter
+                    )
+                }
+                .collect { list ->
+                    _recurringTransactions.value = list
+                }
+        }
     }
+
 
     fun loadInitialTransactions() {
         _transactionsState.update {
@@ -88,8 +122,8 @@ class TransactionViewModel @Inject constructor(
                     filterType = currentState.filterType,
                     searchQuery = currentState.searchQuery,
                     dateRange = currentState.dateRange,
-                    amountRange = currentState.amountRange?.let { 
-                        it.start.toBigDecimal()..it.endInclusive.toBigDecimal() 
+                    amountRange = currentState.amountRange?.let {
+                        it.start.toBigDecimal()..it.endInclusive.toBigDecimal()
                     },
                     categories = currentState.selectedCategories,
                     PageRequest(page = pageToLoad + 1, pageSize = paginationState.pageSize)
@@ -102,12 +136,16 @@ class TransactionViewModel @Inject constructor(
                         state.transactions + result.data
                     }
 
+                    // Calculate if there are more pages
+                    val hasMore = result.data.size >= paginationState.pageSize
+
                     state.copy(
                         transactions = newTransactions,
                         paginationState = state.paginationState.copy(
                             currentPage = pageToLoad + 1,
                             isLoading = false,
                             isRefreshing = false,
+                            hasNext = hasMore
                         )
                     )
                 }
@@ -142,35 +180,11 @@ class TransactionViewModel @Inject constructor(
 
     fun updateStatusFilter(statusFilter: String) {
         _transactionsState.update { it.copy(statusFilter = statusFilter) }
-        loadRecurringTransactions()
-    }
-
-    private fun loadRecurringTransactions() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val currentState = _transactionsState.value
-                transactionRepository.getFilteredRecurringTransactionsFlow(
-                    filterType = currentState.filterType,
-                    searchQuery = currentState.searchQuery,
-                    amountRange = currentState.amountRange?.let { 
-                        it.start.toBigDecimal()..it.endInclusive.toBigDecimal() 
-                    },
-                    categories = currentState.selectedCategories,
-                    statusFilter = currentState.statusFilter
-                ).collect { transactions ->
-                    _recurringTransactions.value = transactions
-                }
-            } catch (e: Exception) {
-                _transactionsState.update {
-                    it.copy(error = e.message)
-                }
-            }
-        }
     }
 
     fun updateFilter(filterType: String) {
         _transactionsState.update { it.copy(filterType = filterType) }
-        loadInitialTransactions()
+        loadInitialTransactions()  // FIX: Uncommented this line
     }
 
     fun updateSearchQuery(query: String) {
@@ -195,14 +209,12 @@ class TransactionViewModel @Inject constructor(
     fun toggleRecurringTransactionStatus(id: Long, isActive: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             dao.updateRecurringTransactionStatus(id, isActive)
-            loadRecurringTransactions()
         }
     }
 
     fun deleteRecurringTransaction(id: Long) {
         viewModelScope.launch(Dispatchers.IO) {
             dao.softDeleteRecurringTransaction(id)
-            loadRecurringTransactions()
         }
     }
 
@@ -212,5 +224,4 @@ class TransactionViewModel @Inject constructor(
             loadInitialTransactions()
         }
     }
-
 }

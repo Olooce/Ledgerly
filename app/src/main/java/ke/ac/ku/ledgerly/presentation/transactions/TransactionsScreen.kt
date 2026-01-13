@@ -102,7 +102,9 @@ fun TransactionsScreen(
             val tabs = listOf(FilterConstants.TAB_ALL_TRANSACTIONS, FilterConstants.TAB_RECURRING)
 
             val transactionsState by transactionViewModel.transactionsState.collectAsState()
+
             val recurringTransactions by transactionViewModel.recurringTransactionsState.collectAsState()
+            val statusFilter = transactionsState.statusFilter
 
             val lazyListState = rememberLazyListState()
             LaunchedEffect(lazyListState) {
@@ -135,58 +137,10 @@ fun TransactionsScreen(
 
             var amountRange by remember { mutableStateOf<ClosedFloatingPointRange<Double>?>(null) }
             var selectedCategories by remember { mutableStateOf<List<String>>(emptyList()) }
-            var statusFilter by remember { mutableStateOf("All") }
 
             val displayedTransactions = transactionsState.transactions
 
-            val filteredRecurringTransactions = remember(
-                recurringTransactions,
-                transactionsState.filterType,
-                transactionsState.searchQuery,
-                amountRange,
-                selectedCategories,
-                statusFilter
-            ) {
-                var filtered = recurringTransactions
 
-                if (transactionsState.filterType != "All") {
-                    filtered = filtered.filter {
-                        it.type.equals(transactionsState.filterType, ignoreCase = true)
-                    }
-                }
-
-                if (transactionsState.searchQuery.isNotEmpty()) {
-                    filtered = filtered.filter { recurring ->
-                        recurring.category.contains(
-                            transactionsState.searchQuery,
-                            ignoreCase = true
-                        ) ||
-                                recurring.notes.contains(
-                                    transactionsState.searchQuery,
-                                    ignoreCase = true
-                                )
-                    }
-                }
-
-                amountRange?.let { range ->
-                    filtered = filtered.filter {
-                        it.amountOriginal.toDouble() in range.start..range.endInclusive
-                    }
-                }
-
-                if (selectedCategories.isNotEmpty()) {
-                    filtered = filtered.filter {
-                        selectedCategories.contains(it.category)
-                    }
-                }
-
-                when (statusFilter) {
-                    "Active" -> filtered = filtered.filter { it.isActive }
-                    "Paused" -> filtered = filtered.filter { !it.isActive }
-                }
-
-                filtered
-            }
 
             LaunchedEffect(Unit) {
                 homeViewModel.navigationEvent.collect { event ->
@@ -349,7 +303,10 @@ fun TransactionsScreen(
                                         )
                                     },
                                     onAmountRangeChange = { amountRange = it },
-                                    onCategoriesChange = { selectedCategories = it },
+                                    onCategoriesChange = {
+                                        selectedCategories = it
+                                        transactionViewModel.updateCategories(it)
+                                    },
                                     onLoadMore = { transactionViewModel.loadTransactions() },
                                     onRefresh = { transactionViewModel.loadInitialTransactions() },
                                     onClearFilters = {
@@ -366,9 +323,9 @@ fun TransactionsScreen(
                             1 -> AnimatedVisibility(visible = true) {
                                 RecurringTransactionsContent(
                                     animatedScope = this,
-                                    recurringTransactions = filteredRecurringTransactions,
+                                    recurringTransactions = recurringTransactions,
                                     filterType = transactionsState.filterType,
-                                    statusFilter = statusFilter,
+                                    statusFilter = transactionsState.statusFilter,
                                     searchQuery = transactionsState.searchQuery,
                                     amountRange = amountRange,
                                     selectedCategories = selectedCategories,
@@ -382,9 +339,13 @@ fun TransactionsScreen(
                                         )
                                     },
                                     onAmountRangeChange = { amountRange = it },
-                                    onCategoriesChange = { selectedCategories = it },
-                                    onStatusFilterChange = { statusFilter = it },
-                                    onToggleActive = { id, isActive ->
+                                    onCategoriesChange = {
+                                        selectedCategories = it
+                                        transactionViewModel.updateCategories(it)
+                                    },
+                                    onStatusFilterChange = transactionViewModel::updateStatusFilter,
+
+                                            onToggleActive = { id, isActive ->
                                         transactionViewModel.toggleRecurringTransactionStatus(
                                             id,
                                             isActive
@@ -396,11 +357,12 @@ fun TransactionsScreen(
                                     onClearFilters = {
                                         transactionViewModel.updateFilter("All")
                                         transactionViewModel.updateSearchQuery("")
-                                        statusFilter = "All"
+                                        transactionViewModel.updateStatusFilter("All")
                                         amountRange = null
                                         selectedCategories = emptyList()
                                     },
-                                    onToggleFilters = { filtersExpanded = !filtersExpanded }
+
+                                            onToggleFilters = { filtersExpanded = !filtersExpanded }
                                 )
                             }
                         }

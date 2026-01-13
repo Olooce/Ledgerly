@@ -63,6 +63,7 @@ class TransactionRepository @Inject constructor(
         val minAmount = amountRange?.start ?: BigDecimal(-1)
         val maxAmount = amountRange?.endInclusive ?: BigDecimal(-1)
 
+
         val transactions = transactionDao.getFilteredTransactionsPaginated(
             filterType = filterType,
             searchQuery = searchQuery,
@@ -72,7 +73,7 @@ class TransactionRepository @Inject constructor(
             minAmount = minAmount.toDouble(),
             maxAmount = maxAmount.toDouble(),
             categoriesCount = categories.size,
-            categories = categories,
+            categories = categories.ifEmpty { listOf("") },
             limit = pageRequest.pageSize,
             offset = (pageRequest.page - 1) * pageRequest.pageSize
         )
@@ -93,8 +94,10 @@ class TransactionRepository @Inject constructor(
         pageRequest: PageRequest
     ): PaginatedResult<RecurringTransactionEntity> {
 
-        val minAmount = amountRange?.start ?: BigDecimal(-1)
-        val maxAmount = amountRange?.endInclusive ?: BigDecimal(-1)
+        val minAmount = amountRange?.start
+        val maxAmount = amountRange?.endInclusive
+
+        val resolvedStatus = statusFilter.takeUnless { it == "All" }
 
         val transactions = recurringTransactionDao.getFilteredRecurringTransactionsPaginated(
             filterType = filterType,
@@ -103,7 +106,7 @@ class TransactionRepository @Inject constructor(
             maxAmount = maxAmount,
             categoriesCount = categories.size,
             categories = categories,
-            statusFilter = statusFilter,
+            statusFilter = resolvedStatus,
             limit = pageRequest.pageSize,
             offset = (pageRequest.page - 1) * pageRequest.pageSize
         )
@@ -120,10 +123,12 @@ class TransactionRepository @Inject constructor(
         searchQuery: String,
         amountRange: ClosedRange<BigDecimal>?,
         categories: List<String>,
-        statusFilter: String
+        statusFilter: String?
     ): Flow<List<RecurringTransactionEntity>> {
-        val minAmount = amountRange?.start ?: BigDecimal(-1)
-        val maxAmount = amountRange?.endInclusive ?: BigDecimal(-1)
+        val minAmount = amountRange?.start
+        val maxAmount = amountRange?.endInclusive
+        val resolvedStatus = statusFilter.takeUnless { it == "All" }
+
 
         return recurringTransactionDao.getFilteredRecurringTransactionsFlow(
             filterType = filterType,
@@ -131,8 +136,8 @@ class TransactionRepository @Inject constructor(
             minAmount = minAmount,
             maxAmount = maxAmount,
             categoriesCount = categories.size,
-            categories = categories,
-            statusFilter = statusFilter
+            categories = categories.ifEmpty { listOf("") }, 
+            statusFilter = resolvedStatus
         )
     }
 
