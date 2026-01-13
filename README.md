@@ -14,10 +14,10 @@ You can view the original assignment instructions here:
 ## Screenshots (Dark Mode)
 
 <p align="center">
-  <img src="screenshots/dark_mode/img.png" width="200" alt="Dashboard">
-  <img src="screenshots/dark_mode/img_1.png" width="200" alt="Transactions">
-  <img src="screenshots/dark_mode/img_2.png" width="200" alt="Savings Goals">
-  <img src="screenshots/dark_mode/img_3.png" width="200" alt="Budgeting">
+  <img src="screenshots/dark_mode/img.png" width="200" alt="">
+  <img src="screenshots/dark_mode/img_1.png" width="200" alt="">
+  <img src="screenshots/dark_mode/img_2.png" width="200" alt="">
+  <img src="screenshots/dark_mode/img_3.png" width="200" alt="">
 </p>
 
 ## Features
