@@ -11,7 +11,7 @@ This project was developed as part of a class assignment.
 You can view the original assignment instructions here:
 [SCO 306 - Project 2 (PDF)](./SCO%20306%20-project%202.pdf)
 
-## 📸 Screenshots (Dark Mode)
+## Screenshots (Dark Mode)
 
 <p align="center">
   <img src="screenshots/dark_mode/img.png" width="200" alt="Dashboard">
@@ -20,7 +20,7 @@ You can view the original assignment instructions here:
   <img src="screenshots/dark_mode/img_3.png" width="200" alt="Budgeting">
 </p>
 
-## ✨ Features
+## Features
 
 - **Transaction Management**: Effortlessly track income and expenses with detailed categorization and payment method logging.
 - **Recurring Transactions**: Automate your frequent entries with flexible frequency settings (Daily, Weekly, Monthly, etc.).
@@ -31,7 +31,7 @@ You can view the original assignment instructions here:
 - **Dark Mode Support**: A beautiful, eye-friendly interface designed for all lighting conditions.
 - **Notifications**: Stay on top of your budget limits and recurring payments with timely alerts.
 
-## 🛠 Tech Stack
+## Tech Stack
 
 - **UI**: Jetpack Compose with Material 3
 - **Language**: 100% Kotlin
@@ -41,7 +41,7 @@ You can view the original assignment instructions here:
 - **Background Tasks**: WorkManager (for recurring transactions)
 - **Architecture**: MVVM (Model-View-ViewModel)
 
-## 🚀 Getting Started
+## Getting Started
 
 1. Clone the repository.
 2. Add your `google-services.json` to the `app/` directory.
