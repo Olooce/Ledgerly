@@ -49,7 +49,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -88,10 +90,12 @@ fun SharedTransitionScope.DebtListScreen(
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
-    selectedTabIndex = when (debtListState.selectedFilter) {
-        "overdue" -> 1
-        "upcoming" -> 2
-        else -> 0
+    LaunchedEffect(debtListState.selectedFilter) {
+        selectedTabIndex = when (debtListState.selectedFilter) {
+            "overdue" -> 1
+            "upcoming" -> 2
+            else -> 0
+        }
     }
 
     Scaffold(

@@ -67,8 +67,3 @@ val PickerWetAsphalt = Color(0xFF34495E)
 val PickerSunFlower = Color(0xFFF1C40F)
 val PickerCarrot = Color(0xFFE67E22)
 val PickerAlizarin = Color(0xFFE74C3C)
-
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)

@@ -66,6 +66,7 @@ import ke.ac.ku.ledgerly.ui.theme.StatusOverdue
 import ke.ac.ku.ledgerly.ui.theme.StatusSoon
 import ke.ac.ku.ledgerly.ui.theme.StatusUpcoming
 import ke.ac.ku.ledgerly.ui.theme.Typography
+import ke.ac.ku.ledgerly.utils.CurrencyFormatter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -280,7 +281,7 @@ private fun SummarySection(summary: BillReminderSummary) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    "KES ${String.format("%.0f", summary.totalAmount)}",
+                    CurrencyFormatter.formatCurrency(summary.totalAmount, "KES"),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = LedgerlyGreen
@@ -370,7 +371,7 @@ private fun BillReminderCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "KES ${String.format("%.2f", bill.amount)}",
+                        text = CurrencyFormatter.formatCurrency(bill.amount, "KES"),
                         style = Typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color(bill.color)

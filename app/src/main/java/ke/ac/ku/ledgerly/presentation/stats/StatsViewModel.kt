@@ -1,5 +1,6 @@
 package ke.ac.ku.ledgerly.presentation.stats
 
+import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.core.graphics.toColorInt
 import androidx.lifecycle.viewModelScope
@@ -44,7 +45,7 @@ data class Insight(
 
 @HiltViewModel
 class StatsViewModel @Inject constructor(
-    val dao: TransactionDao,
+    private val dao: TransactionDao,
     val budgetRepository: BudgetRepository,
     val transactionRepository: TransactionRepository,
     val currencyManager: CurrencyManager
@@ -56,16 +57,23 @@ class StatsViewModel @Inject constructor(
     private val _insights = MutableStateFlow<List<Insight>>(emptyList())
     val insights: StateFlow<List<Insight>> = _insights.asStateFlow()
 
+    val allTransactions: Flow<List<TransactionEntity>> = dao.getAllTransactions()
+
     init {
         loadBudgets()
     }
 
     private fun loadBudgets() {
         viewModelScope.launch {
-            budgetRepository.refreshBudgetSpending()
-            val currentBudgets = budgetRepository.getBudgetsForDisplayCurrentMonth()
-            _budgets.value = currentBudgets
-            generateInsights(currentBudgets)
+            try {
+                budgetRepository.refreshBudgetSpending()
+                val currentBudgets = budgetRepository.getBudgetsForDisplayCurrentMonth()
+                _budgets.value = currentBudgets
+                generateInsights(currentBudgets)
+            } catch (e: Exception) {
+                Log.e("StatsViewModel", "Failed to load budgets", e)
+                // Optionally update UI with error state
+            }
         }
     }
 

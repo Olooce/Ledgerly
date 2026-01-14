@@ -59,7 +59,13 @@ class DebtRepository @Inject constructor(
             return debt
         }
 
-        return debt
+        val convertedAmountOriginal = currencyManager.convertToDisplayCurrency(debt.amountOriginal, displayCurrency)
+        val convertedAmount = currencyManager.convertToDisplayCurrency(debt.amount, displayCurrency)
+
+        return debt.copy(
+            amountOriginal = convertedAmountOriginal.toBigDecimal(),
+            amount = convertedAmount.toBigDecimal()
+        )
     }
 
     suspend fun getTotalOwedUsd(): BigDecimal {
