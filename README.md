@@ -112,8 +112,35 @@ You can view the original assignment instructions here:
 - **Background Tasks**: WorkManager (for recurring transactions)
 - **Architecture**: MVVM (Model-View-ViewModel)
 
+## Firebase Configuration
+
+To enable cloud synchronization and authentication, follow these steps in the [Firebase Console](https://console.firebase.google.com/):
+
+### 1. Project Setup
+*   Create a new Firebase project.
+*   Add an Android app using the package name `ke.ac.ku.ledgerly`.
+*   Download the `google-services.json` file and place it in the `app/` directory of this project.
+
+### 2. Enable Services
+*   **Authentication**: Go to **Build > Authentication**, click **Get Started**, and enable the **Email/Password** sign-in provider.
+*   **Cloud Firestore**: Go to **Build > Firestore Database** and click **Create database**. Select a starting mode (Test mode is recommended for initial setup) and a region.
+
+### 3. Security Rules
+For the app to successfully read and write data, your Firestore security rules should allow authenticated access. You can use the following basic rules:
+
+```
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+```
+
 ## Getting Started
 
 1. Clone the repository.
-2. Add your `google-services.json` to the `app/` directory.
-3. Build and run.
+2. Complete the **Firebase Configuration** steps above.
+3. Open the project in Android Studio.
+4. Build and run.
