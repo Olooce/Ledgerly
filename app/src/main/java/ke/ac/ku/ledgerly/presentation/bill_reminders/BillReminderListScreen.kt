@@ -156,10 +156,10 @@ fun BillReminderListScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Summary Card (Matching Savings Goal style)
+            // Summary Card
             SummarySection(listState.summary)
 
-            // Tabs (Matching Savings Goal style)
+            // Tabs
             TabRow(
                 selectedTabIndex = selectedTabIndex,
                 modifier = Modifier
