@@ -17,7 +17,7 @@ class ExchangeRateCache @Inject constructor(
     private val TTL = 24 * 60 * 60 * 1000L // 24 hours
 
     suspend fun getRates(baseCurrency: String): ExchangeRateResponse? {
-           memoryCache[baseCurrency]?.let { (timestamp, rates) ->
+        memoryCache[baseCurrency]?.let { (timestamp, rates) ->
             if (!isStale(timestamp)) {
                 return rates
             }

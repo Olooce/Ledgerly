@@ -1,4 +1,3 @@
-
 package ke.ac.ku.ledgerly.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.domain.CurrencyManager
+import ke.ac.ku.ledgerly.ui.theme.ChartExpenseDark
+import ke.ac.ku.ledgerly.ui.theme.SuccessGreenDark
 import ke.ac.ku.ledgerly.ui.widget.CircularIcon
 import ke.ac.ku.ledgerly.ui.widget.ItemSurface
 import ke.ac.ku.ledgerly.utils.FormatingUtils
@@ -43,7 +44,9 @@ fun TransactionItem(
     LaunchedEffect(transaction, currencyManager) {
         launch {
             currency = currencyManager.getDisplayCurrency()
-            displayAmount = currencyManager.convertToDisplayCurrency(transaction.amountUsd.toString().toBigDecimal(), currency).toBigDecimal()
+            displayAmount = currencyManager.convertToDisplayCurrency(
+                transaction.amountUsd.toString().toBigDecimal(), currency
+            ).toBigDecimal()
         }
     }
 
@@ -81,7 +84,7 @@ fun TransactionItem(
             Text(
                 text = FormatingUtils.formatDateToHumanReadableForm(transaction.date),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
             if (transaction.notes.isNotEmpty()) {
                 Text(
@@ -102,7 +105,7 @@ fun TransactionItem(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
-                color = if (transaction.type == "Income") Color(0xFF2E7D32) else Color(0xFFC62828)
+                color = if (transaction.type == "Income") SuccessGreenDark else ChartExpenseDark
             )
         }
     }

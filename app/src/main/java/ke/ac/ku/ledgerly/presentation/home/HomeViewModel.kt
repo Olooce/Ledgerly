@@ -115,7 +115,7 @@ class HomeViewModel @Inject constructor(
 
                     // Get display currency and convert from USD
                     val displayCurrency = currencyManager.getDisplayCurrency()
-                    
+
                     // Convert USD to display currency
                     val incomeDisplay = currencyManager.convertToDisplayCurrency(
                         incomeUsd.toBigDecimal(),

@@ -62,9 +62,14 @@ class SavingsGoalRepository @Inject constructor(
         }
 
         // Convert amounts for display only
-        val displayTargetUsd = currencyManager.convertToDisplayCurrency(goal.targetAmount, displayCurrency)
-        val displayCurrentUsd = currencyManager.convertToDisplayCurrency(goal.currentAmount, displayCurrency)
-        val displayMilestoneUsd = currencyManager.convertToDisplayCurrency(goal.lastMilestoneReached, targetCurrency = displayCurrency)
+        val displayTargetUsd =
+            currencyManager.convertToDisplayCurrency(goal.targetAmount, displayCurrency)
+        val displayCurrentUsd =
+            currencyManager.convertToDisplayCurrency(goal.currentAmount, displayCurrency)
+        val displayMilestoneUsd = currencyManager.convertToDisplayCurrency(
+            goal.lastMilestoneReached,
+            targetCurrency = displayCurrency
+        )
 
         return goal.copy(
             targetAmount = displayTargetUsd.toBigDecimal(),
@@ -72,6 +77,7 @@ class SavingsGoalRepository @Inject constructor(
             lastMilestoneReached = displayMilestoneUsd.toBigDecimal()
         )
     }
+
     suspend fun getTotalTargetUsd(): BigDecimal {
         val goals = getAllGoalsSync().filter { !it.isDeleted && !it.isCompleted }
         return goals.fold(BigDecimal.ZERO) { acc, goal ->

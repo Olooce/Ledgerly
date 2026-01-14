@@ -35,7 +35,7 @@ class BudgetWorker @AssistedInject constructor(
                     limit = FormatingUtils.formatToDecimalValue(budget.monthlyBudget.toDouble())
                 )
             }
-           Result.success()
+            Result.success()
         } catch (e: Exception) {
             Log.e("BudgetWorker", "Failed to check budgets", e)
             if (runAttemptCount < 3) {

@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -43,6 +42,7 @@ sealed class ProfileUiEvent {
     data class OnNotificationToggled(val enabled: Boolean) : ProfileUiEvent()
     data class OnDarkModeToggled(val enabled: Boolean) : ProfileUiEvent()
 }
+
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository
@@ -51,7 +51,7 @@ class ProfileViewModel @Inject constructor(
     private val _navigationEvent = MutableSharedFlow<NavigationEvent>()
     val navigationEvent = _navigationEvent.asSharedFlow()
 
-      private val uiState = MutableStateFlow(
+    private val uiState = MutableStateFlow(
         ProfileState()
     )
 

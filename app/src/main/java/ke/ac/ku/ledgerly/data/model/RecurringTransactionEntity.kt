@@ -1,4 +1,3 @@
-
 package ke.ac.ku.ledgerly.data.model
 
 import androidx.room.Entity

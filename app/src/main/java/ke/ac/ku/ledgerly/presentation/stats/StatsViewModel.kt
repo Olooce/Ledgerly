@@ -1,35 +1,115 @@
 package ke.ac.ku.ledgerly.presentation.stats
 
+import androidx.compose.ui.graphics.Color
 import androidx.core.graphics.toColorInt
+import androidx.lifecycle.viewModelScope
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.formatter.LargeValueFormatter
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.base.BaseViewModel
 import ke.ac.ku.ledgerly.base.UiEvent
 import ke.ac.ku.ledgerly.data.dao.TransactionDao
 import ke.ac.ku.ledgerly.data.enums.TimePeriod
+import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.data.model.CategorySummary
 import ke.ac.ku.ledgerly.data.model.MonthlyComparison
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionSummary
+import ke.ac.ku.ledgerly.data.repository.BudgetRepository
+import ke.ac.ku.ledgerly.data.repository.TransactionRepository
 import ke.ac.ku.ledgerly.domain.CurrencyManager
 import ke.ac.ku.ledgerly.utils.FormatingUtils
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
+data class Insight(
+    val title: String,
+    val description: String,
+    val icon: Int,
+    val color: Color
+)
+
 @HiltViewModel
 class StatsViewModel @Inject constructor(
     val dao: TransactionDao,
+    val budgetRepository: BudgetRepository,
+    val transactionRepository: TransactionRepository,
     val currencyManager: CurrencyManager
 ) : BaseViewModel() {
+
+    private val _budgets = MutableStateFlow<List<BudgetEntity>>(emptyList())
+    val budgets: StateFlow<List<BudgetEntity>> = _budgets.asStateFlow()
+
+    private val _insights = MutableStateFlow<List<Insight>>(emptyList())
+    val insights: StateFlow<List<Insight>> = _insights.asStateFlow()
+
+    init {
+        loadBudgets()
+    }
+
+    private fun loadBudgets() {
+        viewModelScope.launch {
+            budgetRepository.refreshBudgetSpending()
+            val currentBudgets = budgetRepository.getBudgetsForDisplayCurrentMonth()
+            _budgets.value = currentBudgets
+            generateInsights(currentBudgets)
+        }
+    }
+
+    private fun generateInsights(budgets: List<BudgetEntity>) {
+        val newInsights = mutableListOf<Insight>()
+
+        // 1. Budget Alerts
+        budgets.forEach { budget ->
+            if (budget.isExceeded()) {
+                newInsights.add(
+                    Insight(
+                        title = "Budget Exceeded",
+                        description = "You've spent more than your budget for ${budget.category}.",
+                        icon = R.drawable.ic_budget,
+                        color = Color(0xFFEF4444)
+                    )
+                )
+            } else if (budget.isNearLimit(80)) {
+                newInsights.add(
+                    Insight(
+                        title = "Almost at Limit",
+                        description = "You've used ${budget.percentageUsed}% of your ${budget.category} budget.",
+                        icon = R.drawable.ic_budget,
+                        color = Color(0xFFF59E0B)
+                    )
+                )
+            }
+        }
+
+        // 2. Spending Trends (Placeholder for more complex logic)
+        // In a real app, you'd compare current week/month to previous ones
+        if (budgets.isEmpty()) {
+            newInsights.add(
+                Insight(
+                    title = "Set a Budget",
+                    description = "Track your spending better by setting monthly budgets for categories.",
+                    icon = R.drawable.ic_add,
+                    color = Color(0xFF3B82F6)
+                )
+            )
+        }
+
+        _insights.value = newInsights
+    }
 
     private fun getDateRangeForPeriod(period: TimePeriod): Pair<Long, Long> {
         val calendar = Calendar.getInstance()

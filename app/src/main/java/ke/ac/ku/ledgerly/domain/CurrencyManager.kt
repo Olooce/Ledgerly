@@ -1,4 +1,3 @@
-
 package ke.ac.ku.ledgerly.domain
 
 import android.util.Log
@@ -21,16 +20,17 @@ class CurrencyManager @Inject constructor(
         private const val DEFAULT_CURRENCY = "USD"
     }
 
-     suspend fun getDisplayCurrency(): String {
+    suspend fun getDisplayCurrency(): String {
         return try {
-            userPreferencesRepository.currency.first().takeIf { it.isNotEmpty() } ?: DEFAULT_CURRENCY
+            userPreferencesRepository.currency.first().takeIf { it.isNotEmpty() }
+                ?: DEFAULT_CURRENCY
         } catch (e: Exception) {
             Log.e(TAG, "Failed to get display currency, using default", e)
             DEFAULT_CURRENCY
         }
     }
 
-      fun getDisplayCurrencyFlow(): Flow<String> {
+    fun getDisplayCurrencyFlow(): Flow<String> {
         return userPreferencesRepository.currency
             .catch { e ->
                 Log.e(TAG, "Error getting display currency flow", e)
@@ -38,12 +38,12 @@ class CurrencyManager @Inject constructor(
             }
     }
 
-   suspend fun convertToDisplayCurrency(
+    suspend fun convertToDisplayCurrency(
         amountUsd: BigDecimal,
         targetCurrency: String? = null
     ): String {
         val displayCurrency = targetCurrency ?: getDisplayCurrency()
-        
+
         if (displayCurrency == BASE_CURRENCY) {
             return amountUsd.setScale(2, RoundingMode.HALF_UP).toString()
         }
@@ -74,11 +74,14 @@ class CurrencyManager @Inject constructor(
                 .setScale(2, RoundingMode.HALF_UP)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to convert $sourceCurrency to USD", e)
-            throw IllegalStateException("Cannot obtain exchange rate for $sourceCurrency to $BASE_CURRENCY", e)
+            throw IllegalStateException(
+                "Cannot obtain exchange rate for $sourceCurrency to $BASE_CURRENCY",
+                e
+            )
         }
     }
 
-     suspend fun getFrozenExchangeRate(currency: String): BigDecimal {
+    suspend fun getFrozenExchangeRate(currency: String): BigDecimal {
         if (currency == BASE_CURRENCY) {
             return BigDecimal.ONE
         }
@@ -91,7 +94,7 @@ class CurrencyManager @Inject constructor(
         }
     }
 
-       private suspend fun getExchangeRate(
+    private suspend fun getExchangeRate(
         fromCurrency: String,
         toCurrency: String
     ): BigDecimal {
@@ -110,7 +113,7 @@ class CurrencyManager @Inject constructor(
         }
     }
 
-        suspend fun sumAndConvert(
+    suspend fun sumAndConvert(
         amounts: List<BigDecimal>,
         targetCurrency: String? = null
     ): BigDecimal {
@@ -119,6 +122,7 @@ class CurrencyManager @Inject constructor(
         }
         return convertToDisplayCurrency(sumUsd, targetCurrency).toBigDecimal()
     }
+
     suspend fun refreshExchangeRates() {
         try {
             currencyDataSource.getExchangeRates(BASE_CURRENCY)
@@ -131,7 +135,7 @@ class CurrencyManager @Inject constructor(
 
     suspend fun isOfflineMode(): Boolean {
         return try {
-                    currencyDataSource.getExchangeRates(BASE_CURRENCY)
+            currencyDataSource.getExchangeRates(BASE_CURRENCY)
             false
         } catch (e: Exception) {
 

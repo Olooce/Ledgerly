@@ -13,6 +13,7 @@ interface BudgetDao {
     suspend fun insertBudgetWithTimestamp(budget: BudgetEntity) {
         insertBudget(budget.copy(lastModified = System.currentTimeMillis()))
     }
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBudget(budget: BudgetEntity)
 

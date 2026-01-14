@@ -8,17 +8,24 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -26,10 +33,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -41,6 +49,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.luminance
@@ -68,14 +77,18 @@ import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.formatter.ValueFormatter
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.enums.TimePeriod
+import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.data.model.CategorySummary
 import ke.ac.ku.ledgerly.data.model.MonthlyComparison
 import ke.ac.ku.ledgerly.presentation.settings.SettingsViewModel
+import ke.ac.ku.ledgerly.presentation.transactions.ExportViewModel
+import ke.ac.ku.ledgerly.ui.components.ExportDialog
 import ke.ac.ku.ledgerly.ui.components.LedgerlyTopBar
 import ke.ac.ku.ledgerly.ui.components.TransactionList
 import ke.ac.ku.ledgerly.ui.theme.White
 import ke.ac.ku.ledgerly.utils.CurrencyFormatter.formatCurrency
 import ke.ac.ku.ledgerly.utils.FormatingUtils.formatDateForChart
+import java.math.BigDecimal
 import java.util.Locale
 
 
@@ -84,12 +97,26 @@ import java.util.Locale
 fun StatsScreen(
     navController: NavController,
     viewModel: StatsViewModel = hiltViewModel(),
-    settingsViewModel: SettingsViewModel = hiltViewModel()
+    settingsViewModel: SettingsViewModel = hiltViewModel(),
+    exportViewModel: ExportViewModel = hiltViewModel()
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     var selectedPeriod by remember { mutableStateOf(TimePeriod.MONTH) }
-    val tabs = listOf("Comparison", "Trends", "Categories")
+    var showExportDialog by remember { mutableStateOf(false) }
+
+    val tabs = listOf("Comparison", "Trends", "Categories", "Budgets", "Insights")
     val displayCurrency by settingsViewModel.displayCurrency.collectAsState()
+
+    // For export
+    val allTransactions by viewModel.dao.getAllTransactions().collectAsState(initial = emptyList())
+
+    if (showExportDialog) {
+        ExportDialog(
+            transactions = allTransactions,
+            exportViewModel = exportViewModel,
+            onDismiss = { showExportDialog = false }
+        )
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LedgerlyTopBar(
@@ -97,10 +124,11 @@ fun StatsScreen(
         ) {
             Image(
                 painter = painterResource(id = R.drawable.ic_ledgerly),
-                contentDescription = "Ledgerly logo",
+                contentDescription = "Ledgerly Logo",
                 modifier = Modifier
-                    .size(48.dp)
-                    .align(Alignment.Center)
+                    .align(Alignment.TopStart)
+                    .padding(start = 16.dp, top = 24.dp)
+                    .size(102.dp)
             )
         }
 
@@ -122,6 +150,15 @@ fun StatsScreen(
                                 painter = painterResource(R.drawable.ic_back),
                                 contentDescription = "Back",
                                 tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { showExportDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Default.IosShare,
+                                contentDescription = "Export Data",
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     },
@@ -147,9 +184,11 @@ fun StatsScreen(
                     onPeriodSelected = { selectedPeriod = it }
                 )
 
-                TabRow(
+                ScrollableTabRow(
                     selectedTabIndex = selectedTab,
                     containerColor = Color.Transparent,
+                    edgePadding = 16.dp,
+                    divider = {},
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     tabs.forEachIndexed { index, title ->
@@ -173,6 +212,8 @@ fun StatsScreen(
                         0 -> ComparisonTab(viewModel, selectedPeriod, displayCurrency)
                         1 -> TrendsTab(viewModel, navController, selectedPeriod, displayCurrency)
                         2 -> CategoriesTab(viewModel, selectedPeriod, displayCurrency)
+                        3 -> BudgetsTab(viewModel, displayCurrency)
+                        4 -> InsightsTab(viewModel)
                     }
                 }
             }
@@ -339,7 +380,10 @@ private fun ComparisonTab(viewModel: StatsViewModel, selectedPeriod: TimePeriod,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    "${selectedPeriod.name.lowercase().replaceFirstChar { it.uppercase(Locale.ROOT) }} Comparison",
+                    "${
+                        selectedPeriod.name.lowercase()
+                            .replaceFirstChar { it.uppercase(Locale.ROOT) }
+                    } Comparison",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -354,6 +398,191 @@ private fun ComparisonTab(viewModel: StatsViewModel, selectedPeriod: TimePeriod,
                 } else {
                     EmptyState("No comparison data")
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BudgetsTab(viewModel: StatsViewModel, currency: String) {
+    val budgets by viewModel.budgets.collectAsState()
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Text(
+                "Budget Utilization",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+
+        if (budgets.isEmpty()) {
+            item {
+                EmptyState("No budgets set for this month")
+            }
+        } else {
+            items(budgets) { budget ->
+                BudgetUtilizationItem(budget, currency)
+            }
+        }
+    }
+}
+
+@Composable
+private fun BudgetUtilizationItem(budget: BudgetEntity, currency: String) {
+    val progress = budget.percentageUsed.divide(BigDecimal(100)).toFloat()
+    val isOverBudget = budget.isExceeded()
+    val progressColor = if (isOverBudget) Color(0xFFEF4444) else Color(0xFF10B981)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                alpha = 0.3f
+            )
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = budget.category,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "${budget.percentageUsed}% used",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = progressColor,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            LinearProgressIndicator(
+                progress = { progress.coerceIn(0f, 1f) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(CircleShape),
+                color = progressColor,
+                trackColor = progressColor.copy(alpha = 0.1f)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "${formatCurrency(budget.currentSpending, currency)} / ${
+                        formatCurrency(
+                            budget.monthlyBudget,
+                            currency
+                        )
+                    }",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (isOverBudget) {
+                    Text(
+                        text = "Over by ${
+                            formatCurrency(
+                                budget.currentSpending - budget.monthlyBudget,
+                                currency
+                            )
+                        }",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFFEF4444),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InsightsTab(viewModel: StatsViewModel) {
+    val insights by viewModel.insights.collectAsState()
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Text(
+                "Smart Insights",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+
+        if (insights.isEmpty()) {
+            item {
+                EmptyState("Gathering more data for insights...")
+            }
+        } else {
+            items(insights) { insight ->
+                InsightCard(insight)
+            }
+        }
+    }
+}
+
+@Composable
+private fun InsightCard(insight: Insight) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = insight.color.copy(alpha = 0.1f))
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(insight.color.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(insight.icon),
+                    contentDescription = null,
+                    tint = insight.color,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(
+                    text = insight.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = insight.color
+                )
+                Text(
+                    text = insight.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
         }
     }

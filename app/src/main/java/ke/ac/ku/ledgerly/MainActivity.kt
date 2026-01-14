@@ -15,10 +15,10 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.auth.api.identity.SignInClient
 import dagger.hilt.android.AndroidEntryPoint
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
-import ke.ac.ku.ledgerly.service.CategoryInitializationService
 import ke.ac.ku.ledgerly.domain.SessionTimeoutManager
 import ke.ac.ku.ledgerly.presentation.auth.AuthViewModel
 import ke.ac.ku.ledgerly.presentation.settings.SettingsViewModel
+import ke.ac.ku.ledgerly.service.CategoryInitializationService
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyTheme
 import ke.ac.ku.ledgerly.ui.theme.ThemeViewModel
 import kotlinx.coroutines.Dispatchers

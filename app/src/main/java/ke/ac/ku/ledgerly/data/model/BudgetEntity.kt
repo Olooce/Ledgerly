@@ -23,7 +23,7 @@ data class BudgetEntity(
         get() = if (this@BudgetEntity.monthlyBudget > BigDecimal.ZERO)
             currentSpending.multiply(BigDecimal(100))
                 .divide(this@BudgetEntity.monthlyBudget, 2, RoundingMode.HALF_UP)
-            else BigDecimal.ZERO
+        else BigDecimal.ZERO
 
     fun isNearLimit(threshold: Int = 80): Boolean {
         return percentageUsed >= BigDecimal(threshold)

@@ -58,7 +58,6 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import java.math.BigDecimal
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.base.AddTransactionNavigationEvent
 import ke.ac.ku.ledgerly.base.NavigationEvent
@@ -66,11 +65,12 @@ import ke.ac.ku.ledgerly.data.enums.RecurrenceFrequency
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
 import ke.ac.ku.ledgerly.ui.components.LedgerlyTopBar
-import ke.ac.ku.ledgerly.ui.theme.LightGrey
+import ke.ac.ku.ledgerly.ui.theme.TextSecondaryLight
 import ke.ac.ku.ledgerly.ui.theme.Typography
 import ke.ac.ku.ledgerly.ui.widget.DropDown
 import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
 import ke.ac.ku.ledgerly.utils.FormatingUtils
+import java.math.BigDecimal
 
 
 @Composable
@@ -105,10 +105,11 @@ fun AddTransaction(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.ic_ledgerly),
-                    contentDescription = "Ledgerly logo",
+                    contentDescription = "Ledgerly Logo",
                     modifier = Modifier
-                        .size(48.dp)
-                        .align(Alignment.Center)
+                        .align(Alignment.TopStart)
+                        .padding(start = 16.dp, top = 24.dp)
+                        .size(102.dp)
                 )
             }
 
@@ -297,7 +298,9 @@ fun DataForm(
                     val currencyPrefix = "$userCurrency "
                     val out = currencyPrefix + text.text
                     val currencyOffsetTranslator = object : OffsetMapping {
-                        override fun originalToTransformed(offset: Int) = offset + currencyPrefix.length
+                        override fun originalToTransformed(offset: Int) =
+                            offset + currencyPrefix.length
+
                         override fun transformedToOriginal(offset: Int) =
                             (offset - currencyPrefix.length).coerceIn(0, text.text.length)
                     }
@@ -547,7 +550,7 @@ fun TitleComponent(title: String) {
         text = title.uppercase(),
         fontSize = 12.sp,
         fontWeight = FontWeight.Medium,
-        color = LightGrey
+        color = TextSecondaryLight
     )
     Spacer(modifier = Modifier.size(10.dp))
 }

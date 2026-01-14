@@ -9,10 +9,12 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ke.ac.ku.ledgerly.R
+import ke.ac.ku.ledgerly.data.converters.Converters
 import ke.ac.ku.ledgerly.data.dao.BillReminderDao
 import ke.ac.ku.ledgerly.data.dao.BudgetDao
 import ke.ac.ku.ledgerly.data.dao.CategoryDao
 import ke.ac.ku.ledgerly.data.dao.DebtDao
+import ke.ac.ku.ledgerly.data.dao.ExchangeRateDao
 import ke.ac.ku.ledgerly.data.dao.NotificationDao
 import ke.ac.ku.ledgerly.data.dao.RecurringTransactionDao
 import ke.ac.ku.ledgerly.data.dao.SavingsGoalDao
@@ -21,13 +23,11 @@ import ke.ac.ku.ledgerly.data.model.BillReminderEntity
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.data.model.CategoryEntity
 import ke.ac.ku.ledgerly.data.model.DebtEntity
+import ke.ac.ku.ledgerly.data.model.ExchangeRateEntity
 import ke.ac.ku.ledgerly.data.model.NotificationEntity
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.SavingsGoalEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
-import ke.ac.ku.ledgerly.data.model.ExchangeRateEntity
-import ke.ac.ku.ledgerly.data.converters.Converters
-import ke.ac.ku.ledgerly.data.dao.ExchangeRateDao
 import javax.inject.Singleton
 
 @Database(
@@ -633,7 +633,8 @@ val MIGRATION_16_17 = object : Migration(16, 17) {
 val MIGRATION_17_18 = object : Migration(17, 18) {
     override fun migrate(db: SupportSQLiteDatabase) {
 
-        db.execSQL("""
+        db.execSQL(
+            """
             CREATE TABLE transactions_new (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 category TEXT NOT NULL,
@@ -649,9 +650,11 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
                 isDeleted INTEGER NOT NULL DEFAULT 0,
                 lastModified INTEGER
             )
-        """.trimIndent())
+        """.trimIndent()
+        )
 
-        db.execSQL("""
+        db.execSQL(
+            """
             INSERT INTO transactions_new (
                 id, category, amountOriginal, originalCurrency, 
                 exchangeRateToUsd, amountUsd, date, type, notes, 
@@ -666,12 +669,14 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
                 date, type, notes, 
                 paymentMethod, tags, isDeleted, lastModified
             FROM transactions
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         db.execSQL("DROP TABLE transactions")
         db.execSQL("ALTER TABLE transactions_new RENAME TO transactions")
 
-        db.execSQL("""
+        db.execSQL(
+            """
             CREATE TABLE recurring_transactions_new (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 category TEXT NOT NULL,
@@ -691,9 +696,11 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
                 isDeleted INTEGER NOT NULL DEFAULT 0,
                 lastModified INTEGER
             )
-        """.trimIndent())
+        """.trimIndent()
+        )
 
-        db.execSQL("""
+        db.execSQL(
+            """
             INSERT INTO recurring_transactions_new (
                 id, category, amountOriginal, originalCurrency, 
                 exchangeRateToUsd, amountUsd, type, notes, 
@@ -710,12 +717,14 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
                 paymentMethod, tags, frequency, startDate, endDate, 
                 lastGeneratedDate, isActive, isDeleted, lastModified
             FROM recurring_transactions
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         db.execSQL("DROP TABLE recurring_transactions")
         db.execSQL("ALTER TABLE recurring_transactions_new RENAME TO recurring_transactions")
 
-        db.execSQL("""
+        db.execSQL(
+            """
             CREATE TABLE budgets_new (
                 category TEXT NOT NULL,
                 monthlyBudget TEXT NOT NULL,
@@ -725,9 +734,11 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
                 lastModified INTEGER,
                 PRIMARY KEY (category, monthYear)
             )
-        """.trimIndent())
+        """.trimIndent()
+        )
 
-        db.execSQL("""
+        db.execSQL(
+            """
             INSERT INTO budgets_new (
                 category, monthlyBudget, currentSpending, 
                 monthYear, isDeleted, lastModified
@@ -738,12 +749,14 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
                 CAST(currentSpending AS TEXT),
                 monthYear, isDeleted, lastModified
             FROM budgets
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         db.execSQL("DROP TABLE budgets")
         db.execSQL("ALTER TABLE budgets_new RENAME TO budgets")
 
-        db.execSQL("""
+        db.execSQL(
+            """
             CREATE TABLE debts_new (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 personName TEXT NOT NULL,
@@ -764,9 +777,11 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
                 isDeleted INTEGER NOT NULL DEFAULT 0,
                 lastReminderSent INTEGER NOT NULL DEFAULT 0
             )
-        """.trimIndent())
+        """.trimIndent()
+        )
 
-        db.execSQL("""
+        db.execSQL(
+            """
             INSERT INTO debts_new (
                 id, personName, amountOriginal, originalCurrency,
                 exchangeRateToUsd, amount, debtType, dueDate, status,
@@ -783,13 +798,15 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
                 description, reminderDays, reminderEnabled, 0,
                 notes, createdAt, lastModified, isDeleted, lastReminderSent
             FROM debts
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         db.execSQL("DROP TABLE debts")
         db.execSQL("ALTER TABLE debts_new RENAME TO debts")
 
         // Bill reminders already have amount as REAL, just need to add currency if needed
-        db.execSQL("""
+        db.execSQL(
+            """
             CREATE TABLE bill_reminders_new (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 billName TEXT NOT NULL,
@@ -812,9 +829,11 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
                 lastModified INTEGER NOT NULL,
                 isDeleted INTEGER NOT NULL
             )
-        """.trimIndent())
+        """.trimIndent()
+        )
 
-        db.execSQL("""
+        db.execSQL(
+            """
             INSERT INTO bill_reminders_new (
                 id, billName, description, amount, currency,
                 dueDate, category, frequency, nextDueDate,
@@ -830,7 +849,8 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
                 isOverdue, status, paymentMethod, notes, color,
                 createdAt, lastModified, isDeleted
             FROM bill_reminders
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         db.execSQL("DROP TABLE bill_reminders")
         db.execSQL("ALTER TABLE bill_reminders_new RENAME TO bill_reminders")
@@ -841,7 +861,8 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
         db.execSQL("CREATE INDEX index_bill_reminders_isDeleted ON bill_reminders(isDeleted)")
 
 
-        db.execSQL("""
+        db.execSQL(
+            """
             CREATE TABLE savings_goals_new (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 name TEXT NOT NULL,
@@ -857,9 +878,11 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
                 isCompleted INTEGER NOT NULL DEFAULT 0,
                 isDeleted INTEGER NOT NULL DEFAULT 0
             )
-        """.trimIndent())
+        """.trimIndent()
+        )
 
-        db.execSQL("""
+        db.execSQL(
+            """
             INSERT INTO savings_goals_new (
                 id, name, description, targetAmount, currentAmount,
                 icon, color, targetDate, lastMilestoneReached,
@@ -873,7 +896,8 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
                 CAST(COALESCE(lastMilestoneReached, 0.0) AS TEXT),
                 createdDate, lastModified, isCompleted, isDeleted
             FROM savings_goals
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         db.execSQL("DROP TABLE savings_goals")
         db.execSQL("ALTER TABLE savings_goals_new RENAME TO savings_goals")

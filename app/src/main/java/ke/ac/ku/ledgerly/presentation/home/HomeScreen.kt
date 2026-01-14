@@ -48,7 +48,6 @@ import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.base.HomeNavigationEvent
 import ke.ac.ku.ledgerly.base.NavigationEvent
 import ke.ac.ku.ledgerly.data.constants.NavRouts
-import ke.ac.ku.ledgerly.domain.CurrencyManager
 import ke.ac.ku.ledgerly.presentation.settings.SettingsViewModel
 import ke.ac.ku.ledgerly.ui.components.LedgerlyTopBar
 import ke.ac.ku.ledgerly.ui.components.TransactionList
@@ -126,10 +125,11 @@ fun HomeScreen(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.ic_ledgerly),
-                    contentDescription = "Ledgerly logo",
+                    contentDescription = "Ledgerly Logo",
                     modifier = Modifier
-                        .size(48.dp)
-                        .align(Alignment.Center)
+                        .align(Alignment.TopStart)
+                        .padding(start = 16.dp, top = 24.dp)
+                        .size(102.dp)
                 )
             }
 

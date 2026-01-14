@@ -209,10 +209,11 @@ class NotificationService @Inject constructor(
 
         val title = "Budget Alert: $category"
         val message = "You've spent ${String.format("%.0f", percentageUsed)}% of your budget"
-        val bigText = "You've spent $formattedSpent out of $formattedLimit for $category this month."
+        val bigText =
+            "You've spent $formattedSpent out of $formattedLimit for $category this month."
         val key = budgetNotificationKey(category)
 
-        val notificationEntity =  NotificationEntity(
+        val notificationEntity = NotificationEntity(
             type = NotificationType.Budget.value,
             title = title,
             message = message,
@@ -254,14 +255,18 @@ class NotificationService @Inject constructor(
         currentAmount: String,
         targetAmount: String
     ): Boolean {
-        val displayCurrentAmount = currencyManager.convertToDisplayCurrency(currentAmount.toBigDecimal())
-        val displayTargetAmount = currencyManager.convertToDisplayCurrency(targetAmount.toBigDecimal())
+        val displayCurrentAmount =
+            currencyManager.convertToDisplayCurrency(currentAmount.toBigDecimal())
+        val displayTargetAmount =
+            currencyManager.convertToDisplayCurrency(targetAmount.toBigDecimal())
         val formattedCurrentAmount = formatCurrency(displayCurrentAmount.toDouble())
         val formattedTargetAmount = formatCurrency(displayTargetAmount.toDouble())
 
         val title = "Savings Goal Update: $goalName"
-        val message = "You've reached ${String.format("%.0f", percentageComplete.toDouble())}% of your goal"
-        val bigText = "You've saved $formattedCurrentAmount out of $formattedTargetAmount for $goalName!"
+        val message =
+            "You've reached ${String.format("%.0f", percentageComplete.toDouble())}% of your goal"
+        val bigText =
+            "You've saved $formattedCurrentAmount out of $formattedTargetAmount for $goalName!"
 
         val notificationEntity = NotificationEntity(
             type = NotificationType.Savings.value,

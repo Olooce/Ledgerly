@@ -5,7 +5,6 @@ import ke.ac.ku.ledgerly.data.model.DebtEntity
 import ke.ac.ku.ledgerly.data.model.DebtSummary
 import ke.ac.ku.ledgerly.domain.CurrencyManager
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import java.math.BigDecimal
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -54,16 +53,16 @@ class DebtRepository @Inject constructor(
         return convertDebtForDisplay(debt)
     }
 
-       private suspend fun convertDebtForDisplay(debt: DebtEntity): DebtEntity {
+    private suspend fun convertDebtForDisplay(debt: DebtEntity): DebtEntity {
         val displayCurrency = currencyManager.getDisplayCurrency()
         if (displayCurrency == "USD") {
             return debt
         }
 
-            return debt
+        return debt
     }
 
-       suspend fun getTotalOwedUsd(): BigDecimal {
+    suspend fun getTotalOwedUsd(): BigDecimal {
         val debts = getAllDebtSync().filter { it.debtType == "owed" && !it.isDeleted }
         return debts.fold(BigDecimal.ZERO) { acc, debt ->
             acc + debt.amount

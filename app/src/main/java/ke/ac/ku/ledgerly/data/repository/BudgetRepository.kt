@@ -34,12 +34,14 @@ class BudgetRepository @Inject constructor(
         val currentMonth = Utils.getCurrentMonthYear()
         dao.softDeleteBudget(category, currentMonth)
     }
+
     suspend fun refreshBudgetSpending() {
         val currentMonth = Utils.getCurrentMonthYear()
         val budgets = dao.getBudgetsForMonth(currentMonth)
 
         budgets.forEach { budget ->
-            val currentSpendingUsd = dao.getCurrentSpendingForCategoryUsd(budget.category, currentMonth)
+            val currentSpendingUsd =
+                dao.getCurrentSpendingForCategoryUsd(budget.category, currentMonth)
             if (budget.currentSpending != currentSpendingUsd) {
                 val updatedBudget = budget.copy(currentSpending = currentSpendingUsd)
                 dao.updateBudget(updatedBudget)
@@ -58,7 +60,7 @@ class BudgetRepository @Inject constructor(
         return convertBudgetForDisplay(budget)
     }
 
-        suspend fun getBudgetsForDisplayCurrentMonth(): List<BudgetEntity> {
+    suspend fun getBudgetsForDisplayCurrentMonth(): List<BudgetEntity> {
         val budgets = getBudgetsForCurrentMonth()
         return budgets.map { convertBudgetForDisplay(it) }
     }
@@ -70,8 +72,12 @@ class BudgetRepository @Inject constructor(
             return budget
         }
 
-               val displayBudgetUsd: BigDecimal = currencyManager.convertToDisplayCurrency(budget.monthlyBudget, displayCurrency).toBigDecimal()
-        val displaySpendingUsd: BigDecimal = currencyManager.convertToDisplayCurrency(budget.currentSpending, displayCurrency).toBigDecimal()
+        val displayBudgetUsd: BigDecimal =
+            currencyManager.convertToDisplayCurrency(budget.monthlyBudget, displayCurrency)
+                .toBigDecimal()
+        val displaySpendingUsd: BigDecimal =
+            currencyManager.convertToDisplayCurrency(budget.currentSpending, displayCurrency)
+                .toBigDecimal()
 
 
         return budget.copy(
@@ -83,6 +89,7 @@ class BudgetRepository @Inject constructor(
     suspend fun getTotalSpendingUsdForMonth(monthYear: String): BigDecimal {
         return dao.getTotalSpendingUsdForMonth(monthYear)
     }
+
     suspend fun getTotalBudgetUsdForMonth(monthYear: String): BigDecimal {
         val budgets = dao.getBudgetsForMonth(monthYear)
         return budgets.fold(BigDecimal.ZERO) { acc, budget ->

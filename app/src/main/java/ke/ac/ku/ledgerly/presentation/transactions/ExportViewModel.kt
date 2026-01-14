@@ -8,7 +8,6 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
-import ke.ac.ku.ledgerly.data.repository.TransactionRepository
 import ke.ac.ku.ledgerly.service.NotificationService
 import ke.ac.ku.ledgerly.utils.TransactionExportManager
 import ke.ac.ku.ledgerly.utils.sendExportSuccessNotification

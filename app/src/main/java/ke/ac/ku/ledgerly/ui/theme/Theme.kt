@@ -10,42 +10,43 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = LedgerlyGreen,
-    onPrimary = OnPrimaryDark,
+    primary = LedgerlyGreenLight,
+    onPrimary = White,
     secondary = LedgerlyBlue,
-    onSecondary = OnPrimaryDark,
-    tertiary = LedgerlyGreenLight,
-    background = Color(0xFF0D1B2A),
-    surface = Color(0xFF1B263B),
-    onSurface = OnSurfaceDark,
-    error = ErrorRed,
-    outline = LedgerlyAccent
-)
-private val LightColorScheme = lightColorScheme(
-    primary = LedgerlyGreen,
-    onPrimary = OnPrimaryLight,
-    secondary = LedgerlyBlue,
-    onSecondary = OnPrimaryLight,
-    tertiary = LedgerlyGreenLight,
-    background = Color(0xFFF5F7FA),
-    surface = Color(0xFFFFFFFF),
-    onSurface = OnSurfaceLight,
+    onSecondary = White,
+    tertiary = LedgerlyCyan,
+    background = BackgroundDark,
+    surface = SurfaceDark,
+    onBackground = TextPrimaryDark,
+    onSurface = TextPrimaryDark,
     error = ErrorRed,
     outline = LedgerlyAccent
 )
 
+private val LightColorScheme = lightColorScheme(
+    primary = LedgerlyGreen,
+    onPrimary = White,
+    secondary = LedgerlyBlue,
+    onSecondary = White,
+    tertiary = LedgerlyCyan,
+    background = BackgroundLight,
+    surface = SurfaceLight,
+    onBackground = TextPrimaryLight,
+    onSurface = TextPrimaryLight,
+    error = ErrorRed,
+    outline = LedgerlyAccent
+)
 
 @Composable
 fun LedgerlyTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // False to prioritize brand colors
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current

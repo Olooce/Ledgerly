@@ -23,22 +23,22 @@ fun ItemSurface(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp, horizontal = 12.dp)
+            .padding(vertical = 8.dp, horizontal = 16.dp)
             .shadow(
-                elevation = 4.dp,
-                shape = RoundedCornerShape(26.dp),
-                ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                elevation = 2.dp,
+                shape = RoundedCornerShape(24.dp),
+                spotColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
             )
-            .clip(RoundedCornerShape(26.dp))
+            .clip(RoundedCornerShape(24.dp))
             .background(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 1f)
+                color = MaterialTheme.colorScheme.surface
             )
             .border(
-                width = 0.05.dp,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-                shape = MaterialTheme.shapes.small
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f),
+                shape = RoundedCornerShape(24.dp)
             )
-            .padding(12.dp),
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         content = content
     )

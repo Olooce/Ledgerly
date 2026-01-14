@@ -39,7 +39,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -74,7 +73,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ke.ac.ku.ledgerly.R
-import java.util.Currency
 
 private val LedgerlyGreen = Color(0xFF11423F)
 private val LedgerlyGreenLight = Color(0xFF094540)
@@ -357,6 +355,7 @@ private fun NameStep(
         )
     }
 }
+
 @Composable
 private fun CurrencyStep(
     selectedCurrency: String,
