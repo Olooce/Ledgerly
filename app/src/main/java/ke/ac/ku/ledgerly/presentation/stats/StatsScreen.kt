@@ -108,7 +108,7 @@ fun StatsScreen(
     val displayCurrency by settingsViewModel.displayCurrency.collectAsState()
 
     // For export
-    val allTransactions by viewModel.dao.getAllTransactions().collectAsState(initial = emptyList())
+    val allTransactions by viewModel.allTransactions.collectAsState(initial = emptyList())
 
     if (showExportDialog) {
         ExportDialog(
@@ -437,8 +437,8 @@ private fun BudgetsTab(viewModel: StatsViewModel, currency: String) {
 @Composable
 private fun BudgetUtilizationItem(budget: BudgetEntity, currency: String) {
     val progress = budget.percentageUsed.divide(BigDecimal(100)).toFloat()
-    val isOverBudget = budget.isExceeded()
-    val progressColor = if (isOverBudget) Color(0xFFEF4444) else Color(0xFF10B981)
+    val isOverbudget = budget.isExceeded()
+    val progressColor = if (isOverbudget) Color(0xFFEF4444) else Color(0xFF10B981)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -496,7 +496,7 @@ private fun BudgetUtilizationItem(budget: BudgetEntity, currency: String) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                if (isOverBudget) {
+                if (isOverbudget) {
                     Text(
                         text = "Over by ${
                             formatCurrency(

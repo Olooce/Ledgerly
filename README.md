@@ -45,4 +45,4 @@ You can view the original assignment instructions here:
 
 1. Clone the repository.
 2. Add your `google-services.json` to the `app/` directory.
-3. Build and run using.
+3. Build and run.
