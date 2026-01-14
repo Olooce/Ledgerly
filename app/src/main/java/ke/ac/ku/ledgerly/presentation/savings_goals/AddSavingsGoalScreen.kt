@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import java.math.BigDecimal
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -53,6 +52,7 @@ import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.SavingsGoalEntity
 import ke.ac.ku.ledgerly.ui.components.rememberSafeIconPainter
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyGreen
+import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -133,8 +133,10 @@ fun AddSavingsGoalScreen(
             if (goalName.isNotEmpty() && targetAmount.toDoubleOrNull() != null && targetAmount.toDoubleOrNull()!! > 0) {
                 ExtendedFloatingActionButton(
                     onClick = {
-                        val target = targetAmount.toDoubleOrNull()?.toBigDecimal() ?: BigDecimal.ZERO
-                        val current = currentAmount.toDoubleOrNull()?.toBigDecimal() ?: BigDecimal.ZERO
+                        val target =
+                            targetAmount.toDoubleOrNull()?.toBigDecimal() ?: BigDecimal.ZERO
+                        val current =
+                            currentAmount.toDoubleOrNull()?.toBigDecimal() ?: BigDecimal.ZERO
 
                         val isEdit = goalId != null && goalId > 0
                         val original = selectedGoal

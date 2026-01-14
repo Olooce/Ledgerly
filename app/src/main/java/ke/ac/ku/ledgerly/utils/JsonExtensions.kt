@@ -6,7 +6,7 @@ import ke.ac.ku.ledgerly.data.model.ExchangeRateResponse
 val gson = Gson()
 
 fun ExchangeRateResponse.toJson(): String =
-        gson.toJson(this)
+    gson.toJson(this)
 
 fun String.toExchangeRateResponse(): ExchangeRateResponse =
-        gson.fromJson(this, ExchangeRateResponse::class.java)
+    gson.fromJson(this, ExchangeRateResponse::class.java)

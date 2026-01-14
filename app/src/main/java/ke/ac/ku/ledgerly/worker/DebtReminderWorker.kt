@@ -79,7 +79,7 @@ class DebtReminderWorker @AssistedInject constructor(
         }
     }
 
-        private fun isRecoverable(e: Exception): Boolean {
+    private fun isRecoverable(e: Exception): Boolean {
         return when (e) {
             is java.io.IOException -> true
             is android.database.sqlite.SQLiteException -> false

@@ -1,4 +1,3 @@
-
 package ke.ac.ku.ledgerly.data.dao
 
 import androidx.room.Dao

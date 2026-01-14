@@ -75,6 +75,7 @@ object CurrencyFormatter {
             "$formatted$suffix $currencyCode"
         }
     }
+
     private fun getNumberFormatter(locale: Locale): DecimalFormat {
         return NumberFormat.getInstance(locale) as DecimalFormat
     }
@@ -91,6 +92,7 @@ object CurrencyFormatter {
             null
         }
     }
+
     fun formatPercentage(
         percentage: BigDecimal,
         decimalPlaces: Int = 1
@@ -101,12 +103,18 @@ object CurrencyFormatter {
         return "${formatter.format(percentage)}%"
     }
 
-    @Deprecated("Use formatCurrency(amount: Double, currencyCode: String) instead", ReplaceWith("formatCurrency(amount, \"KES\")"))
+    @Deprecated(
+        "Use formatCurrency(amount: Double, currencyCode: String) instead",
+        ReplaceWith("formatCurrency(amount, \"KES\")")
+    )
     fun formatCurrency(amount: Double): String {
         return formatCurrency(amount, "KES")
     }
 
-    @Deprecated("Use formatCurrency(amount: BigDecimal, currencyCode: String) instead", ReplaceWith("formatCurrency(amount, \"KES\")"))
+    @Deprecated(
+        "Use formatCurrency(amount: BigDecimal, currencyCode: String) instead",
+        ReplaceWith("formatCurrency(amount, \"KES\")")
+    )
     fun formatCurrency(amount: BigDecimal): String {
         return formatCurrency(amount, "KES")
     }

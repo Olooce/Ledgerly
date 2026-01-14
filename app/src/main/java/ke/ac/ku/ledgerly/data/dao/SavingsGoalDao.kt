@@ -60,10 +60,13 @@ interface SavingsGoalDao {
 
         if (goal.targetAmount <= BigDecimal.ZERO) return emptyList()
 
-        val oldPercentage = goal.currentAmount.divide(goal.targetAmount, 4, RoundingMode.HALF_UP).multiply(BigDecimal(100))
-        val newPercentage = newAmount.divide(goal.targetAmount, 4, RoundingMode.HALF_UP).multiply(BigDecimal(100))
+        val oldPercentage = goal.currentAmount.divide(goal.targetAmount, 4, RoundingMode.HALF_UP)
+            .multiply(BigDecimal(100))
+        val newPercentage =
+            newAmount.divide(goal.targetAmount, 4, RoundingMode.HALF_UP).multiply(BigDecimal(100))
 
-        val milestones = listOf(BigDecimal("25"), BigDecimal("50"), BigDecimal("75"), BigDecimal("100"))
+        val milestones =
+            listOf(BigDecimal("25"), BigDecimal("50"), BigDecimal("75"), BigDecimal("100"))
 
         val crossed = milestones.filter {
             it > goal.lastMilestoneReached &&

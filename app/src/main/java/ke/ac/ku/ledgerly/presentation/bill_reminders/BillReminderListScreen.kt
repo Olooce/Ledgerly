@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,16 +24,17 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -40,11 +42,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -57,7 +60,13 @@ import ke.ac.ku.ledgerly.base.BillReminderNavigationEvent
 import ke.ac.ku.ledgerly.data.constants.NavRouts
 import ke.ac.ku.ledgerly.data.model.BillReminderEntity
 import ke.ac.ku.ledgerly.data.model.BillReminderSummary
+import ke.ac.ku.ledgerly.ui.theme.LedgerlyGreen
+import ke.ac.ku.ledgerly.ui.theme.StatusDueToday
+import ke.ac.ku.ledgerly.ui.theme.StatusOverdue
+import ke.ac.ku.ledgerly.ui.theme.StatusSoon
+import ke.ac.ku.ledgerly.ui.theme.StatusUpcoming
 import ke.ac.ku.ledgerly.ui.theme.Typography
+import ke.ac.ku.ledgerly.utils.CurrencyFormatter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -73,6 +82,8 @@ fun BillReminderListScreen(
     val upcomingBills by viewModel.upcomingBills.collectAsState()
     val overdueBills by viewModel.overdueBills.collectAsState()
 
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
             when (event) {
@@ -84,74 +95,124 @@ fun BillReminderListScreen(
                         NavRouts.ADD_EDIT_BILL_REMINDER
                     }
                     navController.navigate(route)
-
                 }
-//                is BillReminderNavigationEvent.NavigateToBillDetail -> {
-//                    navController.navigate("bill_detail/${event.billId}")
-//                }
+
                 else -> {}
             }
         }
     }
 
-    val filteredBills = when (listState.selectedFilter) {
-        "upcoming" -> upcomingBills
-        "overdue" -> overdueBills
+    LaunchedEffect(listState.selectedFilter) {
+        selectedTabIndex = when (listState.selectedFilter) {
+            "upcoming" -> 1
+            "overdue" -> 2
+            else -> 0
+        }
+    }
+
+    val filteredBills = when (selectedTabIndex) {
+        1 -> upcomingBills
+        2 -> overdueBills
         else -> allBills
     }
 
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
                         Text(
                             "Bill Reminders",
-                            style = Typography.headlineSmall,
+                            style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background
-                    )
-                )
-            },
-            floatingActionButton = {
-                FloatingActionButton(
-                    onClick = { viewModel.onAddNewBill() },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(56.dp)
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = "Add Bill")
-                }
-            },
-            containerColor = MaterialTheme.colorScheme.background
-        ) { paddingValues ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
-                // Summary Cards
-                item {
-                    SummarySection(listState.summary)
-                }
-
-                // Filter Tabs
-                item {
-                    BillReminderFilterTabs(
-                        selectedFilter = listState.selectedFilter,
-                        onFilterSelected = { viewModel.setFilter(it) }
-                    )
-                }
-
-                // Bills List
-                if (filteredBills.isEmpty()) {
-                    item {
-                        EmptyStateMessage(listState.selectedFilter)
+                        Text(
+                            "${upcomingBills.size} upcoming • ${overdueBills.size} overdue",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                } else {
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { viewModel.onAddNewBill() },
+                containerColor = LedgerlyGreen,
+                contentColor = Color.White,
+                modifier = Modifier
+                    .size(56.dp)
+                    .padding(bottom = 16.dp, end = 16.dp)
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = "Add Bill")
+            }
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            // Summary Card (Matching Savings Goal style)
+            SummarySection(listState.summary)
+
+            // Tabs (Matching Savings Goal style)
+            TabRow(
+                selectedTabIndex = selectedTabIndex,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                containerColor = Color.Transparent,
+                divider = {},
+                indicator = { tabPositions ->
+                    TabRowDefaults.SecondaryIndicator(
+                        modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                        height = 3.dp,
+                        color = LedgerlyGreen
+                    )
+                }
+            ) {
+                listOf(
+                    "All" to allBills.size,
+                    "Upcoming" to upcomingBills.size,
+                    "Overdue" to overdueBills.size
+                ).forEachIndexed { index, (title, count) ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = {
+                            selectedTabIndex = index
+                            viewModel.setFilter(
+                                when (index) {
+                                    1 -> "upcoming"
+                                    2 -> "overdue"
+                                    else -> "all"
+                                }
+                            )
+                        }
+                    ) {
+                        Text(
+                            "$title ($count)",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = if (selectedTabIndex == index) FontWeight.SemiBold else FontWeight.Normal,
+                            color = if (selectedTabIndex == index) LedgerlyGreen
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 12.dp)
+                        )
+                    }
+                }
+            }
+
+            if (filteredBills.isEmpty()) {
+                EmptyStateMessage(listState.selectedFilter)
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     items(filteredBills) { bill ->
                         BillReminderCard(
                             bill = bill,
@@ -173,10 +234,7 @@ fun BillReminderListScreen(
                             }
                         )
                     }
-                }
-
-                item {
-                    Spacer(modifier = Modifier.height(24.dp))
+                    item { Spacer(modifier = Modifier.height(80.dp)) }
                 }
             }
         }
@@ -185,117 +243,51 @@ fun BillReminderListScreen(
 
 @Composable
 private fun SummarySection(summary: BillReminderSummary) {
-    Column(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = LedgerlyGreen.copy(alpha = 0.08f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            SummaryCard(
-                title = "Upcoming",
-                value = summary.totalUpcoming.toString(),
-                subtitle = " ${String.format("%.0f", summary.totalAmount)}",
-                backgroundColor = Color(0xFF4CAF50).copy(alpha = 0.12f),
-                borderColor = Color(0xFF4CAF50).copy(alpha = 0.3f),
-                modifier = Modifier.weight(1f)
-            )
-            SummaryCard(
-                title = "Overdue",
-                value = summary.overdueCount.toString(),
-                subtitle = "Needs attention",
-                backgroundColor = Color(0xFFEF4444).copy(alpha = 0.12f),
-                borderColor = Color(0xFFEF4444).copy(alpha = 0.3f),
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
+            Column {
+                Text(
+                    "Upcoming Bills",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "${summary.totalUpcoming} bills",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = LedgerlyGreen
+                )
+            }
 
-@Composable
-private fun SummaryCard(
-    title: String,
-    value: String,
-    subtitle: String,
-    backgroundColor: Color,
-    borderColor: Color,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(100.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        border = BorderStroke(1.dp, borderColor)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = title,
-                style = Typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = value,
-                style = Typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = subtitle,
-                style = Typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = MaterialTheme.typography.labelSmall.fontSize * 0.8f
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    "Total Amount",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    CurrencyFormatter.formatCurrency(summary.totalAmount, "KES"),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = LedgerlyGreen
+                )
+            }
         }
-    }
-}
-
-@Composable
-private fun BillReminderFilterTabs(
-    selectedFilter: String,
-    onFilterSelected: (String) -> Unit
-) {
-    TabRow(
-        selectedTabIndex = when (selectedFilter) {
-            "upcoming" -> 1
-            "overdue" -> 2
-            else -> 0
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        containerColor = MaterialTheme.colorScheme.background,
-        indicator = {}
-    ) {
-        Tab(
-            selected = selectedFilter == "all",
-            onClick = { onFilterSelected("all") },
-            text = { Text("All", style = Typography.labelMedium) }
-        )
-        Tab(
-            selected = selectedFilter == "upcoming",
-            onClick = { onFilterSelected("upcoming") },
-            text = { Text("Upcoming", style = Typography.labelMedium) }
-        )
-        Tab(
-            selected = selectedFilter == "overdue",
-            onClick = { onFilterSelected("overdue") },
-            text = { Text("Overdue", style = Typography.labelMedium) }
-        )
     }
 }
 
@@ -312,32 +304,25 @@ private fun BillReminderCard(
     val dueDate = dateFormat.format(Date(bill.dueDate))
 
     val (statusColor, statusText) = when {
-        bill.isOverdue -> Color(0xFFEF4444) to "OVERDUE"
-        bill.daysUntilDue == 0 -> Color(0xFFFFA500) to "DUE TODAY"
-        bill.daysUntilDue > 0 && bill.daysUntilDue <= 3 -> Color(0xFFFFB74D) to "SOON"
-        else -> Color(0xFF4CAF50) to "UPCOMING"
+        bill.isOverdue -> StatusOverdue to "OVERDUE"
+        bill.daysUntilDue == 0 -> StatusDueToday to "DUE TODAY"
+        bill.daysUntilDue > 0 && bill.daysUntilDue <= 3 -> StatusSoon to "SOON"
+        else -> StatusUpcoming to "UPCOMING"
     }
 
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF2C2C2C).copy(alpha = 0.8f)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(
             width = 1.dp,
-            brush = Brush.linearGradient(
-                colors = listOf(
-                    Color.White.copy(alpha = 0.2f),
-                    Color.White.copy(alpha = 0.05f)
-                ),
-                start = Offset(0f, 0f),
-                end = Offset(500f, 500f)
-            )
-        )
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -363,16 +348,6 @@ private fun BillReminderCard(
                         overflow = TextOverflow.Ellipsis
                     )
 
-                    if (bill.description.isNotEmpty()) {
-                        Text(
-                            text = bill.description,
-                            style = Typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -396,7 +371,7 @@ private fun BillReminderCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "KES ${String.format("%.2f", bill.amount)}",
+                        text = CurrencyFormatter.formatCurrency(bill.amount, "KES"),
                         style = Typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color(bill.color)
@@ -405,8 +380,8 @@ private fun BillReminderCard(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
-                            .background(statusColor.copy(alpha = 0.2f))
-                            .border(1.dp, statusColor.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                            .background(statusColor.copy(alpha = 0.15f))
+                            .border(1.dp, statusColor.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(
@@ -420,9 +395,10 @@ private fun BillReminderCard(
                 }
             }
 
-            Divider(
+            HorizontalDivider(
                 modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
             )
 
             Row(
@@ -436,27 +412,18 @@ private fun BillReminderCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (bill.status == "pending") {
-                        IconButton(
-                            onClick = onMarkAsPaid,
-                            modifier = Modifier.size(28.dp)
-                        ) {
+                        IconButton(onClick = onMarkAsPaid, modifier = Modifier.size(28.dp)) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_check),
                                 contentDescription = "Mark as Paid",
                                 modifier = Modifier.size(16.dp),
-                                tint = Color(0xFF4CAF50)
+                                tint = StatusUpcoming
                             )
                         }
                     }
-
-                    IconButton(
-                        onClick = onEdit,
-                        modifier = Modifier.size(28.dp)
-                    ) {
+                    IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
                         Icon(
                             Icons.Filled.Edit,
                             contentDescription = "Edit",
@@ -464,16 +431,12 @@ private fun BillReminderCard(
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
-
-                    IconButton(
-                        onClick = onDelete,
-                        modifier = Modifier.size(28.dp)
-                    ) {
+                    IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
                         Icon(
                             Icons.Filled.Delete,
                             contentDescription = "Delete",
                             modifier = Modifier.size(16.dp),
-                            tint = Color(0xFFEF4444)
+                            tint = StatusOverdue
                         )
                     }
                 }
@@ -486,7 +449,7 @@ private fun BillReminderCard(
 private fun EmptyStateMessage(filter: String) {
     Box(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .padding(32.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -500,7 +463,6 @@ private fun EmptyStateMessage(filter: String) {
                 modifier = Modifier.size(80.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
             )
-
             Text(
                 text = when (filter) {
                     "upcoming" -> "No upcoming bills"
@@ -509,12 +471,6 @@ private fun EmptyStateMessage(filter: String) {
                 },
                 style = Typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Text(
-                text = "Create your first bill reminder",
-                style = Typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
         }
     }

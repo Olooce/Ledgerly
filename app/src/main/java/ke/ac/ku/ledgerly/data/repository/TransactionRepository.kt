@@ -36,7 +36,7 @@ class TransactionRepository @Inject constructor(
         transactionDao.insertTransaction(newTransaction)
     }
 
-    suspend fun addRecurringTransaction(transaction: RecurringTransactionEntity){
+    suspend fun addRecurringTransaction(transaction: RecurringTransactionEntity) {
         val rate = currencyManager.getFrozenExchangeRate(transaction.originalCurrency)
         val amountUsd = transaction.amountOriginal
             .divide(rate, 6, RoundingMode.HALF_UP)
@@ -136,7 +136,7 @@ class TransactionRepository @Inject constructor(
             minAmount = minAmount,
             maxAmount = maxAmount,
             categoriesCount = categories.size,
-            categories = categories.ifEmpty { listOf("") }, 
+            categories = categories.ifEmpty { listOf("") },
             statusFilter = resolvedStatus
         )
     }
@@ -286,7 +286,7 @@ class TransactionRepository @Inject constructor(
         return convertTransactionForDisplay(transaction)
     }
 
-       private suspend fun convertTransactionForDisplay(transaction: TransactionEntity): TransactionEntity {
+    private suspend fun convertTransactionForDisplay(transaction: TransactionEntity): TransactionEntity {
         val displayCurrency = currencyManager.getDisplayCurrency()
         if (displayCurrency == transaction.originalCurrency) {
             return transaction
@@ -295,18 +295,19 @@ class TransactionRepository @Inject constructor(
         return transaction
     }
 
-     suspend fun getTotalExpenseUsdForMonth(monthYear: String): BigDecimal {
+    suspend fun getTotalExpenseUsdForMonth(monthYear: String): BigDecimal {
         val transactions = transactionDao.getTransactionsForMonth(monthYear)
             .filter { it.type == "Expense" && !it.isDeleted }
-        
+
         return transactions.fold(BigDecimal.ZERO) { acc, transaction ->
             acc + transaction.amountUsd
         }
     }
+
     suspend fun getTotalIncomeUsdForMonth(monthYear: String): BigDecimal {
         val transactions = transactionDao.getTransactionsForMonth(monthYear)
             .filter { it.type == "Income" && !it.isDeleted }
-        
+
         return transactions.fold(BigDecimal.ZERO) { acc, transaction ->
             acc + transaction.amountUsd
         }

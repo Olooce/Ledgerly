@@ -67,7 +67,8 @@ class AddTransactionViewModel @Inject constructor(
 
     suspend fun addTransaction(transactionEntity: TransactionEntity): Boolean {
         return try {
-            val exchangeRate = currencyManager.getFrozenExchangeRate(transactionEntity.originalCurrency)
+            val exchangeRate =
+                currencyManager.getFrozenExchangeRate(transactionEntity.originalCurrency)
             val amountUsd = currencyManager.convertToUsd(
                 transactionEntity.amountOriginal,
                 transactionEntity.originalCurrency
@@ -141,7 +142,8 @@ class AddTransactionViewModel @Inject constructor(
             budget?.let {
                 val newSpending = it.currentSpending.add(transaction.amountOriginal)
                 val newPercentage =
-                    newSpending.divide(it.monthlyBudget, 2, RoundingMode.HALF_UP).multiply(BigDecimal(100))
+                    newSpending.divide(it.monthlyBudget, 2, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal(100))
 
                 return when {
                     newSpending > it.monthlyBudget ->

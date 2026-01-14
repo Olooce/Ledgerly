@@ -10,9 +10,9 @@ import androidx.compose.ui.graphics.Color
 fun progressColor(progress: Double): Color {
     return when {
         progress >= 100.0 -> LedgerlyGreen
-        progress >= 75.0 -> Color(0xFF4CAF50)
-        progress >= 50.0 -> Color(0xFFFFC107)
-        progress >= 25.0 -> Color(0xFFFF9800)
-        else -> Color(0xFFF44336)
+        progress >= 75.0 -> SuccessGreen
+        progress >= 50.0 -> WarningYellow
+        progress >= 25.0 -> StatusSoon
+        else -> ErrorRed
     }
 }

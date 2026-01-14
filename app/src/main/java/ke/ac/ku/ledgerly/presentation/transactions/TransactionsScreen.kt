@@ -28,7 +28,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -73,6 +72,7 @@ import ke.ac.ku.ledgerly.data.constants.FilterConstants
 import ke.ac.ku.ledgerly.data.constants.NavRouts
 import ke.ac.ku.ledgerly.data.model.RecurringTransactionEntity
 import ke.ac.ku.ledgerly.data.model.TransactionEntity
+import ke.ac.ku.ledgerly.domain.CurrencyManager
 import ke.ac.ku.ledgerly.presentation.home.HomeUiEvent
 import ke.ac.ku.ledgerly.presentation.home.HomeViewModel
 import ke.ac.ku.ledgerly.ui.components.LedgerlyTopBar
@@ -86,7 +86,6 @@ import ke.ac.ku.ledgerly.ui.widget.MultiFloatingActionButton
 import ke.ac.ku.ledgerly.ui.widget.SearchBar
 import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
 import ke.ac.ku.ledgerly.utils.CurrencyFormatter.formatCurrency
-import ke.ac.ku.ledgerly.utils.FormatingUtils
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -168,10 +167,11 @@ fun TransactionsScreen(
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.ic_ledgerly),
-                            contentDescription = "Ledgerly logo",
+                            contentDescription = "Ledgerly Logo",
                             modifier = Modifier
-                                .size(48.dp)
-                                .align(Alignment.Center)
+                                .align(Alignment.TopStart)
+                                .padding(start = 16.dp, top = 24.dp)
+                                .size(102.dp)
                         )
                     }
 
@@ -324,6 +324,7 @@ fun TransactionsScreen(
                                 RecurringTransactionsContent(
                                     animatedScope = this,
                                     recurringTransactions = recurringTransactions,
+                                    currencyManager = homeViewModel.currencyManager,
                                     filterType = transactionsState.filterType,
                                     statusFilter = transactionsState.statusFilter,
                                     searchQuery = transactionsState.searchQuery,
@@ -345,7 +346,7 @@ fun TransactionsScreen(
                                     },
                                     onStatusFilterChange = transactionViewModel::updateStatusFilter,
 
-                                            onToggleActive = { id, isActive ->
+                                    onToggleActive = { id, isActive ->
                                         transactionViewModel.toggleRecurringTransactionStatus(
                                             id,
                                             isActive
@@ -362,7 +363,7 @@ fun TransactionsScreen(
                                         selectedCategories = emptyList()
                                     },
 
-                                            onToggleFilters = { filtersExpanded = !filtersExpanded }
+                                    onToggleFilters = { filtersExpanded = !filtersExpanded }
                                 )
                             }
                         }
@@ -671,6 +672,7 @@ fun SharedTransitionScope.AllTransactionsContent(
 fun SharedTransitionScope.RecurringTransactionsContent(
     animatedScope: AnimatedVisibilityScope,
     recurringTransactions: List<RecurringTransactionEntity>,
+    currencyManager: CurrencyManager,
     filterType: String,
     statusFilter: String,
     searchQuery: String,
@@ -889,6 +891,7 @@ fun SharedTransitionScope.RecurringTransactionsContent(
                 items(recurringTransactions) { recurring ->
                     RecurringTransactionItem(
                         recurring = recurring,
+                        currencyManager = currencyManager,
                         onToggleActive = onToggleActive,
                         onDelete = onDelete,
                         modifier = Modifier

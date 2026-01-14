@@ -83,16 +83,16 @@ suspend fun NotificationService.sendOverdueBillNotification(
     billName: String,
     amount: String,
     daysPastDue: Int
-) : Boolean {
+): Boolean {
     val dueDate = "OVERDUE by $daysPastDue days"
     return try {
-    sendBillReminderNotification(
-        billId = billId,
-        billName = billName,
-        amount = amount,
-        dueDate = dueDate,
-        daysUntilDue = -daysPastDue
-    )
+        sendBillReminderNotification(
+            billId = billId,
+            billName = billName,
+            amount = amount,
+            dueDate = dueDate,
+            daysUntilDue = -daysPastDue
+        )
     } catch (e: Exception) {
         false
     }

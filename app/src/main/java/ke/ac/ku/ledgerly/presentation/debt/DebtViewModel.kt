@@ -84,8 +84,10 @@ class DebtViewModel @Inject constructor(
                         debt.dueDate >= System.currentTimeMillis() && debt.status != "settled"
                     }
 
-                    val totalOwed = debts.filter { it.debtType == "owed" }.sumOf { it.amount }.toDouble()
-                    val totalOwe = debts.filter { it.debtType == "owe" }.sumOf { it.amount }.toDouble()
+                    val totalOwed =
+                        debts.filter { it.debtType == "owed" }.sumOf { it.amount }.toDouble()
+                    val totalOwe =
+                        debts.filter { it.debtType == "owe" }.sumOf { it.amount }.toDouble()
 
                     _debtListState.update { state ->
                         state.copy(

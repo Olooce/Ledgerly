@@ -84,18 +84,17 @@ import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.SignInClient
 import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.base.AuthEvent
+import ke.ac.ku.ledgerly.ui.theme.BorderLight
+import ke.ac.ku.ledgerly.ui.theme.InputBackgroundLight
+import ke.ac.ku.ledgerly.ui.theme.LedgerlyCyan
+import ke.ac.ku.ledgerly.ui.theme.LedgerlyTeal
+import ke.ac.ku.ledgerly.ui.theme.OceanBlue
+import ke.ac.ku.ledgerly.ui.theme.SurfaceLight
+import ke.ac.ku.ledgerly.ui.theme.TextPrimaryLight
+import ke.ac.ku.ledgerly.ui.theme.TextSecondaryLight
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-
-private val PrimaryGradient1 = Color(0xFF155E75)
-private val PrimaryGradient2 = Color(0xFF0F766E)
-private val AccentColor = Color(0xFF06B6D4)
-private val SurfaceLight = Color(0xFFFFFFFF)
-private val TextPrimary = Color(0xFF1E293B)
-private val TextSecondary = Color(0xFF64748B)
-private val InputBackground = Color(0xFFF8FAFC)
-private val BorderColor = Color(0xFFE2E8F0)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -171,7 +170,7 @@ fun AuthScreen(
             .fillMaxSize()
             .background(
                 brush = Brush.linearGradient(
-                    colors = listOf(PrimaryGradient1, PrimaryGradient2),
+                    colors = listOf(OceanBlue, LedgerlyTeal),
                     start = androidx.compose.ui.geometry.Offset(0f, 0f),
                     end = androidx.compose.ui.geometry.Offset(1000f, 1000f)
                 )
@@ -219,7 +218,7 @@ fun AuthScreen(
                     Text(
                         text = "Know Your Money",
                         style = MaterialTheme.typography.bodySmall,
-                        color = AccentColor.copy(alpha = 0.9f),
+                        color = LedgerlyCyan.copy(alpha = 0.9f),
                         fontWeight = FontWeight.Light
                     )
                 }
@@ -250,7 +249,7 @@ fun AuthScreen(
                         Text(
                             text = if (isSignUp) "Create Account" else "Welcome Back",
                             style = MaterialTheme.typography.titleLarge,
-                            color = TextPrimary,
+                            color = TextPrimaryLight,
                             fontWeight = FontWeight.Bold
                         )
 
@@ -304,7 +303,7 @@ fun AuthScreen(
                             ) {
                                 Text(
                                     text = "Forgot?",
-                                    color = AccentColor,
+                                    color = LedgerlyCyan,
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Medium
                                 )
@@ -337,14 +336,14 @@ fun AuthScreen(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            HorizontalDivider(modifier = Modifier.weight(1f), color = BorderColor)
+                            HorizontalDivider(modifier = Modifier.weight(1f), color = BorderLight)
                             Text(
                                 text = "or",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = TextSecondary,
+                                color = TextSecondaryLight,
                                 modifier = Modifier.padding(horizontal = 12.dp)
                             )
-                            HorizontalDivider(modifier = Modifier.weight(1f), color = BorderColor)
+                            HorizontalDivider(modifier = Modifier.weight(1f), color = BorderLight)
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -430,7 +429,7 @@ fun AuthScreen(
                             Text(
                                 text = if (isSignUp) "Have an account?" else "No account?",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary
+                                color = TextSecondaryLight
                             )
                             TextButton(
                                 onClick = { isSignUp = !isSignUp },
@@ -438,7 +437,7 @@ fun AuthScreen(
                             ) {
                                 Text(
                                     text = if (isSignUp) "Sign In" else "Sign Up",
-                                    color = AccentColor,
+                                    color = LedgerlyCyan,
                                     fontWeight = FontWeight.SemiBold,
                                     style = MaterialTheme.typography.bodySmall
                                 )
@@ -491,12 +490,12 @@ private fun TextField(
             .fillMaxWidth()
             .height(50.dp)
             .background(
-                color = if (focused) InputBackground else InputBackground.copy(alpha = 0.5f),
+                color = if (focused) InputBackgroundLight else InputBackgroundLight.copy(alpha = 0.5f),
                 shape = RoundedCornerShape(12.dp)
             )
             .border(
                 width = 1.dp,
-                color = if (focused) AccentColor else BorderColor.copy(alpha = 0.5f),
+                color = if (focused) LedgerlyCyan else BorderLight.copy(alpha = 0.5f),
                 shape = RoundedCornerShape(12.dp)
             )
             .padding(horizontal = 12.dp),
@@ -509,7 +508,7 @@ private fun TextField(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (focused) AccentColor else TextSecondary,
+                tint = if (focused) LedgerlyCyan else TextSecondaryLight,
                 modifier = Modifier.size(18.dp)
             )
 
@@ -521,19 +520,19 @@ private fun TextField(
                 modifier = Modifier
                     .weight(1f)
                     .onFocusChanged { focused = it.isFocused },
-                textStyle = MaterialTheme.typography.bodyMedium.copy(color = TextPrimary),
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = TextPrimaryLight),
                 colors = TextFieldDefaults.colors(
                     unfocusedContainerColor = Color.Transparent,
                     focusedContainerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    cursorColor = AccentColor
+                    cursorColor = LedgerlyCyan
                 ),
                 placeholder = {
                     Text(
                         text = placeholder,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary.copy(alpha = 0.5f)
+                        color = TextSecondaryLight.copy(alpha = 0.5f)
                     )
                 },
                 singleLine = true,
@@ -556,7 +555,7 @@ private fun TextField(
                         else
                             Icons.Outlined.VisibilityOff,
                         contentDescription = null,
-                        tint = if (focused) AccentColor else TextSecondary,
+                        tint = if (focused) LedgerlyCyan else TextSecondaryLight,
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -578,8 +577,8 @@ private fun Button(
             .height(48.dp),
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = AccentColor,
-            disabledContainerColor = AccentColor.copy(alpha = 0.6f)
+            containerColor = LedgerlyCyan,
+            disabledContainerColor = LedgerlyCyan.copy(alpha = 0.6f)
         ),
         enabled = !isLoading,
         elevation = ButtonDefaults.buttonElevation(
@@ -617,10 +616,10 @@ private fun SocialButton(
         modifier = modifier.height(48.dp),
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = InputBackground,
-            contentColor = TextPrimary
+            containerColor = InputBackgroundLight,
+            contentColor = TextPrimaryLight
         ),
-        border = BorderStroke(1.dp, BorderColor),
+        border = BorderStroke(1.dp, BorderLight),
         enabled = enabled
     ) {
         Icon(

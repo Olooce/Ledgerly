@@ -59,6 +59,7 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideNotificationDao(db: LedgerlyDatabase): NotificationDao = db.notificationDao()
+
     @Provides
     @Singleton
     fun provideExchangeRateDao(db: LedgerlyDatabase): ExchangeRateDao = db.exchangeRateDao()

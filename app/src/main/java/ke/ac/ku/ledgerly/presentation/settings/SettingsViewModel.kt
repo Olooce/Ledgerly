@@ -5,11 +5,14 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ke.ac.ku.ledgerly.WorkManagerSetup
 import ke.ac.ku.ledgerly.data.repository.AuthRepository
+import ke.ac.ku.ledgerly.data.repository.NotificationRepository
 import ke.ac.ku.ledgerly.data.repository.UserPreferencesRepository
 import ke.ac.ku.ledgerly.domain.SyncManager
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -18,8 +21,24 @@ class SettingsViewModel @Inject constructor(
     val syncManager: SyncManager,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val workManagerSetup: WorkManagerSetup,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val notificationRepository: NotificationRepository
 ) : ViewModel() {
+
+    val userName: StateFlow<String> = userPreferencesRepository.userName
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            "User"
+        )
+
+    val unreadCount: StateFlow<Int> =
+        notificationRepository.getUnreadNotificationCount()
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5_000),
+                0
+            )
 
     private val _isSyncEnabled = MutableStateFlow(false)
     val isSyncEnabled: StateFlow<Boolean> = _isSyncEnabled.asStateFlow()

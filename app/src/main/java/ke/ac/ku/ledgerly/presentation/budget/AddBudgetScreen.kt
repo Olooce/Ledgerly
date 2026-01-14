@@ -50,7 +50,7 @@ import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.BudgetEntity
 import ke.ac.ku.ledgerly.data.repository.CategoryRepository
 import ke.ac.ku.ledgerly.ui.components.LedgerlyTopBar
-import ke.ac.ku.ledgerly.ui.theme.LightGrey
+import ke.ac.ku.ledgerly.ui.theme.TextSecondaryLight
 import ke.ac.ku.ledgerly.ui.theme.Typography
 import ke.ac.ku.ledgerly.ui.widget.TransactionTextView
 import ke.ac.ku.ledgerly.utils.Utils
@@ -76,10 +76,11 @@ fun AddBudgetScreen(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.ic_ledgerly),
-                    contentDescription = "Ledgerly logo",
+                    contentDescription = "Ledgerly Logo",
                     modifier = Modifier
-                        .size(48.dp)
-                        .align(Alignment.Center)
+                        .align(Alignment.TopStart)
+                        .padding(start = 16.dp, top = 24.dp)
+                        .size(102.dp)
                 )
             }
 
@@ -299,7 +300,7 @@ fun TitleComponent(title: String) {
         text = title.uppercase(),
         fontSize = 12.sp,
         fontWeight = FontWeight.Medium,
-        color = LightGrey
+        color = TextSecondaryLight
     )
     Spacer(modifier = Modifier.size(10.dp))
 }

@@ -18,7 +18,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import java.math.BigDecimal
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -30,6 +29,7 @@ import ke.ac.ku.ledgerly.R
 import ke.ac.ku.ledgerly.data.model.SavingsGoalEntity
 import ke.ac.ku.ledgerly.ui.theme.LedgerlyGreen
 import ke.ac.ku.ledgerly.utils.FormatingUtils
+import java.math.BigDecimal
 
 @Composable
 fun CompleteGoalDialog(
