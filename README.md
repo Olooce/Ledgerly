@@ -11,13 +11,84 @@ This project was developed as part of a class assignment.
 You can view the original assignment instructions here:
 [SCO 306 - Project 2 (PDF)](./SCO%20306%20-project%202.pdf)
 
-## Screenshots (Dark Mode)
+## Screenshots
 
+### Dark Mode
 <p align="center">
-  <img src="screenshots/dark_mode/img.png" width="200" alt="">
-  <img src="screenshots/dark_mode/img_1.png" width="200" alt="">
-  <img src="screenshots/dark_mode/img_2.png" width="200" alt="">
-  <img src="screenshots/dark_mode/img_3.png" width="200" alt="">
+  <img src="screenshots/dark_mode/img.png" width="200">
+  <img src="screenshots/dark_mode/img_1.png" width="200">
+  <img src="screenshots/dark_mode/img_2.png" width="200">
+  <img src="screenshots/dark_mode/img_3.png" width="200">
+</p>
+<p align="center">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-37-28.png" width="200">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-37-38.png" width="200">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-37-47.png" width="200">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-38-01.png" width="200">
+</p>
+<p align="center">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-38-05.png" width="200">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-38-09.png" width="200">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-38-12.png" width="200">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-38-20.png" width="200">
+</p>
+<p align="center">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-38-23.png" width="200">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-38-31.png" width="200">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-38-34.png" width="200">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-38-37.png" width="200">
+</p>
+<p align="center">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-38-46.png" width="200">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-38-54.png" width="200">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-38-57.png" width="200">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-39-55.png" width="200">
+</p>
+<p align="center">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-40-11.png" width="200">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-40-22.png" width="200">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-40-27.png" width="200">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-40-35.png" width="200">
+</p>
+<p align="center">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-40-44.png" width="200">
+  <img src="screenshots/dark_mode/Screenshot%20From%202026-01-14%2009-40-47.png" width="200">
+</p>
+
+### Light Mode
+<p align="center">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-41-47.png" width="200">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-41-52.png" width="200">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-42-43.png" width="200">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-42-48.png" width="200">
+</p>
+<p align="center">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-42-50.png" width="200">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-42-58.png" width="200">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-43-01.png" width="200">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-43-07.png" width="200">
+</p>
+<p align="center">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-43-11.png" width="200">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-43-17.png" width="200">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-43-21.png" width="200">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-43-25.png" width="200">
+</p>
+<p align="center">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-43-35.png" width="200">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-43-44.png" width="200">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-43-47.png" width="200">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-43-51.png" width="200">
+</p>
+<p align="center">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-43-56.png" width="200">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-44-00.png" width="200">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-44-03.png" width="200">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-44-13.png" width="200">
+</p>
+<p align="center">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-44-21.png" width="200">
+  <img src="screenshots/light_mode/Screenshot%20From%202026-01-14%2009-44-26.png" width="200">
 </p>
 
 ## Features

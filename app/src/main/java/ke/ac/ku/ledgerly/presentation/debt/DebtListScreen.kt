@@ -146,10 +146,10 @@ fun SharedTransitionScope.DebtListScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Summary Card (Matching Savings Goal style)
+            // Summary Card
             SummarySection(debtListState, displayCurrency)
 
-            // Tabs (Matching Savings Goal style)
+            // Tabs
             TabRow(
                 selectedTabIndex = selectedTabIndex,
                 modifier = Modifier
@@ -168,7 +168,7 @@ fun SharedTransitionScope.DebtListScreen(
                 listOf(
                     "All" to debtListState.debts.size,
                     "Overdue" to debtListState.overdueCount,
-                    "Upcoming" to debtListState.debts.count { it.dueDate > System.currentTimeMillis() && it.status != "settled" }
+                    "Upcoming" to debtListState.upcomingDebts.size,
                 ).forEachIndexed { index, (title, count) ->
                     Tab(
                         selected = selectedTabIndex == index,
@@ -246,7 +246,7 @@ fun SharedTransitionScope.DebtListScreen(
 
 @Composable
 private fun SummarySection(
-    state: ke.ac.ku.ledgerly.presentation.debt.DebtListState,
+    state: DebtListState,
     currency: String
 ) {
     Card(
